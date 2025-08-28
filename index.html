@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chamalnquimyst - Micro-Universo de Contenido</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    
+    <!-- Carga de Three.js y sus componentes de forma global -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/BoxLineGeometry.js"></script>
+
+    <style>
+        :root {
+            --primary-glow-color: #4DDBFF; /* Un color cian para este universo */
+            --secondary-glow-color: #0077FF;
+            --text-color: #EAEAEA;
+            --background-color: #02040a;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: 'Lato', sans-serif;
+            cursor: default;
+        }
+        #webgl-container, #css-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #css-container {
+            pointer-events: none;
+        }
+        #css-container > div {
+            pointer-events: auto;
+        }
+        #blocker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0);
+            pointer-events: none;
+            z-index: 10;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9em;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 1s ease-out 5s;
+        }
+        .content-panel-wrapper {
+            transition: transform 0.5s ease-out;
+        }
+        .video-panel {
+            width: 1280px;
+            height: 720px;
+            border: 5px solid rgba(77, 219, 255, 0.5);
+            box-shadow: 0 0 30px rgba(77, 219, 255, 0.7);
+            background-color: #000;
+        }
+        .video-panel iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        #add-panel-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-glow-color);
+            color: var(--background-color);
+            border: none;
+            border-radius: 50%;
+            font-size: 36px;
+            line-height: 60px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 0 20px var(--primary-glow-color);
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+        #add-panel-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            background-color: #fff;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            background: var(--background-color);
+            border: 1px solid var(--primary-glow-color);
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 30px var(--secondary-glow-color);
+        }
+        .modal-content h3 {
+            font-family: 'Cinzel', serif;
+            color: var(--primary-glow-color);
+            margin-top: 0;
+            text-align: center;
+        }
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid var(--primary-glow-color);
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 1em;
+            opacity: 0.6;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-button.active {
+            opacity: 1;
+            border-bottom-color: var(--primary-glow-color);
+        }
+        .form-section { display: none; }
+        .form-section.active { display: block; }
+        .modal-content input, .modal-content textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--primary-glow-color);
+            color: var(--text-color);
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .modal-content textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        .modal-actions button {
+            background: var(--primary-glow-color);
+            color: var(--background-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .modal-actions button.cancel {
+            background: transparent;
+            border: 1px solid var(--primary-glow-color);
+            color: var(--primary-glow-color);
+        }
+    </style>
+</head>
+<body>
+    <div id="webgl-container"></div>
+    <div id="css-container"></div>
+    <div id="blocker"></div>
+    <div id="instructions">
+        Usa [W,A,S,D] para moverte, [Z,X] para subir/bajar, [Q,E] y [Ratón] para girar. [ESPACIO] para Hiper-salto.
+    </div>
+
+    <button id="add-panel-btn">+</button>
+
+    <div id="creation-modal" class="modal">
+        <div class="modal-content">
+            <h3>Crear Nuevo Panel</h3>
+            <div class="tab-buttons">
+                <button class="tab-button active" data-type="text">Texto</button>
+                <button class="tab-button" data-type="video">Video</button>
+            </div>
+            <div id="text-form" class="form-section active">
+                <input type="text" id="text-title" placeholder="Título...">
+                <textarea id="text-content" placeholder="Contenido..."></textarea>
+            </div>
+            <div id="video-form" class="form-section">
+                <input type="text" id="video-url" placeholder="URL de YouTube...">
+            </div>
+            <div class="modal-actions">
+                <button id="cancel-creation-btn" class="cancel">Cancelar</button>
+                <button id="create-panel-btn">Crear</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SETUP BÁSICO ---
+        let scene, camera, webglRenderer, cssRenderer, clock;
+        let avatarObject;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, moveUp = false, moveDown = false;
+        let rotateLeft = false, rotateRight = false, hyperspace = false;
+        
+        let isCameraDragging = false;
+        let isObjectDragging = false;
+        let draggedObject = null;
+        let dragPlane, offset = new THREE.Vector3();
+        let previousMousePosition = { x: 0, y: 0 };
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        let yawAngle = 0, pitchAngle = 0;
+        const mouseSensitivity = 0.002;
+        const cameraRotationSpeed = 0.02;
+        let initialFov;
+        
+        let contentPanels = [];
+        let draggableObjects = [];
+        const blocker = document.getElementById('blocker');
+
+        init();
+        animate();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x02040a, 50, 200);
+            clock = new THREE.Clock();
+
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+            initialFov = camera.fov;
+            const avatarGeometry = new THREE.SphereGeometry(0.1, 16, 12);
+            const avatarMaterial = new THREE.MeshBasicMaterial({ visible: false });
+            avatarObject = new THREE.Mesh(avatarGeometry, avatarMaterial);
+            avatarObject.position.set(0, 0, 25);
+            scene.add(avatarObject);
+            camera.position.copy(avatarObject.position);
+
+            webglRenderer = new THREE.WebGLRenderer({ antialias: true });
+            webglRenderer.setPixelRatio(window.devicePixelRatio);
+            webglRenderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('webgl-container').appendChild(webglRenderer.domElement);
+
+            cssRenderer = new THREE.CSS3DRenderer();
+            cssRenderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('css-container').appendChild(cssRenderer.domElement);
+            
+            dragPlane = new THREE.Plane();
+            
+            const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xADD8E6, 0.8);
+            directionalLight.position.set(-1, 1, 1);
+            scene.add(directionalLight);
+
+            const starCount = 5000;
+            const starGeometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount; i++) {
+                positions[i * 3 + 0] = (Math.random() - 0.5) * 500;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 500;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 500;
+            }
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const starMaterial = new THREE.PointsMaterial({ color: 0xAAAAAA, size: 0.15 });
+            const starField = new THREE.Points(starGeometry, starMaterial);
+            scene.add(starField);
+
+            const textPanel1 = createTextPanel(
+                "El Viaje del Héroe",
+                "Cada concepto es una etapa en el viaje. El Chamán nos arraiga en la tierra. La Alquimia nos enseña a navegar las aguas de la emoción y el intelecto. El Misterio nos invita a mirar hacia las estrellas, reconociendo la unidad en la diversidad. Este espacio es un mapa para ese viaje interior, una herramienta para la autoexploración y el descubrimiento.",
+                1024, 768
+            );
+            textPanel1.position.set(-15, 2, 0);
+            scene.add(textPanel1);
+            contentPanels.push(textPanel1);
+            draggableObjects.push(textPanel1);
+
+            const imagePanel = createImagePanel("https://placehold.co/1024x768/02040a/4DDBFF?text=Conciencia+Salvaje");
+            imagePanel.position.set(0, 5, -15);
+            scene.add(imagePanel);
+            contentPanels.push(imagePanel);
+            draggableObjects.push(imagePanel);
+            
+            const { videoCSSObject, videoProxyObject } = createVideoPanel("47Korua-WLo", 311);
+            videoCSSObject.position.set(15, 0, 0);
+            videoProxyObject.position.copy(videoCSSObject.position);
+            scene.add(videoCSSObject);
+            scene.add(videoProxyObject);
+            contentPanels.push(videoCSSObject, videoProxyObject);
+            draggableObjects.push(videoProxyObject);
+
+            initEventListeners();
+        }
+
+        function initEventListeners() {
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            document.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mouseup', onMouseUp);
+            document.addEventListener('mousemove', onMouseMove);
+
+            // Modal Listeners
+            const modal = document.getElementById('creation-modal');
+            document.getElementById('add-panel-btn').addEventListener('click', () => modal.classList.add('visible'));
+            document.getElementById('cancel-creation-btn').addEventListener('click', () => modal.classList.remove('visible'));
+            document.getElementById('create-panel-btn').addEventListener('click', handleCreatePanel);
+            
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    document.querySelectorAll('.form-section').forEach(section => section.classList.remove('active'));
+                    document.getElementById(`${button.dataset.type}-form`).classList.add('active');
+                });
+            });
+
+            setTimeout(() => {
+                document.getElementById('instructions').style.opacity = '0';
+            }, 5000);
+        }
+
+        function handleCreatePanel() {
+            const activeTab = document.querySelector('.tab-button.active').dataset.type;
+            const pos = new THREE.Vector3();
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            pos.copy(camera.position).add(dir.multiplyScalar(15)); // Place 15 units in front
+            pos.x += (Math.random() - 0.5) * 5;
+            pos.y += (Math.random() - 0.5) * 5;
+
+            if (activeTab === 'text') {
+                const title = document.getElementById('text-title').value || "Sin Título";
+                const content = document.getElementById('text-content').value || "Sin contenido.";
+                const newPanel = createTextPanel(title, content, 1024, 768);
+                newPanel.position.copy(pos);
+                scene.add(newPanel);
+                contentPanels.push(newPanel);
+                draggableObjects.push(newPanel);
+            } else if (activeTab === 'video') {
+                const url = document.getElementById('video-url').value;
+                const videoId = parseYoutubeUrl(url);
+                if (videoId) {
+                    const { videoCSSObject, videoProxyObject } = createVideoPanel(videoId, 0);
+                    videoCSSObject.position.copy(pos);
+                    videoProxyObject.position.copy(pos);
+                    scene.add(videoCSSObject);
+                    scene.add(videoProxyObject);
+                    contentPanels.push(videoCSSObject, videoProxyObject);
+                    draggableObjects.push(videoProxyObject);
+                } else {
+                    alert("URL de YouTube no válida. Por favor, usa un enlace completo.");
+                }
+            }
+            document.getElementById('creation-modal').classList.remove('visible');
+        }
+
+        function parseYoutubeUrl(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        function createTextPanel(title, text, width, height) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = width;
+            canvas.height = height;
+
+            context.fillStyle = 'rgba(2, 4, 10, 0.7)';
+            context.fillRect(0, 0, width, height);
+            context.strokeStyle = 'rgba(77, 219, 255, 0.5)';
+            context.lineWidth = 10;
+            context.strokeRect(0, 0, width, height);
+
+            context.fillStyle = '#4DDBFF';
+            context.font = `bold ${height * 0.08}px 'Cinzel', serif`;
+            context.textAlign = 'center';
+            context.fillText(title, width / 2, height * 0.15);
+
+            context.fillStyle = '#EAEAEA';
+            context.font = `${height * 0.04}px 'Lato', sans-serif`;
+            context.textAlign = 'left';
+            wrapText(context, text, width * 0.05, height * 0.3, width * 0.9, height * 0.06);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
+            const geometry = new THREE.PlaneGeometry(width / 100, height / 100);
+            return new THREE.Mesh(geometry, material);
+        }
+
+        function createImagePanel(src) {
+            const textureLoader = new THREE.TextureLoader();
+            const texture = textureLoader.load(src);
+            const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+            const geometry = new THREE.PlaneGeometry(10.24, 7.68);
+            const panel = new THREE.Mesh(geometry, material);
+
+            const borderGeo = new THREE.BoxLineGeometry(10.34, 7.78, 0.1, 1, 1, 1);
+            const borderMat = new THREE.LineBasicMaterial({ color: 0x4DDBFF, transparent: true, opacity: 0.8 });
+            const border = new THREE.LineSegments(borderGeo, borderMat);
+            panel.add(border);
+
+            return panel;
+        }
+
+        function createVideoPanel(videoId, start) {
+            const div = document.createElement('div');
+            div.className = 'content-panel-wrapper';
+            const iframeWrapper = document.createElement('div');
+            iframeWrapper.className = 'video-panel';
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.youtube.com/embed/${videoId}?start=${start}&autoplay=1&mute=1&modestbranding=1&rel=0&controls=1&showinfo=0&loop=1&playlist=${videoId}`;
+            iframeWrapper.appendChild(iframe);
+            div.appendChild(iframeWrapper);
+
+            const cssObject = new THREE.CSS3DObject(div);
+            const scale = 0.015;
+            cssObject.scale.set(scale, scale, scale);
+
+            const proxyGeometry = new THREE.PlaneGeometry(1280 * scale, 720 * scale);
+            const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
+            const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
+            proxyObject.userData.cssObject = cssObject;
+
+            return { videoCSSObject: cssObject, videoProxyObject: proxyObject };
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            webglRenderer.setSize(window.innerWidth, window.innerHeight);
+            cssRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onKeyDown(event) {
+            switch (event.code) {
+                case 'KeyW': moveForward = true; break;
+                case 'KeyS': moveBackward = true; break;
+                case 'KeyA': moveLeft = true; break;
+                case 'KeyD': moveRight = true; break;
+                case 'KeyZ': moveUp = true; break;
+                case 'KeyX': moveDown = true; break;
+                case 'KeyQ': rotateLeft = true; break;
+                case 'KeyE': rotateRight = true; break;
+                case 'Space': hyperspace = true; break;
+            }
+        }
+
+        function onKeyUp(event) {
+            switch (event.code) {
+                case 'KeyW': moveForward = false; break;
+                case 'KeyS': moveBackward = false; break;
+                case 'KeyA': moveLeft = false; break;
+                case 'KeyD': moveRight = false; break;
+                case 'KeyZ': moveUp = false; break;
+                case 'KeyX': moveDown = false; break;
+                case 'KeyQ': rotateLeft = false; break;
+                case 'KeyE': rotateRight = false; break;
+                case 'Space': hyperspace = false; break;
+            }
+        }
+        
+        function onMouseDown(event) {
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(draggableObjects);
+
+            if (intersects.length > 0) {
+                isObjectDragging = true;
+                draggedObject = intersects[0].object;
+                
+                dragPlane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(dragPlane.normal), draggedObject.position);
+                
+                const intersectionPoint = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(dragPlane, intersectionPoint)) {
+                    offset.copy(intersectionPoint).sub(draggedObject.position);
+                }
+                
+                blocker.style.pointerEvents = 'auto';
+            } else {
+                isCameraDragging = true;
+                blocker.style.pointerEvents = 'auto';
+            }
+        }
+
+        function onMouseUp(event) {
+            isCameraDragging = false;
+            isObjectDragging = false;
+            draggedObject = null;
+            blocker.style.pointerEvents = 'none';
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+            if (isObjectDragging && draggedObject) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersectionPoint = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(dragPlane, intersectionPoint)) {
+                    const newPosition = intersectionPoint.sub(offset);
+                    draggedObject.position.copy(newPosition);
+
+                    if (draggedObject.userData.cssObject) {
+                        draggedObject.userData.cssObject.position.copy(newPosition);
+                    }
+                }
+
+            } else if (isCameraDragging) {
+                const deltaX = event.clientX - previousMousePosition.x;
+                const deltaY = event.clientY - previousMousePosition.y;
+                yawAngle -= deltaX * mouseSensitivity;
+                pitchAngle -= deltaY * mouseSensitivity;
+                pitchAngle = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitchAngle));
+            }
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+        }
+
+        function wrapText(context, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            for(let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = context.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    context.fillText(line, x, y);
+                    line = words[n] + ' ';
+                    y += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            context.fillText(line, x, y);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            
+            if (rotateLeft) yawAngle += cameraRotationSpeed * delta * 60;
+            if (rotateRight) yawAngle -= cameraRotationSpeed * delta * 60;
+
+            const speed = (hyperspace ? 30 : 10) * delta;
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+
+            const right = new THREE.Vector3().crossVectors(camera.up, direction).normalize();
+
+            if (moveForward) avatarObject.position.addScaledVector(direction, speed);
+            if (moveBackward) avatarObject.position.addScaledVector(direction, -speed);
+            if (moveLeft) avatarObject.position.addScaledVector(right, -speed);
+            if (moveRight) avatarObject.position.addScaledVector(right, speed);
+            if (moveUp) avatarObject.position.y += speed;
+            if (moveDown) avatarObject.position.y -= speed;
+
+            camera.quaternion.setFromEuler(new THREE.Euler(pitchAngle, yawAngle, 0, 'YXZ'));
+            camera.position.copy(avatarObject.position);
+            
+            if (hyperspace) {
+                camera.fov = THREE.MathUtils.lerp(camera.fov, 120, 0.1);
+            } else {
+                camera.fov = THREE.MathUtils.lerp(camera.fov, initialFov, 0.1);
+            }
+            camera.updateProjectionMatrix();
+
+            contentPanels.forEach(panel => {
+                panel.lookAt(camera.position);
+            });
+
+            webglRenderer.render(scene, camera);
+            cssRenderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
