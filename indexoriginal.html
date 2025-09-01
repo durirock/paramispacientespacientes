@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chamalnquimyst - Micro-Universo de Contenido</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    
+    <!-- Carga de Three.js y sus componentes de forma global -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/BoxLineGeometry.js"></script>
+
+    <style>
+        :root {
+            --primary-glow-color: #4DDBFF; /* Un color cian para este universo */
+            --secondary-glow-color: #0077FF;
+            --text-color: #EAEAEA;
+            --background-color: #02040a;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: 'Lato', sans-serif;
+            cursor: default;
+        }
+        #webgl-container, #css-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #css-container {
+            pointer-events: none;
+        }
+        #css-container > div {
+            pointer-events: auto;
+        }
+        #blocker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0);
+            pointer-events: none;
+            z-index: 10;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9em;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 1s ease-out 5s;
+        }
+        .content-panel-wrapper {
+            transition: transform 0.5s ease-out;
+        }
+        .video-panel {
+            width: 1280px;
+            height: 720px;
+            border: 5px solid rgba(77, 219, 255, 0.5);
+            box-shadow: 0 0 30px rgba(77, 219, 255, 0.7);
+            background-color: #000;
+        }
+        .video-panel iframe, .video-panel video {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .pdf-panel {
+            width: 800px;
+            height: 1131px;
+            border: 5px solid rgba(77, 219, 255, 0.5);
+            box-shadow: 0 0 30px rgba(77, 219, 255, 0.7);
+            background-color: #333;
+            overflow-y: scroll !important;
+        }
+        .pdf-panel iframe {
+            width: 100%;
+            height: 100%;
+        }
+        .ui-button {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-glow-color);
+            color: var(--background-color);
+            border: none;
+            border-radius: 50%;
+            font-size: 36px;
+            line-height: 60px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 0 20px var(--primary-glow-color);
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+        .ui-button:hover {
+            transform: scale(1.1);
+            background-color: #fff;
+        }
+        #add-panel-btn {
+            bottom: 30px;
+            right: 30px;
+        }
+        #add-panel-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            background: var(--background-color);
+            border: 1px solid var(--primary-glow-color);
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 30px var(--secondary-glow-color);
+        }
+        .modal-content h3 {
+            font-family: 'Cinzel', serif;
+            color: var(--primary-glow-color);
+            margin-top: 0;
+            text-align: center;
+        }
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid var(--primary-glow-color);
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 1em;
+            opacity: 0.6;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-button.active {
+            opacity: 1;
+            border-bottom-color: var(--primary-glow-color);
+        }
+        .form-section { display: none; }
+        .form-section.active { display: block; }
+        .modal-content input, .modal-content textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--primary-glow-color);
+            color: var(--text-color);
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .modal-content textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .modal-actions button {
+            background: var(--primary-glow-color);
+            color: var(--background-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .modal-actions button.cancel {
+            background: transparent;
+            border: 1px solid var(--primary-glow-color);
+            color: var(--primary-glow-color);
+        }
+        .file-upload-label {
+            display: block;
+            padding: 20px;
+            border: 2px dashed var(--primary-glow-color);
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        .file-upload-label:hover {
+            background: rgba(77, 219, 255, 0.1);
+        }
+        .file-preview {
+            max-width: 100%;
+            max-height: 150px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        .io-buttons button {
+            font-size: 18px;
+            padding: 8px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        .layout-selector, .color-selector {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .layout-selector label {
+            cursor: pointer;
+        }
+        input[type="color"] {
+            -webkit-appearance: none;
+            width: 40px;
+            height: 40px;
+            border: none;
+            cursor: pointer;
+            background: none;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid var(--primary-glow-color);
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div id="webgl-container"></div>
+    <div id="css-container"></div>
+    <div id="blocker"></div>
+    <div id="instructions">
+        Usa [W,A,S,D] para moverte, [Z,X] para subir/bajar, [Q,E] y [Ratón] para girar. [ESPACIO] para Hiper-salto.
+    </div>
+
+    <button id="add-panel-btn" class="ui-button">+</button>
+
+    <div id="creation-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Crear Nuevo Panel</h3>
+            <div class="tab-buttons">
+                <button class="tab-button active" data-type="text">Texto</button>
+                <button class="tab-button" data-type="video">Video</button>
+                <button class="tab-button" data-type="file">Archivo</button>
+            </div>
+            <div id="text-form" class="form-section active">
+                <input type="text" id="text-title" placeholder="Título...">
+                <textarea id="text-content" placeholder="Contenido..."></textarea>
+                <div class="color-selector">
+                    <label for="text-color-picker">Color del Marco:</label>
+                    <input type="color" id="text-color-picker" value="#4DDBFF">
+                </div>
+            </div>
+            <div id="video-form" class="form-section">
+                <input type="text" id="video-url" placeholder="URL de YouTube...">
+            </div>
+            <div id="file-form" class="form-section">
+                <input type="file" id="file-upload" accept="image/*,video/mp4,video/avi,application/pdf,.txt,.md" style="display: none;" multiple>
+                <label for="file-upload" class="file-upload-label">
+                    Haz clic para seleccionar archivos
+                    <img id="image-preview" class="file-preview" src="" alt="Vista previa" style="display:none;">
+                </label>
+                <div class="layout-selector">
+                    <strong>Disposición:</strong>
+                    <label><input type="radio" name="layout" value="sphere" checked> Esfera</label>
+                    <label><input type="radio" name="layout" value="cylinder"> Cilindro</label>
+                    <label><input type="radio" name="layout" value="fibonacci"> Fibonacci</label>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <div class="io-buttons">
+                     <button id="save-scene-btn" title="Guardar Escena">&#x1F4BE;</button>
+                     <button id="load-scene-btn" title="Cargar Escena">&#x1F4C2;</button>
+                     <input type="file" id="load-file-input" style="display: none;" accept=".json">
+                </div>
+                <div>
+                    <button id="cancel-creation-btn" class="cancel">Cancelar</button>
+                    <button id="create-panel-btn">Crear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SETUP BÁSICO ---
+        let scene, camera, webglRenderer, cssRenderer, clock;
+        let avatarObject;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, moveUp = false, moveDown = false;
+        let rotateLeft = false, rotateRight = false, hyperspace = false;
+        
+        let isCameraDragging = false;
+        let isObjectDragging = false;
+        let draggedObject = null;
+        let dragPlane, offset = new THREE.Vector3();
+        let previousMousePosition = { x: 0, y: 0 };
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        let yawAngle = 0, pitchAngle = 0;
+        const mouseSensitivity = 0.002;
+        const cameraRotationSpeed = 0.02;
+        let initialFov;
+        let zoomDistance = 25;
+        
+        let contentPanels = [];
+        let draggableObjects = [];
+        const blocker = document.getElementById('blocker');
+        let lastClickTime = 0;
+        let editingPanel = null;
+
+        // Focus mode
+        let isFocused = false;
+        let isTransitioning = false;
+        let focusedObject = null;
+        let lastCameraPosition = new THREE.Vector3();
+        let lastCameraQuaternion = new THREE.Quaternion();
+
+        init();
+        animate();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x02040a, 50, 200);
+            clock = new THREE.Clock();
+
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+            initialFov = camera.fov;
+            const avatarGeometry = new THREE.SphereGeometry(0.1, 16, 12);
+            const avatarMaterial = new THREE.MeshBasicMaterial({ visible: false });
+            avatarObject = new THREE.Mesh(avatarGeometry, avatarMaterial);
+            avatarObject.position.set(0, 0, 0);
+            scene.add(avatarObject);
+            
+            webglRenderer = new THREE.WebGLRenderer({ antialias: true });
+            webglRenderer.setPixelRatio(window.devicePixelRatio);
+            webglRenderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('webgl-container').appendChild(webglRenderer.domElement);
+
+            cssRenderer = new THREE.CSS3DRenderer();
+            cssRenderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('css-container').appendChild(cssRenderer.domElement);
+            
+            dragPlane = new THREE.Plane();
+            
+            const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xADD8E6, 0.8);
+            directionalLight.position.set(-1, 1, 1);
+            scene.add(directionalLight);
+
+            const starCount = 5000;
+            const starGeometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount; i++) {
+                positions[i * 3 + 0] = (Math.random() - 0.5) * 500;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 500;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 500;
+            }
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const starMaterial = new THREE.PointsMaterial({ color: 0xAAAAAA, size: 0.15 });
+            const starField = new THREE.Points(starGeometry, starMaterial);
+            scene.add(starField);
+            
+            // Initial scene content
+            const initialSceneData = [
+                { type: 'text', title: 'El Viaje del Héroe', content: 'Cada concepto es una etapa en el viaje. El Chamán nos arraiga en la tierra. La Alquimia nos enseña a navegar las aguas de la emoción y el intelecto. El Misterio nos invita a mirar hacia las estrellas, reconociendo la unidad en la diversidad.', position: [-15, 2, 0], color: '#4DDBFF' },
+                { type: 'image', src: 'https://placehold.co/1024x768/02040a/FF6B4D?text=Conciencia+Salvaje', position: [0, 5, -15], color: '#FF6B4D' },
+                { type: 'video', videoId: '47Korua-WLo', start: 311, position: [15, 0, 0] }
+            ];
+            buildSceneFromData(initialSceneData);
+
+            initEventListeners();
+        }
+
+        function initEventListeners() {
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            document.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mouseup', onMouseUp);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('wheel', onMouseWheel);
+
+            document.getElementById('add-panel-btn').addEventListener('click', openCreationModal);
+            document.getElementById('save-scene-btn').addEventListener('click', saveScene);
+            document.getElementById('load-scene-btn').addEventListener('click', () => document.getElementById('load-file-input').click());
+            document.getElementById('load-file-input').addEventListener('change', loadScene);
+
+            const modal = document.getElementById('creation-modal');
+            document.getElementById('cancel-creation-btn').addEventListener('click', () => modal.classList.remove('visible'));
+            document.getElementById('create-panel-btn').addEventListener('click', handleCreateOrUpdatePanel);
+            
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', (e) => switchTab(e.target.dataset.type));
+            });
+
+            const fileUpload = document.getElementById('file-upload');
+            const imagePreview = document.getElementById('image-preview');
+            fileUpload.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            imagePreview.src = event.target.result;
+                            imagePreview.style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        imagePreview.style.display = 'none';
+                    }
+                }
+            });
+
+            setTimeout(() => {
+                document.getElementById('instructions').style.opacity = '0';
+            }, 5000);
+        }
+
+        function openCreationModal() {
+            editingPanel = null;
+            document.getElementById('modal-title').textContent = "Crear Nuevo Panel";
+            document.getElementById('create-panel-btn').textContent = "Crear";
+            document.getElementById('text-title').value = "";
+            document.getElementById('text-content').value = "";
+            document.getElementById('video-url').value = "";
+            document.getElementById('file-upload').value = "";
+            document.getElementById('image-preview').style.display = 'none';
+            document.getElementById('text-color-picker').value = "#4DDBFF";
+            switchTab('text');
+            document.getElementById('creation-modal').classList.add('visible');
+        }
+
+        function openEditModal(panel) {
+            editingPanel = panel;
+            document.getElementById('modal-title').textContent = "Editar Panel de Texto";
+            document.getElementById('create-panel-btn').textContent = "Actualizar";
+            document.getElementById('text-title').value = panel.userData.title;
+            document.getElementById('text-content').value = panel.userData.content;
+            document.getElementById('text-color-picker').value = panel.userData.color;
+            switchTab('text');
+            document.getElementById('creation-modal').classList.add('visible');
+        }
+
+        function switchTab(type) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tab-button[data-type="${type}"]`).classList.add('active');
+            document.querySelectorAll('.form-section').forEach(section => section.classList.remove('active'));
+            document.getElementById(`${type}-form`).classList.add('active');
+        }
+
+        async function handleCreateOrUpdatePanel() {
+            const createBtn = document.getElementById('create-panel-btn');
+            const originalText = createBtn.textContent;
+            createBtn.textContent = 'Creando...';
+            createBtn.disabled = true;
+
+            try {
+                if (editingPanel) {
+                    const newTitle = document.getElementById('text-title').value;
+                    const newContent = document.getElementById('text-content').value;
+                    const newColor = document.getElementById('text-color-picker').value;
+                    editingPanel.userData.title = newTitle;
+                    editingPanel.userData.content = newContent;
+                    editingPanel.userData.color = newColor;
+                    
+                    const canvas = editingPanel.material.map.image;
+                    const context = canvas.getContext('2d');
+                    redrawTextPanel(context, newTitle, newContent, newColor, canvas.width, canvas.height);
+                    editingPanel.material.map.needsUpdate = true;
+                } else {
+                    const activeTab = document.querySelector('.tab-button.active').dataset.type;
+                    const pos = new THREE.Vector3();
+                    const dir = new THREE.Vector3();
+                    camera.getWorldDirection(dir);
+                    pos.copy(camera.position).add(dir.multiplyScalar(15));
+                    
+                    switch (activeTab) {
+                        case 'text':
+                            const title = document.getElementById('text-title').value || "Sin Título";
+                            const content = document.getElementById('text-content').value || "Sin contenido.";
+                            const color = document.getElementById('text-color-picker').value;
+                            addTextPanelToScene(title, content, pos, color);
+                            break;
+                        case 'video':
+                            const url = document.getElementById('video-url').value;
+                            const videoId = parseYoutubeUrl(url);
+                            if (videoId) {
+                                addVideoPanelToScene(videoId, 0, pos);
+                            } else {
+                                alert("URL de YouTube no válida.");
+                            }
+                            break;
+                        case 'file':
+                            await handleFileUpload(pos);
+                            break;
+                    }
+                }
+            } catch (error) {
+                console.error("Error creating panel:", error);
+                alert("Hubo un error al crear el panel.");
+            } finally {
+                createBtn.textContent = originalText;
+                createBtn.disabled = false;
+                document.getElementById('creation-modal').classList.remove('visible');
+            }
+        }
+
+        async function handleFileUpload(basePosition) {
+            const fileInput = document.getElementById('file-upload');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("Por favor, selecciona uno o más archivos.");
+                return;
+            }
+            
+            const layout = document.querySelector('input[name="layout"]:checked').value;
+            const positions = calculateLayoutPositions(fileInput.files.length, layout, basePosition);
+
+            for (let i = 0; i < fileInput.files.length; i++) {
+                const file = fileInput.files[i];
+                const pos = positions[i];
+                
+                await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        if (file.type.startsWith('image/')) {
+                            addImagePanelToScene(event.target.result, pos);
+                        } else if (file.type.startsWith('video/')) {
+                            addLocalVideoPanelToScene(event.target.result, pos);
+                        } else if (file.type === 'application/pdf') {
+                            addPdfPanelToScene(event.target.result, pos);
+                        } else {
+                            addTextPanelToScene(file.name, event.target.result, pos);
+                        }
+                        resolve();
+                    };
+                    reader.onerror = (error) => reject(error);
+
+                    if (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type === 'application/pdf') {
+                        reader.readAsDataURL(file);
+                    } else {
+                        reader.readAsText(file);
+                    }
+                });
+            }
+        }
+
+        function calculateLayoutPositions(count, layout, center) {
+            const positions = [];
+            const radius = 25; // Increased radius
+            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+
+            switch(layout) {
+                case 'sphere':
+                    for (let i = 0; i < count; i++) {
+                        const y = 1 - (i / (count - 1)) * 2;
+                        const r = Math.sqrt(1 - y * y);
+                        const theta = goldenAngle * i;
+                        const x = Math.cos(theta) * r;
+                        const z = Math.sin(theta) * r;
+                        const pos = new THREE.Vector3(x, y, z).multiplyScalar(radius).add(center);
+                        positions.push(pos);
+                    }
+                    break;
+                case 'cylinder':
+                    const numRows = Math.ceil(Math.sqrt(count / 2));
+                    const numCols = Math.ceil(count / numRows);
+                    const colAngle = (Math.PI * 2) / numCols;
+                    for (let i = 0; i < count; i++) {
+                        const row = Math.floor(i / numCols);
+                        const col = i % numCols;
+                        const angle = col * colAngle;
+                        const x = Math.cos(angle) * radius;
+                        const z = Math.sin(angle) * radius;
+                        const y = (row - (numRows - 1) / 2) * 12; // Increased vertical spacing
+                        const pos = new THREE.Vector3(x, y, z).add(center);
+                        positions.push(pos);
+                    }
+                    break;
+                case 'fibonacci':
+                    const c = 8; // Increased spacing constant
+                    for (let i = 0; i < count; i++) {
+                        const r = c * Math.sqrt(i + 1);
+                        const theta = i * goldenAngle;
+                        const x = r * Math.cos(theta);
+                        const y = r * Math.sin(theta);
+                        const pos = new THREE.Vector3(x, y, -i * 8).add(center); // Increased Z spacing
+                        positions.push(pos);
+                    }
+                    break;
+            }
+            return positions;
+        }
+
+        function parseYoutubeUrl(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+        
+        function addTextPanelToScene(title, content, position, color = '#4DDBFF') {
+            const newPanel = createTextPanel(title, content, color);
+            newPanel.position.copy(position);
+            scene.add(newPanel);
+            contentPanels.push(newPanel);
+            draggableObjects.push(newPanel);
+        }
+
+        function addImagePanelToScene(src, position, color = '#4DDBFF') {
+            const newPanel = createImagePanel(src, color);
+            newPanel.position.copy(position);
+            scene.add(newPanel);
+            contentPanels.push(newPanel);
+            draggableObjects.push(newPanel);
+        }
+
+        function addVideoPanelToScene(videoId, start, position) {
+            const { videoCSSObject, videoProxyObject } = createVideoPanel(videoId, start);
+            videoCSSObject.position.copy(position);
+            videoProxyObject.position.copy(position);
+            scene.add(videoCSSObject, videoProxyObject);
+            contentPanels.push(videoCSSObject, videoProxyObject);
+            draggableObjects.push(videoProxyObject);
+        }
+
+        function addLocalVideoPanelToScene(src, position) {
+            const { videoCSSObject, videoProxyObject } = createLocalVideoPanel(src);
+            videoCSSObject.position.copy(position);
+            videoProxyObject.position.copy(position);
+            scene.add(videoCSSObject, videoProxyObject);
+            contentPanels.push(videoCSSObject, videoProxyObject);
+            draggableObjects.push(videoProxyObject);
+        }
+        
+        function addPdfPanelToScene(src, position) {
+            const { pdfCSSObject, pdfProxyObject } = createPdfPanel(src);
+            pdfCSSObject.position.copy(position);
+            pdfProxyObject.position.copy(position);
+            scene.add(pdfCSSObject, pdfProxyObject);
+            contentPanels.push(pdfCSSObject, pdfProxyObject);
+            draggableObjects.push(pdfProxyObject);
+        }
+
+        function createTextPanel(title, text, color) {
+            const tempCtx = document.createElement('canvas').getContext('2d');
+            const { width, height } = getTextPanelDimensions(tempCtx, text);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext('2d');
+            redrawTextPanel(context, title, text, color, width, height);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
+            const geometry = new THREE.PlaneGeometry(width / 100, height / 100);
+            const panel = new THREE.Mesh(geometry, material);
+            panel.userData = { type: 'text', title: title, content: text, color: color, velocity: new THREE.Vector3() };
+            return panel;
+        }
+
+        function getTextPanelDimensions(context, text) {
+            const maxWidth = 1024;
+            const lineHeight = 40;
+            const baseHeight = 250;
+            context.font = `32px 'Lato', sans-serif`;
+            const lines = wrapText(context, text, 0, 0, maxWidth - 100, lineHeight, true);
+            const textHeight = lines * lineHeight;
+            return { width: maxWidth, height: baseHeight + textHeight };
+        }
+
+        function redrawTextPanel(context, title, text, color, width, height) {
+            context.fillStyle = 'rgba(2, 4, 10, 0.7)';
+            context.fillRect(0, 0, width, height);
+            context.strokeStyle = color;
+            context.lineWidth = 10;
+            context.strokeRect(0, 0, width, height);
+            context.fillStyle = color;
+            context.font = `bold 80px 'Cinzel', serif`;
+            context.textAlign = 'center';
+            context.fillText(title, width / 2, 100);
+            context.fillStyle = '#EAEAEA';
+            context.font = `32px 'Lato', sans-serif`;
+            context.textAlign = 'left';
+            wrapText(context, text, 50, 200, width - 100, 40, false);
+        }
+
+        function createImagePanel(src, color) {
+            const textureLoader = new THREE.TextureLoader();
+            const texture = textureLoader.load(src);
+            const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+            const geometry = new THREE.PlaneGeometry(10.24, 7.68);
+            const panel = new THREE.Mesh(geometry, material);
+            panel.userData = { type: 'image', src: src, velocity: new THREE.Vector3() };
+            const borderGeo = new THREE.BoxLineGeometry(10.34, 7.78, 0.1, 1, 1, 1);
+            const borderMat = new THREE.LineBasicMaterial({ color: new THREE.Color(color), transparent: true, opacity: 0.8 });
+            const border = new THREE.LineSegments(borderGeo, borderMat);
+            panel.add(border);
+            return panel;
+        }
+
+        function createVideoPanel(videoId, start) {
+            const div = document.createElement('div');
+            div.className = 'content-panel-wrapper';
+            const iframeWrapper = document.createElement('div');
+            iframeWrapper.className = 'video-panel';
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.youtube.com/embed/${videoId}?start=${start}&autoplay=1&mute=1&modestbranding=1&rel=0&controls=1&showinfo=0&loop=1&playlist=${videoId}`;
+            iframeWrapper.appendChild(iframe);
+            div.appendChild(iframeWrapper);
+
+            const cssObject = new THREE.CSS3DObject(div);
+            const scale = 0.015;
+            cssObject.scale.set(scale, scale, scale);
+            cssObject.userData = { type: 'video', videoId: videoId };
+
+            const proxyGeometry = new THREE.PlaneGeometry(1280 * scale, 720 * scale);
+            const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
+            const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
+            proxyObject.userData.cssObject = cssObject;
+            proxyObject.userData.type = 'video';
+            proxyObject.userData.velocity = new THREE.Vector3();
+
+            return { videoCSSObject: cssObject, videoProxyObject: proxyObject };
+        }
+
+        function createLocalVideoPanel(src) {
+            const div = document.createElement('div');
+            div.className = 'content-panel-wrapper';
+            const videoWrapper = document.createElement('div');
+            videoWrapper.className = 'video-panel';
+            const video = document.createElement('video');
+            video.src = src;
+            video.autoplay = true;
+            video.muted = true;
+            video.loop = true;
+            video.controls = true;
+            videoWrapper.appendChild(video);
+            div.appendChild(videoWrapper);
+
+            const cssObject = new THREE.CSS3DObject(div);
+            const scale = 0.015;
+            cssObject.scale.set(scale, scale, scale);
+            cssObject.userData = { type: 'localVideo', src: src };
+
+            const proxyGeometry = new THREE.PlaneGeometry(1280 * scale, 720 * scale);
+            const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
+            const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
+            proxyObject.userData.cssObject = cssObject;
+            proxyObject.userData.type = 'localVideo';
+            proxyObject.userData.velocity = new THREE.Vector3();
+
+            return { videoCSSObject: cssObject, videoProxyObject: proxyObject };
+        }
+
+        function createPdfPanel(src) {
+            const div = document.createElement('div');
+            div.className = 'content-panel-wrapper';
+            const pdfWrapper = document.createElement('div');
+            pdfWrapper.className = 'pdf-panel';
+            const iframe = document.createElement('iframe');
+            iframe.src = src;
+            pdfWrapper.appendChild(iframe);
+            div.appendChild(pdfWrapper);
+            
+            const cssObject = new THREE.CSS3DObject(div);
+            const scale = 0.01;
+            cssObject.scale.set(scale, scale, scale);
+            cssObject.userData = { type: 'pdf', src: src };
+
+            const proxyGeometry = new THREE.PlaneGeometry(800 * scale, 1131 * scale);
+            const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
+            const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
+            proxyObject.userData.cssObject = cssObject;
+            proxyObject.userData.type = 'pdf';
+            proxyObject.userData.velocity = new THREE.Vector3();
+
+            return { pdfCSSObject: cssObject, pdfProxyObject: proxyObject };
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            webglRenderer.setSize(window.innerWidth, window.innerHeight);
+            cssRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onKeyDown(event) {
+            if (event.key === "Escape" && (isFocused || isTransitioning)) {
+                exitFocusMode();
+            }
+
+            switch (event.code) {
+                case 'KeyW': moveForward = true; break;
+                case 'KeyS': moveBackward = true; break;
+                case 'KeyA': moveLeft = true; break;
+                case 'KeyD': moveRight = true; break;
+                case 'KeyZ': moveUp = true; break;
+                case 'KeyX': moveDown = true; break;
+                case 'KeyQ': rotateLeft = true; break;
+                case 'KeyE': rotateRight = true; break;
+                case 'Space': hyperspace = true; break;
+            }
+            if (moveForward || moveBackward || moveLeft || moveRight) {
+                exitFocusMode();
+            }
+        }
+
+        function onKeyUp(event) {
+            switch (event.code) {
+                case 'KeyW': moveForward = false; break;
+                case 'KeyS': moveBackward = false; break;
+                case 'KeyA': moveLeft = false; break;
+                case 'KeyD': moveRight = false; break;
+                case 'KeyZ': moveUp = false; break;
+                case 'KeyX': moveDown = false; break;
+                case 'KeyQ': rotateLeft = false; break;
+                case 'KeyE': rotateRight = false; break;
+                case 'Space': hyperspace = false; break;
+            }
+        }
+        
+        function onMouseDown(event) {
+            const time = new Date().getTime();
+            if (time - lastClickTime < 300) {
+                handleDoubleClick();
+            }
+            lastClickTime = time;
+
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(draggableObjects);
+
+            if (intersects.length > 0 && !isFocused) {
+                isObjectDragging = true;
+                draggedObject = intersects[0].object;
+                draggedObject.userData.velocity.set(0, 0, 0);
+                
+                dragPlane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(dragPlane.normal), draggedObject.position);
+                
+                const intersectionPoint = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(dragPlane, intersectionPoint)) {
+                    offset.copy(intersectionPoint).sub(draggedObject.position);
+                }
+                
+                blocker.style.pointerEvents = 'auto';
+            } else if (!isFocused) {
+                isCameraDragging = true;
+                blocker.style.pointerEvents = 'auto';
+            }
+        }
+
+        function handleDoubleClick() {
+            if (isTransitioning) return;
+            if (isFocused) {
+                exitFocusMode();
+                return;
+            }
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(draggableObjects);
+            if (intersects.length > 0) {
+                const clickedObject = intersects[0].object;
+                if (clickedObject.userData.type === 'text') {
+                    isObjectDragging = false;
+                    blocker.style.pointerEvents = 'none';
+                    openEditModal(clickedObject);
+                } else if (['image', 'video', 'localVideo', 'pdf'].includes(clickedObject.userData.type)) {
+                    enterFocusMode(clickedObject);
+                }
+            }
+        }
+
+        function enterFocusMode(object) {
+            isTransitioning = true;
+            isFocused = true;
+            focusedObject = object;
+            lastCameraPosition.copy(camera.position);
+            lastCameraQuaternion.copy(camera.quaternion);
+
+            draggableObjects.forEach(obj => {
+                const targetIsProxy = focusedObject.userData.cssObject;
+                const currentIsProxy = obj.userData.cssObject;
+                const isFocusedObj = (obj === focusedObject) || (targetIsProxy && currentIsProxy && obj.userData.cssObject === focusedObject.userData.cssObject);
+
+                if (!isFocusedObj) {
+                    if (obj.userData.cssObject) obj.userData.cssObject.element.style.display = 'none';
+                    obj.visible = false;
+                }
+            });
+        }
+
+        function exitFocusMode() {
+            if (!isFocused) return;
+            isTransitioning = true;
+            isFocused = false;
+            
+            draggableObjects.forEach(obj => {
+                 if (obj.userData.cssObject) obj.userData.cssObject.element.style.display = 'block';
+                 obj.visible = true;
+            });
+        }
+
+        function onMouseUp(event) {
+            isCameraDragging = false;
+            if (isObjectDragging && draggedObject) {
+                const deltaX = event.clientX - previousMousePosition.x;
+                const deltaY = event.clientY - previousMousePosition.y;
+                const momentum = new THREE.Vector3(deltaX * 0.05, -deltaY * 0.05, 0);
+                momentum.applyQuaternion(camera.quaternion);
+                draggedObject.userData.velocity.copy(momentum);
+            }
+            isObjectDragging = false;
+            draggedObject = null;
+            blocker.style.pointerEvents = 'none';
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+            if (isObjectDragging && draggedObject) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersectionPoint = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(dragPlane, intersectionPoint)) {
+                    const newPosition = intersectionPoint.sub(offset);
+                    draggedObject.position.copy(newPosition);
+                    if (draggedObject.userData.cssObject) {
+                        draggedObject.userData.cssObject.position.copy(newPosition);
+                    }
+                }
+            } else if (isCameraDragging) {
+                exitFocusMode();
+                const deltaX = event.clientX - previousMousePosition.x;
+                const deltaY = event.clientY - previousMousePosition.y;
+                yawAngle -= deltaX * mouseSensitivity;
+                pitchAngle -= deltaY * mouseSensitivity;
+                pitchAngle = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitchAngle));
+            }
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+        }
+        
+        function onMouseWheel(event) {
+            if (!isFocused && !isTransitioning) {
+                zoomDistance -= event.deltaY * 0.02;
+                zoomDistance = Math.max(5, Math.min(100, zoomDistance));
+            }
+        }
+
+        function wrapText(context, text, x, y, maxWidth, lineHeight, measureOnly = false) {
+            const words = text.split(' ');
+            let line = '';
+            let lineCount = 1;
+            for(let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = context.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    if (!measureOnly) context.fillText(line, x, y);
+                    line = words[n] + ' ';
+                    y += lineHeight;
+                    lineCount++;
+                } else {
+                    line = testLine;
+                }
+            }
+            if (!measureOnly) context.fillText(line, x, y);
+            return lineCount;
+        }
+
+        function saveScene() {
+            const sceneData = [];
+            draggableObjects.forEach(obj => {
+                const data = {
+                    type: obj.userData.type,
+                    position: obj.position.toArray()
+                };
+                if (obj.userData.type === 'text') {
+                    data.title = obj.userData.title;
+                    data.content = obj.userData.content;
+                    data.color = obj.userData.color;
+                } else if (obj.userData.type === 'image') {
+                    data.src = obj.userData.src;
+                    data.color = new THREE.Color(obj.children[0].material.color).getHexString();
+                } else if (obj.userData.type === 'video') {
+                    data.videoId = obj.userData.cssObject.userData.videoId;
+                } else if (obj.userData.type === 'localVideo' || obj.userData.type === 'pdf') {
+                    data.src = obj.userData.cssObject.userData.src;
+                }
+                sceneData.push(data);
+            });
+
+            const jsonString = JSON.stringify(sceneData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'chamalnquimyst-scene.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadScene(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const sceneData = JSON.parse(e.target.result);
+                    clearScene();
+                    buildSceneFromData(sceneData);
+                } catch (error) {
+                    alert("Error al cargar el archivo.");
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearScene() {
+            [...draggableObjects].forEach(obj => {
+                if (obj.userData.cssObject) {
+                    scene.remove(obj.userData.cssObject);
+                }
+                scene.remove(obj);
+            });
+            draggableObjects = [];
+            contentPanels = [];
+        }
+
+        function buildSceneFromData(data) {
+            data.forEach(item => {
+                const pos = new THREE.Vector3().fromArray(item.position);
+                switch (item.type) {
+                    case 'text':
+                        addTextPanelToScene(item.title, item.content, pos, item.color);
+                        break;
+                    case 'image':
+                        addImagePanelToScene(item.src, pos, item.color);
+                        break;
+                    case 'video':
+                        addVideoPanelToScene(item.videoId, 0, pos);
+                        break;
+                    case 'localVideo':
+                        addLocalVideoPanelToScene(item.src, pos);
+                        break;
+                    case 'pdf':
+                        addPdfPanelToScene(item.src, pos);
+                        break;
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            
+            if (!isFocused && !isTransitioning) {
+                if (rotateLeft) yawAngle += cameraRotationSpeed * delta * 60;
+                if (rotateRight) yawAngle -= cameraRotationSpeed * delta * 60;
+
+                const speed = (hyperspace ? 30 : 10) * delta;
+                const direction = new THREE.Vector3();
+                camera.getWorldDirection(direction);
+
+                const right = new THREE.Vector3().crossVectors(camera.up, direction).normalize();
+
+                if (moveForward) avatarObject.position.addScaledVector(direction, speed);
+                if (moveBackward) avatarObject.position.addScaledVector(direction, -speed);
+                if (moveLeft) avatarObject.position.addScaledVector(right, -speed);
+                if (moveRight) avatarObject.position.addScaledVector(right, speed);
+                if (moveUp) avatarObject.position.y += speed;
+                if (moveDown) avatarObject.position.y -= speed;
+                
+                const targetQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitchAngle, yawAngle, 0, 'YXZ'));
+                avatarObject.quaternion.slerp(targetQuaternion, 0.1);
+                
+                const offset = new THREE.Vector3(0, 0, zoomDistance);
+                offset.applyQuaternion(avatarObject.quaternion);
+                camera.position.copy(avatarObject.position).add(offset);
+                camera.lookAt(avatarObject.position);
+            } else if (isTransitioning) {
+                const targetPosition = isFocused ? new THREE.Vector3() : lastCameraPosition;
+                const targetQuaternion = isFocused ? new THREE.Quaternion() : lastCameraQuaternion;
+
+                if (isFocused) {
+                    focusedObject.getWorldPosition(targetPosition);
+                    
+                    const panelSize = focusedObject.geometry.parameters.height || 10;
+                    const focusDistance = (panelSize / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+                    
+                    const direction = new THREE.Vector3();
+                    focusedObject.getWorldDirection(direction); // Use panel's direction
+                    targetPosition.addScaledVector(direction, focusDistance * 1.25);
+                    
+                    const tempMatrix = new THREE.Matrix4();
+                    tempMatrix.lookAt(targetPosition, focusedObject.position, camera.up);
+                    targetQuaternion.setFromRotationMatrix(tempMatrix);
+                }
+
+                camera.position.lerp(targetPosition, 0.05);
+                camera.quaternion.slerp(targetQuaternion, 0.05);
+
+                if (camera.position.distanceTo(targetPosition) < 0.1) {
+                    isTransitioning = false;
+                    if (!isFocused) focusedObject = null;
+                }
+            }
+            
+            if (hyperspace) {
+                camera.fov = THREE.MathUtils.lerp(camera.fov, 120, 0.1);
+            } else {
+                camera.fov = THREE.MathUtils.lerp(camera.fov, initialFov, 0.1);
+            }
+            camera.updateProjectionMatrix();
+
+            draggableObjects.forEach(obj => {
+                if (obj.userData.velocity && obj.userData.velocity.lengthSq() > 0.0001) {
+                    obj.position.add(obj.userData.velocity);
+                    obj.userData.velocity.multiplyScalar(0.95); // Damping
+                    if (obj.userData.cssObject) {
+                        obj.userData.cssObject.position.copy(obj.position);
+                    }
+                }
+            });
+
+            contentPanels.forEach(panel => {
+                panel.lookAt(camera.position);
+            });
+
+            webglRenderer.render(scene, camera);
+            cssRenderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
