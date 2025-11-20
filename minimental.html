@@ -1,0 +1,331 @@
+<!-- FRAGMENTO DE CÓDIGO MMSE PARA EMBED EN BLOGS (SIN <html>/<body>) -->
+
+<!-- 1. Carga de Tailwind CSS (DEBE estar dentro del fragmento) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+    /* Las clases de cuerpo deben limitarse al contenedor principal para no afectar al blog */
+    .mmse-container-wrapper {
+        font-family: 'Inter', sans-serif;
+        background-color: #f7f9fb;
+        padding: 1rem; /* p-4 md:p-8 */
+    }
+    .score-box {
+        transition: all 0.3s ease;
+    }
+</style>
+
+<div class="mmse-container-wrapper min-h-screen">
+
+    <!-- Encabezado -->
+    <header class="text-center mb-8">
+        <h1 class="text-4xl font-extrabold text-blue-800 mb-2">Mini-Examen Cognoscitivo (MMSE)</h1>
+        <p class="text-lg text-gray-600">Registro y puntuación automática (Máx. 30 pts)</p>
+    </header>
+
+    <!-- AQUÍ SE CAMBIÓ max-w-4xl a w-full max-w-6xl para que sea mucho más ancho en desktop -->
+    <div class="w-full max-w-6xl mx-auto bg-white shadow-xl rounded-2xl p-6 md:p-10">
+
+        <!-- Contenedor Principal de la Evaluación -->
+        <div id="mmse-form" class="space-y-6" onchange="calculateScore()">
+
+            <!-- SECCIÓN I: ORIENTACIÓN TEMPORAL (5 pts) -->
+            <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200">
+                <h2 class="text-xl font-bold text-indigo-700 mb-3">1. Orientación Temporal (5 pts)</h2>
+                <p class="text-sm text-gray-600 mb-3">Pregunte: "¿En qué [Año/Estación/Día/etc.] estamos?"</p>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="time" class="form-checkbox text-indigo-500 rounded focus:ring-indigo-500">
+                        <span class="text-gray-700 text-sm">Año</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="time" class="form-checkbox text-indigo-500 rounded focus:ring-indigo-500">
+                        <span class="text-gray-700 text-sm">Estación</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="time" class="form-checkbox text-indigo-500 rounded focus:ring-indigo-500">
+                        <span class="text-gray-700 text-sm">Día del Mes</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="time" class="form-checkbox text-indigo-500 rounded focus:ring-indigo-500">
+                        <span class="text-gray-700 text-sm">Día de la Semana</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="time" class="form-checkbox text-indigo-500 rounded focus:ring-indigo-500">
+                        <span class="text-gray-700 text-sm">Mes</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- SECCIÓN II: ORIENTACIÓN ESPACIAL (5 pts) -->
+            <div class="bg-purple-50 p-4 rounded-xl border border-purple-200">
+                <h2 class="text-xl font-bold text-purple-700 mb-3">2. Orientación Espacial (5 pts)</h2>
+                <p class="text-sm text-gray-600 mb-3">Pregunte: "¿Dónde estamos? (País, Ciudad, Edificio, Piso, Sala)"</p>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="place" class="form-checkbox text-purple-500 rounded focus:ring-purple-500">
+                        <span class="text-gray-700 text-sm">País/Estado</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="place" class="form-checkbox text-purple-500 rounded focus:ring-purple-500">
+                        <span class="text-gray-700 text-sm">Ciudad/Pueblo</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="place" class="form-checkbox text-purple-500 rounded focus:ring-purple-500">
+                        <span class="text-gray-700 text-sm">Edificio/Clínica</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="place" class="form-checkbox text-purple-500 rounded focus:ring-purple-500">
+                        <span class="text-gray-700 text-sm">Piso</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="place" class="form-checkbox text-purple-500 rounded focus:ring-purple-500">
+                        <span class="text-gray-700 text-sm">Sala/Consultorio</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- SECCIÓN III: REGISTRO (3 pts) -->
+            <div class="bg-green-50 p-4 rounded-xl border border-green-200">
+                <h2 class="text-xl font-bold text-green-700 mb-3">3. Registro (3 pts)</h2>
+                <p class="text-sm text-gray-600 mb-3">Diga: "Escuche y repita estas 3 palabras: <span class="font-semibold">PERRO, MANZANA, CABALLO</span>".</p>
+                <div class="flex flex-wrap gap-3">
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="registration" data-word="perro" class="form-checkbox text-green-500 rounded focus:ring-green-500">
+                        <span class="text-gray-700 text-sm">Perro (Correcto)</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="registration" data-word="manzana" class="form-checkbox text-green-500 rounded focus:ring-green-500">
+                        <span class="text-gray-700 text-sm">Manzana (Correcto)</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="registration" data-word="caballo" class="form-checkbox text-green-500 rounded focus:ring-green-500">
+                        <span class="text-gray-700 text-sm">Caballo (Correcto)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- SECCIÓN IV: ATENCIÓN Y CÁLCULO (5 pts) -->
+            <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+                <h2 class="text-xl font-bold text-yellow-700 mb-3">4. Atención y Cálculo (5 pts)</h2>
+                <p class="text-sm text-gray-600 mb-3">Resta de 7s (100 - 7, 5 veces).</p>
+                <div class="grid grid-cols-3 md:grid-cols-5 gap-3">
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="calculation" class="form-checkbox text-yellow-500 rounded focus:ring-yellow-500">
+                        <span class="text-gray-700 text-sm">93</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="calculation" class="form-checkbox text-yellow-500 rounded focus:ring-yellow-500">
+                        <span class="text-gray-700 text-sm">86</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="calculation" class="form-checkbox text-yellow-500 rounded focus:ring-yellow-500">
+                        <span class="text-gray-700 text-sm">79</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="calculation" class="form-checkbox text-yellow-500 rounded focus:ring-yellow-500">
+                        <span class="text-gray-700 text-sm">72</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="calculation" class="form-checkbox text-yellow-500 rounded focus:ring-yellow-500">
+                        <span class="text-gray-700 text-sm">65</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- SECCIÓN V: RECUERDO (3 pts) -->
+            <div class="bg-red-50 p-4 rounded-xl border border-red-200">
+                <h2 class="text-xl font-bold text-red-700 mb-3">5. Recuerdo (3 pts)</h2>
+                <p class="text-sm text-gray-600 mb-3">Pregunte: "¿Recuerda las 3 palabras que le pedí repetir antes?"</p>
+                <div class="flex flex-wrap gap-3">
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="recall" data-word="perro" class="form-checkbox text-red-500 rounded focus:ring-red-500">
+                        <span class="text-gray-700 text-sm">Perro (Recordado)</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="recall" data-word="manzana" class="form-checkbox text-red-500 rounded focus:ring-red-500">
+                        <span class="text-gray-700 text-sm">Manzana (Recordado)</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition">
+                        <input type="checkbox" data-score="1" data-section="recall" data-word="caballo" class="form-checkbox text-red-500 rounded focus:ring-red-500">
+                        <span class="text-gray-700 text-sm">Caballo (Recordado)</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- SECCIÓN VI: LENGUAJE Y PRAXIAS (9 pts) -->
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                <h2 class="text-xl font-bold text-blue-700 mb-3">6. Lenguaje y Praxias (9 pts)</h2>
+                <div class="space-y-3">
+                    
+                    <!-- Nominación (2 pts) -->
+                    <div class="bg-white p-3 rounded-lg shadow-sm">
+                        <p class="font-medium text-sm text-gray-800 mb-2">Nominación (Mostrar reloj y lápiz/lapicera):</p>
+                        <div class="flex gap-4">
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" data-score="1" data-section="language" class="form-checkbox text-blue-500 rounded focus:ring-blue-500">
+                                <span class="text-gray-700 text-sm">Objeto 1 (Reloj)</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" data-score="1" data-section="language" class="form-checkbox text-blue-500 rounded focus:ring-blue-500">
+                                <span class="text-gray-700 text-sm">Objeto 2 (Lapicera)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Repetición (1 pt) -->
+                    <div class="bg-white p-3 rounded-lg shadow-sm">
+                        <p class="font-medium text-sm text-gray-800 mb-2">Repetición (Pedir repetir: "Ni sí, ni no, ni pero"):</p>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" data-score="1" data-section="language" class="form-checkbox text-blue-500 rounded focus:ring-blue-500">
+                            <span class="text-gray-700 text-sm">Repite Correctamente</span>
+                        </label>
+                    </div>
+
+                    <!-- Comprensión (3 pts) -->
+                    <div class="bg-white p-3 rounded-lg shadow-sm">
+                        <p class="font-medium text-sm text-gray-800 mb-2">Comando de 3 etapas ("Tome el papel, dóblelo a la mitad y póngalo en el suelo"):</p>
+                        <div class="flex gap-4">
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" data-score="1" data-section="language" class="form-checkbox text-blue-500 rounded focus:ring-blue-500">
+                                <span class="text-gray-700 text-sm">Etapa 1 (Toma)</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" data-score="1" data-section="language" class="form-checkbox text-blue-500 rounded focus:ring-blue-500">
+                                <span class="text-gray-700 text-sm">Etapa 2 (Dobla)</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" data-score="1" data-section="language" class="form-checkbox text-blue-500 rounded focus:ring-blue-500">
+                                <span class="text-gray-700 text-sm">Etapa 3 (Pone)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Lectura (1 pt) -->
+                    <div class="bg-white p-3 rounded-lg shadow-sm">
+                        <p class="font-medium text-sm text-gray-800 mb-2">Lectura y Ejecución (Mostrar tarjeta con "CIERRE LOS OJOS"):</p>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" data-score="1" data-section="language" class="form-checkbox text-blue-500 rounded focus:ring-blue-500">
+                            <span class="text-gray-700 text-sm">Ejecuta la acción</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Escritura (1 pt) -->
+                    <div class="bg-white p-3 rounded-lg shadow-sm">
+                        <p class="font-medium text-sm text-gray-800 mb-2">Escritura (Pedir escribir una frase con sujeto y verbo):</p>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" data-score="1" data-section="language" class="form-checkbox text-blue-500 rounded focus:ring-blue-500">
+                            <span class="text-gray-700 text-sm">Escribe frase coherente</span>
+                        </label>
+                    </div>
+
+                    <!-- Copia (1 pt) -->
+                    <div class="bg-white p-3 rounded-lg shadow-sm">
+                        <p class="font-medium text-sm text-gray-800 mb-2">Copia (Pedir dibujar dos pentágonos intersectados):</p>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" data-score="1" data-section="language" class="form-checkbox text-blue-500 rounded focus:ring-blue-500">
+                            <span class="text-gray-700 text-sm">Copia el diseño</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- SECCIÓN DE RESULTADOS Y PUNTUACIÓN -->
+        <div class="mt-8 pt-6 border-t-2 border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Puntuación Final e Interpretación</h2>
+            
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                <!-- Se eliminó el fondo blanco completo del body y se puso un fondo al contenedor principal -->
+                <div class="score-box p-6 rounded-xl bg-blue-100 flex-grow w-full md:w-auto mb-4 md:mb-0">
+                    <p class="text-lg text-blue-800 font-semibold">Puntuación Total:</p>
+                    <p class="text-5xl font-extrabold text-blue-900"><span id="total-score">0</span> / 30</p>
+                </div>
+                
+                <div class="score-box p-6 rounded-xl bg-gray-100 ml-0 md:ml-6 flex-grow w-full md:w-auto">
+                    <p class="text-lg text-gray-800 font-semibold">Nivel Cognitivo:</p>
+                    <p id="interpretation-text" class="text-2xl font-bold text-gray-700">Comience la evaluación...</p>
+                    <p id="interpretation-detail" class="text-sm text-gray-600 mt-2"></p>
+                </div>
+            </div>
+
+            <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                <p class="text-sm font-semibold text-gray-700">Criterios de Interpretación (Ajuste según nivel educativo/edad):</p>
+                <ul class="list-disc list-inside text-xs text-gray-500 mt-2">
+                    <li>27 - 30 puntos: Normal (Sin Deterioro).</li>
+                    <li>21 - 26 puntos: Deterioro Cognitivo Leve (DCL).</li>
+                    <li>11 - 20 puntos: Deterioro Cognitivo Moderado.</li>
+                    <li>0 - 10 puntos: Deterioro Cognitivo Severo.</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Función principal para calcular y mostrar la puntuación
+    function calculateScore() {
+        const checkboxes = document.querySelectorAll('#mmse-form input[type="checkbox"]:checked');
+        let totalScore = 0;
+
+        checkboxes.forEach(checkbox => {
+            // Suma el valor del atributo data-score, asegurándose de que sea un número
+            totalScore += parseInt(checkbox.getAttribute('data-score') || '0', 10);
+        });
+
+        // Actualiza la UI
+        document.getElementById('total-score').textContent = totalScore;
+        interpretScore(totalScore);
+    }
+
+    // Función para interpretar el resultado
+    function interpretScore(score) {
+        const interpretationText = document.getElementById('interpretation-text');
+        const interpretationDetail = document.getElementById('interpretation-detail');
+        const scoreBox = document.querySelector('.score-box:nth-child(2)'); // El contenedor de la interpretación
+
+        let text = "";
+        let detail = "";
+        let colorClass = "text-gray-700";
+        let bgClass = "bg-gray-100";
+
+        if (score >= 27) {
+            text = "Normal (Sin Deterioro)";
+            detail = "El rendimiento cognitivo está dentro de los límites esperados.";
+            colorClass = "text-green-700";
+            bgClass = "bg-green-100";
+        } else if (score >= 21) {
+            text = "Deterioro Cognitivo Leve (DCL)";
+            detail = "Sugiere un posible deterioro cognitivo leve. Se recomienda una evaluación más profunda.";
+            colorClass = "text-yellow-700";
+            bgClass = "bg-yellow-100";
+        } else if (score >= 11) {
+            text = "Deterioro Cognitivo Moderado";
+            detail = "El deterioro es significativo. Es necesaria una evaluación neuropsicológica completa y seguimiento.";
+            colorClass = "text-orange-700";
+            bgClass = "bg-orange-100";
+        } else if (score >= 0) {
+            text = "Deterioro Cognitivo Severo";
+            detail = "El deterioro es grave. Requiere intervención y manejo inmediato.";
+            colorClass = "text-red-700";
+            bgClass = "bg-red-100";
+        }
+        
+        // Aplicar clases de color y texto
+        interpretationText.textContent = text;
+        interpretationDetail.textContent = detail;
+
+        // Resetear clases de color y aplicar las nuevas
+        scoreBox.classList.remove('bg-gray-100', 'bg-green-100', 'bg-yellow-100', 'bg-orange-100', 'bg-red-100');
+        scoreBox.classList.add(bgClass);
+
+        interpretationText.classList.remove('text-gray-700', 'text-green-700', 'text-yellow-700', 'text-orange-700', 'text-red-700');
+        interpretationText.classList.add(colorClass);
+    }
+
+    // Inicializar la aplicación al cargar
+    document.addEventListener('DOMContentLoaded', calculateScore);
+</script>
+<!-- FIN DEL FRAGMENTO -->
