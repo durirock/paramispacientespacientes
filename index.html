@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@300;400&display=swap" rel="stylesheet">
     
-    <!-- Carga de Three.js y sus componentes de forma global -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/BoxLineGeometry.js"></script>
@@ -63,6 +62,18 @@
             opacity: 1;
             transition: opacity 1s ease-out 5s;
         }
+        /* UI SUPERIOR NUEVA */
+        #top-ui {
+            position: absolute; top: 20px; right: 20px; z-index: 200; display: flex; gap: 10px;
+        }
+        .hud-btn {
+            background: rgba(0, 20, 40, 0.8); border: 1px solid var(--primary-glow-color);
+            color: var(--primary-glow-color); padding: 8px 15px; cursor: pointer;
+            font-family: 'Cinzel', serif; text-transform: uppercase; font-size: 12px;
+            border-radius: 4px; pointer-events: auto;
+        }
+        .hud-btn:hover { background: var(--primary-glow-color); color: #000; }
+
         .content-panel-wrapper {
             transition: transform 0.5s ease-out, box-shadow 0.3s ease;
             box-sizing: border-box;
@@ -92,13 +103,8 @@
             font-size: 32px;
             flex-grow: 1;
             overflow-y: auto;
-            /* Custom scrollbar for webkit browsers */
-            &::-webkit-scrollbar {
-                width: 12px;
-            }
-            &::-webkit-scrollbar-track {
-                background: rgba(0,0,0,0.2);
-            }
+            &::-webkit-scrollbar { width: 12px; }
+            &::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
             &::-webkit-scrollbar-thumb {
                 background-color: var(--primary-glow-color);
                 border-radius: 20px;
@@ -213,7 +219,7 @@
         }
         .form-section { display: none; }
         .form-section.active { display: block; }
-        .modal-content input, .modal-content textarea {
+        .modal-content input, .modal-content textarea, .modal-content select {
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
@@ -302,8 +308,15 @@
     <div id="css-container"></div>
     <div id="blocker"></div>
     <div id="instructions">
-        Usa [W,A,S,D] para moverte, [Z,X] para subir/bajar, [Q,E] y [Ratón] para girar. [Click] para seleccionar, [Supr/Retroceso] para borrar.
+        Usa [W,A,S,D] para moverte, [Z,X] para subir/bajar, [Q,E] y [Ratón] para girar. 
+        [Doble Click] para Enfocar/Entrar. [Supr] para borrar.
     </div>
+
+    <div id="top-ui">
+        <button class="hud-btn" onclick="document.getElementById('folder-input').click()">📂 Escanear USB/Carpeta</button>
+    </div>
+    
+    <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none">
 
     <button id="add-panel-btn" class="ui-button">+</button>
 
@@ -315,7 +328,8 @@
                 <button class="tab-button" data-type="video">Video</button>
                 <button class="tab-button" data-type="web">Web</button>
                 <button class="tab-button" data-type="file">Archivo</button>
-            </div>
+                <button class="tab-button" data-type="360">360°/VR</button> </div>
+            
             <div id="text-form" class="form-section active">
                 <input type="text" id="text-title" placeholder="Título...">
                 <textarea id="text-content" placeholder="Contenido..."></textarea>
@@ -343,6 +357,20 @@
                     <label><input type="radio" name="layout" value="fibonacci"> Fibonacci</label>
                 </div>
             </div>
+            <div id="360-form" class="form-section">
+                <select id="360-type">
+                    <option value="upload">Subir Video 360</option>
+                    <option value="stream">Stream Cámara IP (Wifi)</option>
+                </select>
+                <div id="360-upload-div" style="margin-top:10px;">
+                    <input type="file" id="video-360-input" accept="video/*">
+                </div>
+                <div id="360-stream-div" style="display:none; margin-top:10px;">
+                    <input type="text" id="stream-url" placeholder="http://192.168.x.x:8080/video">
+                    <p style="font-size:10px; color:#aaa">Nota: Requiere una URL de stream compatible (MJPEG/HLS)</p>
+                </div>
+            </div>
+
             <div class="modal-actions">
                 <div class="io-buttons">
                      <button id="save-scene-btn" title="Guardar Escena">&#x1F4BE;</button>
@@ -471,27 +499,127 @@
                 button.addEventListener('click', (e) => switchTab(e.target.dataset.type));
             });
 
+            // LÓGICA DE PREVISUALIZACIÓN DE ARCHIVOS
             const fileUpload = document.getElementById('file-upload');
             const imagePreview = document.getElementById('image-preview');
             fileUpload.addEventListener('change', (e) => {
                 if (e.target.files && e.target.files[0]) {
                     const file = e.target.files[0];
                     if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                            imagePreview.src = event.target.result;
-                            imagePreview.style.display = 'block';
-                        };
-                        reader.readAsDataURL(file);
+                        // Usamos ObjectURL para previsualización rápida
+                        imagePreview.src = URL.createObjectURL(file);
+                        imagePreview.style.display = 'block';
                     } else {
                         imagePreview.style.display = 'none';
                     }
                 }
             });
 
+            // Lógica UI 360
+            document.getElementById('360-type').addEventListener('change', (e) => {
+                document.getElementById('360-upload-div').style.display = e.target.value === 'upload' ? 'block' : 'none';
+                document.getElementById('360-stream-div').style.display = e.target.value === 'stream' ? 'block' : 'none';
+            });
+
+            // NUEVO: Escaner de Carpeta
+            document.getElementById('folder-input').addEventListener('change', handleFolderScan);
+
             setTimeout(() => {
                 document.getElementById('instructions').style.opacity = '0';
             }, 5000);
+        }
+
+        // --- NUEVA FUNCIÓN: ESCANEO MINORITY REPORT (Túnel del Tiempo) ---
+        async function handleFolderScan(event) {
+            const files = Array.from(event.target.files);
+            if(files.length === 0) return;
+
+            // Filtro y ordenamiento por fecha
+            const validFiles = files.filter(f => f.name[0] !== '.').sort((a,b) => b.lastModified - a.lastModified);
+            
+            alert(`Analizando ${validFiles.length} archivos. Generando túnel temporal...`);
+
+            const spiralRadius = 15;
+            const angleStep = 0.6; // radianes entre archivos
+            const zStep = 3; // distancia en profundidad entre archivos
+
+            // Vector dirección cámara para que el túnel salga frente a ti
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            dir.y = 0; dir.normalize();
+            const startPos = avatarObject.position.clone();
+
+            for(let i=0; i<validFiles.length; i++) {
+                const file = validFiles[i];
+                const angle = i * angleStep;
+                
+                // Coordenadas locales de la espiral
+                const localX = Math.cos(angle) * spiralRadius;
+                const localY = (Math.random() - 0.5) * 10; 
+                const localZ = -(i * zStep) - 15; // Hacia el fondo
+
+                // Rotar espiral según hacia donde mira el usuario
+                const pos = new THREE.Vector3(localX, localY, localZ);
+                pos.applyAxisAngle(new THREE.Vector3(0,1,0), yawAngle);
+                pos.add(startPos);
+
+                await createPanelFromFile(file, pos);
+            }
+        }
+
+        // --- NUEVA FUNCIÓN: CARGA INTELIGENTE DE ARCHIVOS (Blob URLs) ---
+        async function createPanelFromFile(file, pos) {
+            // Creamos un Blob URL: Acceso rápido sin leer todo el archivo en RAM
+            const url = URL.createObjectURL(file);
+            
+            if (file.type.startsWith('image/')) {
+                addImagePanelToScene(url, pos);
+            } 
+            else if (file.type.startsWith('video/')) {
+                addLocalVideoPanelToScene(url, pos);
+            } 
+            else if (file.type === 'application/pdf') {
+                addPdfPanelToScene(url, pos);
+            }
+            else if (file.type.startsWith('text/') || file.name.endsWith('.js') || file.name.endsWith('.html')) {
+                // Para texto sí leemos un poco
+                const text = await new Promise(r => {
+                    const reader = new FileReader();
+                    reader.onload = e => r(e.target.result.substring(0, 500) + "...");
+                    reader.readAsText(file);
+                });
+                addTextPanelToScene(file.name, text, pos);
+            }
+            else {
+                addTextPanelToScene(file.name, `Archivo Binario\nTipo: ${file.type}\nTamaño: ${(file.size/1024).toFixed(1)} KB`, pos);
+            }
+        }
+
+        // --- NUEVA FUNCIÓN: BURBUJA 360 ---
+        function create360Bubble(src, pos, isStream=false) {
+            const geom = new THREE.SphereGeometry(15, 60, 40);
+            geom.scale(-1, 1, 1); // Invertir para ver desde dentro
+            
+            const video = document.createElement('video');
+            video.src = src;
+            if(isStream) video.crossOrigin = "anonymous";
+            video.loop = true; video.muted = true; video.play();
+            
+            const tex = new THREE.VideoTexture(video);
+            const mat = new THREE.MeshBasicMaterial({map: tex});
+            const sphere = new THREE.Mesh(geom, mat);
+            sphere.position.copy(pos);
+            
+            // Borde exterior visual para saber que es una burbuja 360
+            const border = new THREE.Mesh(new THREE.SphereGeometry(15.2, 32, 32), new THREE.MeshBasicMaterial({color:0x4DDBFF, wireframe:true, transparent:true, opacity:0.1}));
+            sphere.add(border);
+
+            sphere.scale.set(0.1, 0.1, 0.1); // Empieza pequeña
+            sphere.userData = { type: '360', video: video };
+            
+            scene.add(sphere);
+            draggableObjects.push(sphere);
+            contentPanels.push(sphere);
         }
 
         function openCreationModal() {
@@ -559,22 +687,26 @@
                         case 'video':
                             const url = document.getElementById('video-url').value;
                             const videoId = parseYoutubeUrl(url);
-                            if (videoId) {
-                                addVideoPanelToScene(videoId, 0, pos);
-                            } else {
-                                alert("URL de YouTube no válida.");
-                            }
+                            if (videoId) addVideoPanelToScene(videoId, 0, pos);
+                            else alert("URL de YouTube no válida.");
                             break;
                         case 'web':
                             const webUrl = document.getElementById('web-url').value;
-                            if (webUrl) {
-                                addWebPanelToScene(webUrl, pos);
-                            } else {
-                                alert("Por favor, introduce una URL.");
-                            }
+                            if (webUrl) addWebPanelToScene(webUrl, pos);
+                            else alert("Por favor, introduce una URL.");
                             break;
                         case 'file':
                             await handleFileUpload(pos);
+                            break;
+                        case '360': // NUEVO CASO
+                            const mode = document.getElementById('360-type').value;
+                            if(mode === 'upload') {
+                                const file = document.getElementById('video-360-input').files[0];
+                                if(file) create360Bubble(URL.createObjectURL(file), pos);
+                            } else {
+                                const strm = document.getElementById('stream-url').value;
+                                if(strm) create360Bubble(strm, pos, true);
+                            }
                             break;
                     }
                 }
@@ -601,31 +733,8 @@
             for (let i = 0; i < fileInput.files.length; i++) {
                 const file = fileInput.files[i];
                 const pos = positions[i];
-                
-                await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        if (file.type.startsWith('image/')) {
-                            addImagePanelToScene(event.target.result, pos);
-                        } else if (file.type.startsWith('video/')) {
-                            addLocalVideoPanelToScene(event.target.result, pos);
-                        } else if (file.type === 'application/pdf') {
-                            addPdfPanelToScene(event.target.result, pos);
-                        } else if (file.type === 'text/html') {
-                            addHtmlPanelToScene(event.target.result, pos);
-                        } else {
-                            addTextPanelToScene(file.name, event.target.result, pos);
-                        }
-                        resolve();
-                    };
-                    reader.onerror = (error) => reject(error);
-
-                    if (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type === 'application/pdf' || file.type === 'text/html') {
-                        reader.readAsDataURL(file);
-                    } else {
-                        reader.readAsText(file);
-                    }
-                });
+                // AQUÍ USAMOS LA NUEVA FUNCIÓN OPTIMIZADA
+                await createPanelFromFile(file, pos);
             }
         }
 
@@ -979,6 +1088,7 @@
                 case 'KeyE': rotateRight = true; break;
             }
             if (moveForward || moveBackward || moveLeft || moveRight) {
+                // Al moverte, sales del foco
                 exitFocusMode();
             }
         }
@@ -999,15 +1109,10 @@
         function selectObject(object) {
             if (selectedObject && selectedObject.userData.cssObject) {
                 selectedObject.userData.cssObject.element.classList.remove('selected');
-            } else if (selectedObject && selectedObject.userData.type === 'image') {
-                 // Should add visual feedback for image panels too
             }
-
             selectedObject = object;
             if (selectedObject && selectedObject.userData.cssObject) {
                 selectedObject.userData.cssObject.element.classList.add('selected');
-            } else if (selectedObject && selectedObject.userData.type === 'image') {
-                // Add visual feedback for image panels
             }
         }
 
@@ -1024,6 +1129,8 @@
         }
         
         function onMouseDown(event) {
+            if(event.target.closest('.hud-btn') || event.target.closest('.modal')) return;
+
             const time = new Date().getTime();
             const isDoubleClick = time - lastClickTime < 300;
             lastClickTime = time;
@@ -1071,6 +1178,13 @@
             const intersects = raycaster.intersectObjects(draggableObjects);
             if (intersects.length > 0) {
                 const clickedObject = intersects[0].object;
+                
+                // MODIFICADO: Soporte para entrar en Burbujas 360
+                if(clickedObject.userData.type === '360') {
+                    enter360Mode(clickedObject);
+                    return;
+                }
+
                 if (clickedObject.userData.type === 'text') {
                     if (viewMode === 'fixed') {
                         openEditModal(clickedObject);
@@ -1107,10 +1221,30 @@
                 }
             });
         }
+        
+        // MODIFICADO: Modo especial para 360
+        function enter360Mode(sphere) {
+            isTransitioning = true;
+            isFocused = true;
+            focusedObject = sphere;
+            lastCameraPosition.copy(camera.position);
+            
+            // Nos movemos al CENTRO de la esfera
+            // Animaremos esto en el loop
+            
+            sphere.scale.set(1, 1, 1); // Tamaño real
+            sphere.userData.video.muted = false; // Audio ON
+        }
 
         function exitFocusMode() {
             if (!isFocused) return;
             
+            // Si salimos de 360
+            if (focusedObject && focusedObject.userData.type === '360') {
+                focusedObject.scale.set(0.1, 0.1, 0.1);
+                focusedObject.userData.video.muted = true;
+            }
+
             if (focusedObject && focusedObject.userData.cssObject && focusedObject.userData.cssObject.userData.contentElement) {
                 focusedObject.userData.cssObject.userData.contentElement.style.pointerEvents = 'none';
             }
@@ -1164,28 +1298,8 @@
             }
         }
 
-        function wrapText(context, text, x, y, maxWidth, lineHeight, measureOnly = false) {
-            const words = (text || '').split(' ');
-            let line = '';
-            let lineCount = 1;
-            for(let n = 0; n < words.length; n++) {
-                const testLine = line + words[n] + ' ';
-                const metrics = context.measureText(testLine);
-                const testWidth = metrics.width;
-                if (testWidth > maxWidth && n > 0) {
-                    if (!measureOnly) context.fillText(line, x, y);
-                    line = words[n] + ' ';
-                    y += lineHeight;
-                    lineCount++;
-                } else {
-                    line = testLine;
-                }
-            }
-            if (!measureOnly) context.fillText(line, x, y);
-            return lineCount;
-        }
-
         function saveScene() {
+            // ... (Tu lógica existente se mantiene)
             const sceneData = [];
             draggableObjects.forEach(obj => {
                 const data = {
@@ -1210,7 +1324,6 @@
                 }
                 sceneData.push(data);
             });
-
             const jsonString = JSON.stringify(sceneData, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -1308,31 +1421,58 @@
                 camera.position.copy(avatarObject.position).add(offset);
                 camera.lookAt(avatarObject.position);
             } else if (isTransitioning) {
-                const targetPosition = isFocused ? new THREE.Vector3() : lastCameraPosition;
-                const targetQuaternion = isFocused ? new THREE.Quaternion() : lastCameraQuaternion;
+                let targetPosition, targetQuaternion;
 
-                if (isFocused) {
+                if (isFocused && focusedObject.userData.type === '360') {
+                    // Si vamos a una burbuja, el objetivo es el centro de la esfera
+                    targetPosition = focusedObject.position.clone();
+                    targetQuaternion = camera.quaternion.clone(); // No forzamos rotación al entrar
+                } else if (isFocused) {
+                    // Si vamos a un panel plano
+                    targetPosition = new THREE.Vector3();
                     focusedObject.getWorldPosition(targetPosition);
-                    
                     const panelSize = focusedObject.geometry.parameters.height || 10;
                     const focusDistance = (panelSize / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-                    
                     const direction = new THREE.Vector3();
-                    focusedObject.getWorldDirection(direction); // Use panel's direction
+                    focusedObject.getWorldDirection(direction);
                     targetPosition.addScaledVector(direction, focusDistance * 1.25);
                     
+                    targetQuaternion = new THREE.Quaternion();
                     const tempMatrix = new THREE.Matrix4();
                     tempMatrix.lookAt(targetPosition, focusedObject.position, camera.up);
                     targetQuaternion.setFromRotationMatrix(tempMatrix);
+                } else {
+                    // Volviendo a la vista normal
+                    targetPosition = lastCameraPosition;
+                    targetQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitchAngle, yawAngle, 0, 'YXZ'));
                 }
 
                 camera.position.lerp(targetPosition, 0.05);
-                camera.quaternion.slerp(targetQuaternion, 0.05);
+                if(isFocused && focusedObject.userData.type !== '360') {
+                     camera.quaternion.slerp(targetQuaternion, 0.05);
+                }
 
                 if (camera.position.distanceTo(targetPosition) < 0.1) {
                     isTransitioning = false;
+                    if(isFocused && focusedObject.userData.type === '360') {
+                         avatarObject.position.copy(targetPosition); // Actualizar avatar
+                    }
                     if (!isFocused) focusedObject = null;
                 }
+            } else if (isFocused && focusedObject.userData.type === '360') {
+                // ESTAMOS DENTRO DE LA BURBUJA 360
+                // Permitir rotación libre desde el punto fijo
+                if (rotateLeft) yawAngle += cameraRotationSpeed * delta * 60;
+                if (rotateRight) yawAngle -= cameraRotationSpeed * delta * 60;
+                
+                // La cámara se queda en el centro, solo rota
+                camera.position.copy(focusedObject.position);
+                const targetLook = new THREE.Vector3(
+                    focusedObject.position.x - Math.sin(yawAngle),
+                    focusedObject.position.y,
+                    focusedObject.position.z - Math.cos(yawAngle)
+                );
+                camera.lookAt(targetLook);
             }
             
             camera.updateProjectionMatrix();
@@ -1349,13 +1489,15 @@
 
             if(viewMode === 'lookAtCamera') {
                 draggableObjects.forEach(panel => {
-                    panel.lookAt(camera.position);
-                    if (panel.userData.cssObject) {
-                        panel.userData.cssObject.quaternion.copy(panel.quaternion);
+                    // Los paneles miran a la cámara, EXCEPTO si son burbujas 360
+                    if (panel.userData.type !== '360') {
+                        panel.lookAt(camera.position);
+                        if (panel.userData.cssObject) {
+                            panel.userData.cssObject.quaternion.copy(panel.quaternion);
+                        }
                     }
                 });
             }
-
 
             webglRenderer.render(scene, camera);
             cssRenderer.render(scene, camera);
@@ -1363,4 +1505,3 @@
     </script>
 </body>
 </html>
-
