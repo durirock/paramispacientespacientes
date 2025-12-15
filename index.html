@@ -140,15 +140,20 @@
             cursor: pointer;
             z-index: 200;
             box-shadow: 0 0 20px var(--primary-glow-color);
-            transition: transform 0.3s ease, background-color 0.3s ease;
+            transition: transform 0.3s ease, background-color 0.3s ease, opacity 1s ease;
+            opacity: 1;
+        }
+        .ui-button.faded {
+            opacity: 0.1; /* Casi invisible */
         }
         .ui-button:hover {
             transform: scale(1.1);
             background-color: #fff;
+            opacity: 1 !important; /* Siempre visible al pasar el mouse */
         }
         #add-panel-btn {
-            bottom: 30px;
-            right: 30px;
+            top: 30px; /* Arriba */
+            right: 30px; /* Derecha */
         }
         #add-panel-btn:hover {
             transform: scale(1.1) rotate(90deg);
@@ -303,13 +308,13 @@
             border: 2px solid var(--primary-glow-color);
             border-radius: 50%;
         }
-        /* Estilos para lista dinámica de videos */
-        .video-input-group {
+        /* Estilos para listas dinámicas (video/web) */
+        .dynamic-input-group {
             display: flex;
             gap: 5px;
             margin-bottom: 5px;
         }
-        .video-input-group input {
+        .dynamic-input-group input {
             margin-bottom: 0;
         }
         .small-btn {
@@ -347,7 +352,7 @@
     <div id="blocker"></div>
     <div id="instructions">
         Usa [W,A,S,D] para moverte, [Z,X] para subir/bajar, [Q,E] y [Ratón] para girar. 
-        [Doble Click] para Enfocar/Entrar. [Supr] para borrar.
+        [Doble Click] para Enfocar/Entrar. [Supr] para borrar. [Flechas] para navegar en zoom.
     </div>
     
     <div id="autosave-indicator">Guardado automático...</div>
@@ -378,7 +383,7 @@
             
             <div id="video-form" class="form-section">
                 <div id="video-inputs-container">
-                    <div class="video-input-group">
+                    <div class="dynamic-input-group">
                         <input type="text" class="video-url-input" placeholder="URL de YouTube...">
                     </div>
                 </div>
@@ -386,7 +391,12 @@
             </div>
             
             <div id="web-form" class="form-section">
-                <input type="text" id="web-url" placeholder="URL de la página web...">
+                <div id="web-inputs-container">
+                    <div class="dynamic-input-group">
+                        <input type="text" class="web-url-input" placeholder="URL de la página web...">
+                    </div>
+                </div>
+                <button type="button" id="add-web-input-btn" class="add-more-btn">+ Agregar otra web</button>
             </div>
             
             <div id="file-form" class="form-section">
@@ -426,7 +436,7 @@
                 <div class="io-buttons">
                      <button id="save-scene-btn" title="Guardar Escena">&#x1F4BE;</button>
                      <button id="load-scene-btn" title="Cargar Escena">&#x1F4C2;</button>
-                     <!-- BOTÓN LUPA MOVIDO AQUÍ -->
+                     <!-- BOTÓN LUPA -->
                      <button id="scan-folder-btn" title="Escanear USB/Carpeta">&#x1F50D;</button>
                      <input type="file" id="load-file-input" style="display: none;" accept=".json">
                 </div>
@@ -474,13 +484,25 @@
         let lastCameraPosition = new THREE.Vector3();
         let lastCameraQuaternion = new THREE.Quaternion();
 
+        // Button Idle Timer
+        let btnIdleTimer;
+
+        // Gestor de Video LOD Avanzado (Cola de Procesamiento)
+        const MAX_ACTIVE_VIDEOS = 3; // Cuantos se reproducen a la vez (cerca)
+        const THUMBNAIL_DISTANCE = 1200; // Distancia para empezar a generar thumbnail
+        const PLAY_DISTANCE = 100; // Distancia para empezar a reproducir
+        
+        let videoPanels = [];
+        let thumbnailQueue = [];
+        let isProcessingThumbnail = false;
+
         init();
         animate();
-        startAutoSave(); // Iniciar sistema de autoguardado
+        startAutoSave(); 
 
         function init() {
             scene = new THREE.Scene();
-            scene.fog = new THREE.Fog(0x02040a, 50, 200);
+            scene.fog = new THREE.Fog(0x02040a, 50, 300); // Niebla un poco más profunda
             clock = new THREE.Clock();
 
             camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -521,21 +543,14 @@
             const starField = new THREE.Points(starGeometry, starMaterial);
             scene.add(starField);
             
-            // Cargar escena inicial o guardada
-            const savedScene = localStorage.getItem('autosave_scene');
-            if (savedScene) {
-                try {
-                    buildSceneFromData(JSON.parse(savedScene));
-                    console.log("Escena restaurada desde autoguardado.");
-                } catch(e) {
-                    console.error("Error al restaurar autoguardado", e);
-                    loadDefaultScene();
-                }
-            } else {
-                loadDefaultScene();
-            }
+            // Carga escena por defecto
+            loadDefaultScene();
 
             initEventListeners();
+            resetBtnIdleTimer(); 
+            
+            // Iniciar procesador de cola de thumbnails
+            setInterval(processThumbnailQueue, 500); // Intenta procesar 1 thumbnail cada 0.5 segundos
         }
 
         function loadDefaultScene() {
@@ -547,21 +562,35 @@
             buildSceneFromData(initialSceneData);
         }
 
+        function resetBtnIdleTimer() {
+            const btn = document.getElementById('add-panel-btn');
+            btn.classList.remove('faded');
+            clearTimeout(btnIdleTimer);
+            btnIdleTimer = setTimeout(() => {
+                btn.classList.add('faded');
+            }, 5000);
+        }
+
         function initEventListeners() {
             window.addEventListener('resize', onWindowResize);
             document.addEventListener('keydown', onKeyDown);
             document.addEventListener('keyup', onKeyUp);
             document.addEventListener('mousedown', onMouseDown);
             document.addEventListener('mouseup', onMouseUp);
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('wheel', onMouseWheel);
+            document.addEventListener('mousemove', (e) => {
+                onMouseMove(e);
+                resetBtnIdleTimer(); 
+            });
+            document.addEventListener('wheel', (e) => {
+                onMouseWheel(e);
+                resetBtnIdleTimer();
+            });
 
             document.getElementById('add-panel-btn').addEventListener('click', openCreationModal);
             document.getElementById('save-scene-btn').addEventListener('click', saveSceneToFile);
             document.getElementById('load-scene-btn').addEventListener('click', () => document.getElementById('load-file-input').click());
             document.getElementById('load-file-input').addEventListener('change', loadSceneFromFile);
             
-            // NUEVO: Botón de escaneo movido
             document.getElementById('scan-folder-btn').addEventListener('click', () => document.getElementById('folder-input').click());
 
             const modal = document.getElementById('creation-modal');
@@ -572,10 +601,9 @@
                 button.addEventListener('click', (e) => switchTab(e.target.dataset.type));
             });
 
-            // Lógica UI Video Inputs Dinámicos
             document.getElementById('add-video-input-btn').addEventListener('click', addVideoInputRow);
+            document.getElementById('add-web-input-btn').addEventListener('click', addWebInputRow); 
 
-            // LÓGICA DE PREVISUALIZACIÓN DE ARCHIVOS
             const fileUpload = document.getElementById('file-upload');
             const imagePreview = document.getElementById('image-preview');
             fileUpload.addEventListener('change', (e) => {
@@ -590,14 +618,12 @@
                 }
             });
 
-            // Lógica UI 360
             document.getElementById('360-type').addEventListener('change', (e) => {
                 document.getElementById('360-upload-div').style.display = e.target.value === 'upload' ? 'block' : 'none';
                 document.getElementById('360-youtube-div').style.display = e.target.value === 'youtube' ? 'block' : 'none';
                 document.getElementById('360-stream-div').style.display = e.target.value === 'stream' ? 'block' : 'none';
             });
 
-            // Escaner de Carpeta
             document.getElementById('folder-input').addEventListener('change', handleFolderScan);
 
             setTimeout(() => {
@@ -613,7 +639,7 @@
                 const indicator = document.getElementById('autosave-indicator');
                 indicator.classList.add('visible');
                 setTimeout(() => indicator.classList.remove('visible'), 2000);
-            }, 30000); // 30 segundos
+            }, 30000); 
         }
 
         function serializeScene() {
@@ -629,7 +655,6 @@
                     data.color = obj.userData.color;
                 } else if (obj.userData.type === 'image') {
                     data.src = obj.userData.src;
-                    // Intenta preservar color del borde si existe
                     if(obj.children.length > 0 && obj.children[0].material) {
                          data.color = new THREE.Color(obj.children[0].material.color).getHexString();
                     }
@@ -640,8 +665,7 @@
                 } else if (obj.userData.type === 'html') {
                     data.content = obj.userData.cssObject.userData.content;
                 } else if (obj.userData.type === 'localVideo' || obj.userData.type === 'pdf') {
-                    // Nota: Blob URLs no persisten entre sesiones, solo referencias
-                    data.src = obj.userData.cssObject.userData.src; 
+                    data.src = obj.userData.cssObject ? obj.userData.cssObject.userData.src : obj.userData.src; 
                 } else if (obj.userData.type === '360') {
                     data.src = obj.userData.src;
                     data.isYouTube = obj.userData.isYouTube || false;
@@ -651,17 +675,14 @@
             return sceneData;
         }
 
-        // --- GESTIÓN DE INPUTS DE VIDEO ---
         function addVideoInputRow() {
             const container = document.getElementById('video-inputs-container');
             const div = document.createElement('div');
-            div.className = 'video-input-group';
-            
+            div.className = 'dynamic-input-group';
             const input = document.createElement('input');
             input.type = 'text';
             input.className = 'video-url-input';
             input.placeholder = 'Otra URL de YouTube...';
-            
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'modal-actions button cancel small-btn';
@@ -669,24 +690,59 @@
             btn.style.borderColor = 'red';
             btn.style.color = 'red';
             btn.onclick = () => div.remove();
-            
             div.appendChild(input);
             div.appendChild(btn);
             container.appendChild(div);
         }
 
-        // --- ESCANEO DE CARPETA ---
+        function addWebInputRow() {
+            const container = document.getElementById('web-inputs-container');
+            const div = document.createElement('div');
+            div.className = 'dynamic-input-group';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'web-url-input';
+            input.placeholder = 'Otra URL web...';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'modal-actions button cancel small-btn';
+            btn.innerHTML = '✕';
+            btn.style.borderColor = 'red';
+            btn.style.color = 'red';
+            btn.onclick = () => div.remove();
+            div.appendChild(input);
+            div.appendChild(btn);
+            container.appendChild(div);
+        }
+
+        // --- ESCANEO DE CARPETA (FIBONACCI AMPLIADO) ---
         async function handleFolderScan(event) {
             const files = Array.from(event.target.files);
             if(files.length === 0) return;
 
-            const validFiles = files.filter(f => f.name[0] !== '.').sort((a,b) => b.lastModified - a.lastModified);
+            const validFiles = files.filter(f => {
+                return f.name[0] !== '.' && (f.type.startsWith('image/') || f.type.startsWith('video/'));
+            }).sort((a,b) => b.lastModified - a.lastModified);
             
-            alert(`Analizando ${validFiles.length} archivos. Generando túnel temporal...`);
+            if (validFiles.length === 0) {
+                alert("No se encontraron imágenes o videos válidos en la carpeta seleccionada.");
+                return;
+            }
 
-            const spiralRadius = 15;
-            const angleStep = 0.6;
-            const zStep = 3;
+            alert(`Procesando ${validFiles.length} archivos multimedia...`);
+
+            // Parámetros "Tubo Amplio"
+            const goldenAngle = Math.PI * (3 - Math.sqrt(5)); 
+            
+            // --- AQUÍ PUEDES CONFIGURAR LA DENSIDAD DEL TUBO ---
+            // spreadFactor: Controla qué tan ANCHO es el tubo (radio lateral). 
+            //               Valor anterior: 20 (muy ancho). Nuevo: 12.
+            const spreadFactor = 12; 
+            
+            // zStep: Controla la distancia en PROFUNDIDAD entre cada archivo.
+            //        Valor anterior: 10 (muy lejos). Nuevo: 4 (más apretado para activar animaciones).
+            const zStep = 4; 
+            // ----------------------------------------------------
 
             const dir = new THREE.Vector3();
             camera.getWorldDirection(dir);
@@ -695,11 +751,13 @@
 
             for(let i=0; i<validFiles.length; i++) {
                 const file = validFiles[i];
-                const angle = i * angleStep;
                 
-                const localX = Math.cos(angle) * spiralRadius;
-                const localY = (Math.random() - 0.5) * 10; 
-                const localZ = -(i * zStep) - 15;
+                const r = spreadFactor * Math.sqrt(i + 1);
+                const theta = i * goldenAngle;
+                
+                const localX = r * Math.cos(theta);
+                const localY = r * Math.sin(theta);
+                const localZ = -(i * zStep) - 20; 
 
                 const pos = new THREE.Vector3(localX, localY, localZ);
                 pos.applyAxisAngle(new THREE.Vector3(0,1,0), yawAngle);
@@ -718,106 +776,257 @@
             else if (file.type.startsWith('video/')) {
                 addLocalVideoPanelToScene(url, pos);
             } 
-            else if (file.type === 'application/pdf') {
-                addPdfPanelToScene(url, pos);
+        }
+
+        // --- SISTEMA GESTIÓN RECURSOS VIDEO (LOD) ---
+        function updateVideoLOD() {
+            if (videoPanels.length === 0) return;
+
+            // 1. Calcular distancia a la cámara
+            videoPanels.forEach(panel => {
+                panel.distanceToCamera = panel.mesh.position.distanceTo(camera.position);
+            });
+
+            // 2. Ordenar por cercanía
+            videoPanels.sort((a, b) => a.distanceToCamera - b.distanceToCamera);
+
+            // 3. Lógica de activación / generación de thumbnails
+            for (let i = 0; i < videoPanels.length; i++) {
+                const panel = videoPanels[i];
+                
+                // Zona 1: Reproducción (< PLAY_DISTANCE y entre los primeros 3)
+                const shouldPlay = (i < MAX_ACTIVE_VIDEOS) && (panel.distanceToCamera < PLAY_DISTANCE);
+                
+                // Zona 2: Thumbnail Visible (< THUMBNAIL_DISTANCE)
+                const shouldHaveThumbnail = (panel.distanceToCamera < THUMBNAIL_DISTANCE);
+
+                if (shouldPlay) {
+                    if (panel.status !== 'playing') {
+                        activateVideoPanel(panel);
+                    }
+                } else {
+                    // Si no debe reproducirse, asegúrate de que esté apagado
+                    if (panel.status === 'playing') {
+                        deactivateVideoPanel(panel);
+                    }
+                    
+                    // Si debe tener thumbnail y no lo tiene, encola
+                    if (shouldHaveThumbnail && !panel.textureLoaded && !panel.thumbnailLoading) {
+                        if (!thumbnailQueue.includes(panel)) {
+                            thumbnailQueue.push(panel);
+                        }
+                    }
+                }
             }
-            else if (file.type.startsWith('text/') || file.name.endsWith('.js') || file.name.endsWith('.html')) {
-                const text = await new Promise(r => {
-                    const reader = new FileReader();
-                    reader.onload = e => r(e.target.result.substring(0, 500) + "...");
-                    reader.readAsText(file);
-                });
-                addTextPanelToScene(file.name, text, pos);
+        }
+
+        // Procesa la cola de thumbnails uno a uno para no congelar el navegador
+        function processThumbnailQueue() {
+            if (isProcessingThumbnail || thumbnailQueue.length === 0) return;
+            
+            // Tomar el siguiente panel de la cola (el más cercano generalmente, porque ordenamos en LOD)
+            // Reordenamos la cola por si el usuario se movió
+            thumbnailQueue.sort((a, b) => a.distanceToCamera - b.distanceToCamera);
+            
+            const panel = thumbnailQueue.shift();
+            // Verificar si todavía es relevante
+            if (panel.distanceToCamera > THUMBNAIL_DISTANCE) return; 
+
+            generateThumbnail(panel);
+        }
+
+        function generateThumbnail(panel) {
+            isProcessingThumbnail = true;
+            panel.thumbnailLoading = true;
+
+            const video = document.createElement('video');
+            video.src = panel.src;
+            video.crossOrigin = 'anonymous';
+            video.muted = true;
+            video.currentTime = 1.0; // Capturar segundo 1
+            video.preload = 'metadata'; // Solo metadata inicialmente
+
+            // Función de limpieza
+            const cleanup = () => {
+                video.remove();
+                isProcessingThumbnail = false;
+                panel.thumbnailLoading = false;
+            };
+
+            const onSeeked = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 512; 
+                    canvas.height = 512 * (video.videoHeight / video.videoWidth) || 288;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    const texture = new THREE.CanvasTexture(canvas);
+                    panel.mesh.material.map = texture;
+                    panel.mesh.material.color.setHex(0xffffff); // Blanco para mostrar textura real
+                    panel.mesh.material.needsUpdate = true;
+                    panel.textureLoaded = true;
+                } catch(e) { console.log("Error generando thumb", e); }
+                cleanup();
+            };
+
+            video.addEventListener('loadeddata', () => {
+                video.currentTime = 1.0; // Buscar frame
+            });
+            video.addEventListener('seeked', onSeeked);
+            video.addEventListener('error', cleanup);
+            
+            // Timeout de seguridad por si falla
+            setTimeout(cleanup, 4000);
+
+            video.load();
+        }
+
+        function activateVideoPanel(panel) {
+            if (!panel.videoElement) {
+                const video = document.createElement('video');
+                video.src = panel.src;
+                video.muted = true; 
+                video.loop = true;
+                video.autoplay = true;
+                video.width = 1280;
+                video.height = 720;
+                video.style.pointerEvents = 'none';
+                
+                const div = document.createElement('div');
+                div.className = 'video-panel';
+                div.appendChild(video);
+                
+                const cssObject = new THREE.CSS3DObject(div);
+                const scale = 0.015;
+                cssObject.scale.set(scale, scale, scale);
+                cssObject.position.copy(panel.mesh.position);
+                cssObject.rotation.copy(panel.mesh.rotation);
+                
+                scene.add(cssObject);
+                
+                panel.videoElement = video;
+                panel.cssObject = cssObject;
+                panel.mesh.userData.cssObject = cssObject;
+                panel.mesh.userData.contentElement = video; 
             }
-            else {
-                addTextPanelToScene(file.name, `Archivo Binario\nTipo: ${file.type}\nTamaño: ${(file.size/1024).toFixed(1)} KB`, pos);
+            
+            panel.videoElement.play().catch(e => {}); 
+            panel.mesh.visible = false; 
+            panel.status = 'playing';
+        }
+
+        function deactivateVideoPanel(panel) {
+            if (panel.videoElement) {
+                panel.videoElement.pause();
+                if (panel.cssObject) {
+                    scene.remove(panel.cssObject);
+                }
+                panel.videoElement = null;
+                panel.cssObject = null;
+                panel.mesh.userData.cssObject = null;
             }
+            panel.mesh.visible = true; 
+            panel.status = 'idle';
+        }
+
+        function addLocalVideoPanelToScene(src, position) {
+            // Estilo Inicial: Negro Profundo con Borde Fucsia
+            const geometry = new THREE.PlaneGeometry(10.24, 7.68);
+            const material = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide }); 
+            const proxyObject = new THREE.Mesh(geometry, material);
+            proxyObject.position.copy(position);
+            
+            // Borde Fucsia Eléctrico
+            const borderGeo = new THREE.BoxLineGeometry(10.34, 7.78, 0.1, 1, 1, 1);
+            const borderMat = new THREE.LineBasicMaterial({ color: 0xFF00FF, transparent: true, opacity: 0.8 });
+            const border = new THREE.LineSegments(borderGeo, borderMat);
+            proxyObject.add(border);
+
+            proxyObject.userData = { 
+                type: 'localVideo', 
+                src: src, 
+                velocity: new THREE.Vector3() 
+            };
+
+            scene.add(proxyObject);
+            draggableObjects.push(proxyObject);
+            contentPanels.push(proxyObject);
+
+            // Registrar en LOD
+            videoPanels.push({
+                mesh: proxyObject,
+                src: src,
+                status: 'idle',
+                distanceToCamera: Infinity,
+                textureLoaded: false,
+                thumbnailLoading: false
+            });
         }
 
         // --- BURBUJA 360 ---
         function create360Bubble(src, pos, isStream=false, isYouTube=false) {
             let mesh;
-            
             if (isYouTube) {
-                // Truco para YouTube 360: Usamos CSS3DObject dentro de un contenedor esférico transparente para interacción
                 const videoId = parseYoutubeUrl(src);
                 if(!videoId) return;
-
-                // Para visualización 360 real de YouTube se necesita la API VR de YouTube que es compleja.
-                // Aquí simularemos una experiencia inmersiva creando un cilindro panorámico grande alrededor del usuario
-                // usando CSS3DRenderer, ya que YouTube en WebGL tiene problemas de CORS.
-                
                 const div = document.createElement('div');
                 div.style.width = '1024px';
                 div.style.height = '768px';
                 const iframe = document.createElement('iframe');
-                // Usar embed simple. El usuario tendrá que mover el video 360 con el ratón dentro del iframe.
                 iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}`; 
                 iframe.style.width = '100%';
                 iframe.style.height = '100%';
                 iframe.style.border = 'none';
                 div.appendChild(iframe);
-
                 const object = new THREE.CSS3DObject(div);
                 object.position.copy(pos);
-                object.scale.set(0.05, 0.05, 0.05); // Escala para que no sea gigante en la vista normal
-                
-                // Proxy para seleccionarlo
+                object.scale.set(0.05, 0.05, 0.05); 
                 const geom = new THREE.SphereGeometry(15, 16, 16);
                 const mat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, opacity: 0.1, transparent: true });
                 mesh = new THREE.Mesh(geom, mat);
                 mesh.position.copy(pos);
-                mesh.userData = { type: '360', cssObject: object, isYouTube: true, src: src }; // Guardar src para guardar
-                
-                object.userData = { contentElement: iframe }; // Para focus mode
-                
+                mesh.userData = { type: '360', cssObject: object, isYouTube: true, src: src };
+                object.userData = { contentElement: iframe }; 
                 scene.add(object);
-                
-                // NOTA: YouTube 360 en iframe 2D requiere arrastre manual. 
-                // En modo "Focus", simplemente acercaremos la cámara al iframe.
             } else {
-                // Video Local o Stream (WebGL Texture)
                 const geom = new THREE.SphereGeometry(15, 60, 40);
                 geom.scale(-1, 1, 1);
-                
                 const video = document.createElement('video');
                 video.src = src;
                 if(isStream) video.crossOrigin = "anonymous";
                 video.loop = true; video.muted = true; video.play();
-                
                 const tex = new THREE.VideoTexture(video);
                 const mat = new THREE.MeshBasicMaterial({map: tex});
                 mesh = new THREE.Mesh(geom, mat);
                 mesh.position.copy(pos);
-                
-                // Borde visual
                 const border = new THREE.Mesh(new THREE.SphereGeometry(15.2, 32, 32), new THREE.MeshBasicMaterial({color:0x4DDBFF, wireframe:true, transparent:true, opacity:0.1}));
                 mesh.add(border);
-
                 mesh.scale.set(0.1, 0.1, 0.1); 
                 mesh.userData = { type: '360', video: video, src: src };
             }
-
             scene.add(mesh);
             draggableObjects.push(mesh);
             contentPanels.push(mesh);
         }
 
+        // --- CREACIÓN MANUAL ---
         function openCreationModal() {
             editingPanel = null;
             document.getElementById('modal-title').textContent = "Crear Nuevo Panel";
             document.getElementById('create-panel-btn').textContent = "Crear";
             document.getElementById('text-title').value = "";
             document.getElementById('text-content').value = "";
-            
-            // Limpiar inputs de video
-            const container = document.getElementById('video-inputs-container');
-            container.innerHTML = ''; 
-            const div = document.createElement('div'); div.className = 'video-input-group';
-            const input = document.createElement('input'); input.type='text'; input.className='video-url-input'; input.placeholder='URL de YouTube...';
-            div.appendChild(input); container.appendChild(div);
-
-            document.getElementById('web-url').value = "";
+            const vContainer = document.getElementById('video-inputs-container');
+            vContainer.innerHTML = ''; 
+            const vDiv = document.createElement('div'); vDiv.className = 'dynamic-input-group';
+            const vInput = document.createElement('input'); vInput.type='text'; vInput.className='video-url-input'; vInput.placeholder='URL de YouTube...';
+            vDiv.appendChild(vInput); vContainer.appendChild(vDiv);
+            const wContainer = document.getElementById('web-inputs-container');
+            wContainer.innerHTML = ''; 
+            const wDiv = document.createElement('div'); wDiv.className = 'dynamic-input-group';
+            const wInput = document.createElement('input'); wInput.type='text'; wInput.className='web-url-input'; wInput.placeholder='URL de la página web...';
+            wDiv.appendChild(wInput); wContainer.appendChild(wDiv);
             document.getElementById('file-upload').value = "";
             document.getElementById('image-preview').style.display = 'none';
             document.getElementById('text-color-picker').value = "#4DDBFF";
@@ -848,7 +1057,6 @@
             const originalText = createBtn.textContent;
             createBtn.textContent = 'Creando...';
             createBtn.disabled = true;
-
             try {
                 if (editingPanel) {
                     const newTitle = document.getElementById('text-title').value;
@@ -873,26 +1081,33 @@
                             addTextPanelToScene(title, content, pos, color);
                             break;
                         case 'video':
-                            // LOGICA MULTI-VIDEO
-                            const inputs = document.querySelectorAll('.video-url-input');
-                            let offsetX = 0;
-                            inputs.forEach(input => {
+                            const vInputs = document.querySelectorAll('.video-url-input');
+                            let vOffsetX = 0;
+                            vInputs.forEach(input => {
                                 const url = input.value;
                                 if(url) {
                                     const videoId = parseYoutubeUrl(url);
                                     if (videoId) {
                                         const p = pos.clone();
-                                        p.x += offsetX;
+                                        p.x += vOffsetX;
                                         addVideoPanelToScene(videoId, 0, p);
-                                        offsetX += 20; // Separar paneles
+                                        vOffsetX += 20; 
                                     }
                                 }
                             });
                             break;
                         case 'web':
-                            const webUrl = document.getElementById('web-url').value;
-                            if (webUrl) addWebPanelToScene(webUrl, pos);
-                            else alert("Por favor, introduce una URL.");
+                            const wInputs = document.querySelectorAll('.web-url-input');
+                            let wOffsetX = 0;
+                            wInputs.forEach(input => {
+                                const url = input.value;
+                                if(url) {
+                                    const p = pos.clone();
+                                    p.x += wOffsetX;
+                                    addWebPanelToScene(url, p);
+                                    wOffsetX += 20;
+                                }
+                            });
                             break;
                         case 'file':
                             await handleFileUpload(pos);
@@ -928,10 +1143,8 @@
                 alert("Por favor, selecciona uno o más archivos.");
                 return;
             }
-            
             const layout = document.querySelector('input[name="layout"]:checked').value;
             const positions = calculateLayoutPositions(fileInput.files.length, layout, basePosition);
-
             for (let i = 0; i < fileInput.files.length; i++) {
                 const file = fileInput.files[i];
                 const pos = positions[i];
@@ -943,7 +1156,6 @@
             const positions = [];
             const radius = 25;
             const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-
             switch(layout) {
                 case 'sphere':
                     for (let i = 0; i < count; i++) {
@@ -1036,15 +1248,6 @@
             draggableObjects.push(htmlProxyObject);
         }
 
-        function addLocalVideoPanelToScene(src, position) {
-            const { videoCSSObject, videoProxyObject } = createLocalVideoPanel(src);
-            videoCSSObject.position.copy(position);
-            videoProxyObject.position.copy(position);
-            scene.add(videoCSSObject, videoProxyObject);
-            contentPanels.push(videoCSSObject, videoProxyObject);
-            draggableObjects.push(videoProxyObject);
-        }
-        
         function addPdfPanelToScene(src, position) {
             const { pdfCSSObject, pdfProxyObject } = createPdfPanel(src);
             pdfCSSObject.position.copy(position);
@@ -1059,24 +1262,18 @@
             div.className = 'content-panel-wrapper text-panel';
             div.style.width = '1024px';
             div.style.height = '768px';
-            
             const titleElement = document.createElement('div');
             titleElement.className = 'text-panel-title';
-            
             const contentElement = document.createElement('div');
             contentElement.className = 'text-panel-content';
-
             div.appendChild(titleElement);
             div.appendChild(contentElement);
-
             const cssObject = new THREE.CSS3DObject(div);
             const scale = 0.01;
             cssObject.scale.set(scale, scale, scale);
-            
             const proxyGeometry = new THREE.PlaneGeometry(1024 * scale, 768 * scale);
             const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
             const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
-
             proxyObject.userData = { 
                 type: 'text', 
                 title, 
@@ -1086,9 +1283,7 @@
                 cssObject 
             };
             cssObject.userData.proxyObject = proxyObject;
-            
             updateTextPanel(proxyObject);
-
             return { cssObject, proxyObject };
         }
 
@@ -1097,11 +1292,9 @@
             const div = panel.userData.cssObject.element;
             div.style.borderColor = color;
             div.style.boxShadow = `0 0 30px ${color}`;
-            
             const titleElement = div.querySelector('.text-panel-title');
             titleElement.textContent = title;
             titleElement.style.color = color;
-
             const contentElement = div.querySelector('.text-panel-content');
             contentElement.textContent = content;
         }
@@ -1130,19 +1323,16 @@
             iframe.style.pointerEvents = 'none';
             iframeWrapper.appendChild(iframe);
             div.appendChild(iframeWrapper);
-
             const cssObject = new THREE.CSS3DObject(div);
             const scale = 0.015;
             cssObject.scale.set(scale, scale, scale);
             cssObject.userData = { type: 'video', videoId: videoId, contentElement: iframe };
-
             const proxyGeometry = new THREE.PlaneGeometry(1280 * scale, 720 * scale);
             const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
             const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
             proxyObject.userData.cssObject = cssObject;
             proxyObject.userData.type = 'video';
             proxyObject.userData.velocity = new THREE.Vector3();
-
             return { videoCSSObject: cssObject, videoProxyObject: proxyObject };
         }
         
@@ -1150,7 +1340,7 @@
             const div = document.createElement('div');
             div.className = 'content-panel-wrapper';
             const iframeWrapper = document.createElement('div');
-            iframeWrapper.className = 'web-panel'; // Re-use style for now
+            iframeWrapper.className = 'web-panel'; 
             iframeWrapper.style.width = '1280px';
             iframeWrapper.style.height = '720px';
             iframeWrapper.style.border = '5px solid var(--primary-glow-color)';
@@ -1159,19 +1349,16 @@
             iframe.style.pointerEvents = 'none';
             iframeWrapper.appendChild(iframe);
             div.appendChild(iframeWrapper);
-
             const cssObject = new THREE.CSS3DObject(div);
             const scale = 0.015;
             cssObject.scale.set(scale, scale, scale);
             cssObject.userData = { type: 'web', url: url, contentElement: iframe };
-
             const proxyGeometry = new THREE.PlaneGeometry(1280 * scale, 720 * scale);
             const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
             const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
             proxyObject.userData.cssObject = cssObject;
             proxyObject.userData.type = 'web';
             proxyObject.userData.velocity = new THREE.Vector3();
-
             return { webCSSObject: cssObject, webProxyObject: proxyObject };
         }
 
@@ -1188,50 +1375,17 @@
             iframe.style.pointerEvents = 'none';
             iframeWrapper.appendChild(iframe);
             div.appendChild(iframeWrapper);
-
             const cssObject = new THREE.CSS3DObject(div);
             const scale = 0.015;
             cssObject.scale.set(scale, scale, scale);
             cssObject.userData = { type: 'html', content: htmlContent, contentElement: iframe };
-
             const proxyGeometry = new THREE.PlaneGeometry(1280 * scale, 720 * scale);
             const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
             const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
             proxyObject.userData.cssObject = cssObject;
             proxyObject.userData.type = 'html';
             proxyObject.userData.velocity = new THREE.Vector3();
-
             return { htmlCSSObject: cssObject, htmlProxyObject: proxyObject };
-        }
-
-        function createLocalVideoPanel(src) {
-            const div = document.createElement('div');
-            div.className = 'content-panel-wrapper';
-            const videoWrapper = document.createElement('div');
-            videoWrapper.className = 'video-panel';
-            const video = document.createElement('video');
-            video.src = src;
-            video.autoplay = true;
-            video.muted = true;
-            video.loop = true;
-            video.controls = true;
-            video.style.pointerEvents = 'none';
-            videoWrapper.appendChild(video);
-            div.appendChild(videoWrapper);
-
-            const cssObject = new THREE.CSS3DObject(div);
-            const scale = 0.015;
-            cssObject.scale.set(scale, scale, scale);
-            cssObject.userData = { type: 'localVideo', src: src, contentElement: video };
-
-            const proxyGeometry = new THREE.PlaneGeometry(1280 * scale, 720 * scale);
-            const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
-            const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
-            proxyObject.userData.cssObject = cssObject;
-            proxyObject.userData.type = 'localVideo';
-            proxyObject.userData.velocity = new THREE.Vector3();
-
-            return { videoCSSObject: cssObject, videoProxyObject: proxyObject };
         }
 
         function createPdfPanel(src) {
@@ -1245,19 +1399,16 @@
             embed.style.pointerEvents = 'none';
             pdfWrapper.appendChild(embed);
             div.appendChild(pdfWrapper);
-            
             const cssObject = new THREE.CSS3DObject(div);
             const scale = 0.01;
             cssObject.scale.set(scale, scale, scale);
             cssObject.userData = { type: 'pdf', src: src, contentElement: embed };
-
             const proxyGeometry = new THREE.PlaneGeometry(800 * scale, 1131 * scale);
             const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
             const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
             proxyObject.userData.cssObject = cssObject;
             proxyObject.userData.type = 'pdf';
             proxyObject.userData.velocity = new THREE.Vector3();
-
             return { pdfCSSObject: cssObject, pdfProxyObject: proxyObject };
         }
 
@@ -1271,6 +1422,22 @@
         function onKeyDown(event) {
             if (event.key === "Escape" && (isFocused || isTransitioning)) {
                 exitFocusMode();
+                return;
+            }
+
+            if (isFocused && !isTransitioning) {
+                let moveDir = null;
+                switch (event.code) {
+                    case 'ArrowRight': moveDir = new THREE.Vector3(1, 0, 0); break;
+                    case 'ArrowLeft':  moveDir = new THREE.Vector3(-1, 0, 0); break;
+                    case 'ArrowUp':    moveDir = new THREE.Vector3(0, 1, 0); break;
+                    case 'ArrowDown':  moveDir = new THREE.Vector3(0, -1, 0); break;
+                }
+                if (moveDir) {
+                    event.preventDefault();
+                    navigateToNearestPanel(moveDir);
+                    return;
+                }
             }
 
             if ((event.key === 'Delete' || event.key === 'Backspace') && selectedObject) {
@@ -1305,6 +1472,30 @@
                 case 'KeyE': rotateRight = false; break;
             }
         }
+
+        function navigateToNearestPanel(localDirection) {
+            if (!focusedObject) return;
+            const worldDir = localDirection.clone().applyQuaternion(camera.quaternion).normalize();
+            let nearest = null;
+            let minDistance = Infinity;
+            const angleThreshold = 0.7; 
+            draggableObjects.forEach(obj => {
+                if (obj === focusedObject) return;
+                const toCandidate = new THREE.Vector3().subVectors(obj.position, focusedObject.position);
+                const distance = toCandidate.length();
+                toCandidate.normalize();
+                const alignment = toCandidate.dot(worldDir);
+                if (alignment > angleThreshold) {
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearest = obj;
+                    }
+                }
+            });
+            if (nearest) {
+                enterFocusMode(nearest);
+            }
+        }
         
         function selectObject(object) {
             if (selectedObject && selectedObject.userData.cssObject) {
@@ -1321,43 +1512,33 @@
             if (objectToDelete.userData.cssObject) {
                 scene.remove(objectToDelete.userData.cssObject);
             }
-
             draggableObjects = draggableObjects.filter(obj => obj !== objectToDelete);
             contentPanels = contentPanels.filter(obj => obj !== objectToDelete && (!obj.userData || obj.userData.proxyObject !== objectToDelete));
-
             selectObject(null);
         }
         
         function onMouseDown(event) {
             if(event.target.closest('.hud-btn') || event.target.closest('.modal')) return;
-
             const time = new Date().getTime();
             const isDoubleClick = time - lastClickTime < 300;
             lastClickTime = time;
-
             if(isDoubleClick) {
                 handleDoubleClick();
                 return;
             }
-
             previousMousePosition = { x: event.clientX, y: event.clientY };
-            
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(draggableObjects);
-
             if (intersects.length > 0 && !isFocused) {
                 isObjectDragging = true;
                 draggedObject = intersects[0].object;
                 selectObject(draggedObject);
                 draggedObject.userData.velocity.set(0, 0, 0);
-                
                 dragPlane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(dragPlane.normal), draggedObject.position);
-                
                 const intersectionPoint = new THREE.Vector3();
                 if (raycaster.ray.intersectPlane(dragPlane, intersectionPoint)) {
                     offset.copy(intersectionPoint).sub(draggedObject.position);
                 }
-                
                 blocker.style.pointerEvents = 'auto';
             } else {
                  if (!isFocused) {
@@ -1378,12 +1559,10 @@
             const intersects = raycaster.intersectObjects(draggableObjects);
             if (intersects.length > 0) {
                 const clickedObject = intersects[0].object;
-                
                 if(clickedObject.userData.type === '360') {
                     enter360Mode(clickedObject);
                     return;
                 }
-
                 if (clickedObject.userData.type === 'text') {
                     if (viewMode === 'fixed') {
                         openEditModal(clickedObject);
@@ -1409,13 +1588,11 @@
 
             contentPanels.forEach(obj => {
                 const isProxy = !!obj.userData.proxyObject;
-                const targetIsProxy = !!focusedObject.userData.cssObject;
-
                 const currentObj = isProxy ? obj.userData.proxyObject : obj;
                 const isFocusedObj = currentObj === focusedObject;
 
                 if (!isFocusedObj) {
-                    obj.element.style.display = 'none';
+                    if (obj.element) obj.element.style.display = 'none'; // FIX: Verificar obj.element
                     if(!isProxy) obj.visible = false;
                 }
             });
@@ -1426,12 +1603,8 @@
             isFocused = true;
             focusedObject = sphere;
             lastCameraPosition.copy(camera.position);
-            
             sphere.scale.set(1, 1, 1);
-            
             if (sphere.userData.isYouTube) {
-                // Para YouTube 360, no podemos mutear directamente sin API
-                // Mostramos el iframe
             } else if (sphere.userData.video) {
                 sphere.userData.video.muted = false;
             }
@@ -1439,22 +1612,18 @@
 
         function exitFocusMode() {
             if (!isFocused) return;
-            
             if (focusedObject && focusedObject.userData.type === '360') {
                 focusedObject.scale.set(0.1, 0.1, 0.1);
                 if (focusedObject.userData.video) focusedObject.userData.video.muted = true;
             }
-
             if (focusedObject && focusedObject.userData.cssObject && focusedObject.userData.cssObject.userData.contentElement) {
                 focusedObject.userData.cssObject.userData.contentElement.style.pointerEvents = 'none';
             }
-
             isTransitioning = true;
             isFocused = false;
-            
             contentPanels.forEach(obj => {
                  const isProxy = !!obj.userData.proxyObject;
-                 obj.element.style.display = 'block';
+                 if (obj.element) obj.element.style.display = 'block'; // FIX: Verificar obj.element
                  if(!isProxy) obj.visible = true;
             });
         }
@@ -1469,7 +1638,6 @@
         function onMouseMove(event) {
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-
             if (isObjectDragging && draggedObject) {
                 raycaster.setFromCamera(mouse, camera);
                 const intersectionPoint = new THREE.Vector3();
@@ -1513,7 +1681,6 @@
         function loadSceneFromFile(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
@@ -1568,7 +1735,7 @@
                         if (item.isYouTube) {
                             create360Bubble(item.src, pos, false, true);
                         } else {
-                            create360Bubble(item.src, pos, true); // Asumimos stream/local url válido
+                            create360Bubble(item.src, pos, true); 
                         }
                         break;
                 }
@@ -1579,6 +1746,8 @@
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
             
+            updateVideoLOD(); // Actualizar sistema de videos cada frame
+
             if (!isFocused && !isTransitioning) {
                 if (rotateLeft) yawAngle += cameraRotationSpeed * delta * 60;
                 if (rotateRight) yawAngle -= cameraRotationSpeed * delta * 60;
