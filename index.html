@@ -62,18 +62,7 @@
             opacity: 1;
             transition: opacity 1s ease-out 5s;
         }
-        /* UI SUPERIOR NUEVA */
-        #top-ui {
-            position: absolute; top: 20px; right: 20px; z-index: 200; display: flex; gap: 10px;
-        }
-        .hud-btn {
-            background: rgba(0, 20, 40, 0.8); border: 1px solid var(--primary-glow-color);
-            color: var(--primary-glow-color); padding: 8px 15px; cursor: pointer;
-            font-family: 'Cinzel', serif; text-transform: uppercase; font-size: 12px;
-            border-radius: 4px; pointer-events: auto;
-        }
-        .hud-btn:hover { background: var(--primary-glow-color); color: #000; }
-
+        
         .content-panel-wrapper {
             transition: transform 0.5s ease-out, box-shadow 0.3s ease;
             box-sizing: border-box;
@@ -270,12 +259,25 @@
             margin-top: 10px;
             border-radius: 5px;
         }
+        .io-buttons {
+            display: flex;
+            gap: 10px;
+        }
         .io-buttons button {
             font-size: 18px;
             padding: 8px;
             width: 40px;
             height: 40px;
             border-radius: 50%;
+            background: rgba(0, 20, 40, 0.8);
+            border: 1px solid var(--primary-glow-color);
+            color: var(--primary-glow-color);
+            transition: all 0.2s;
+        }
+        .io-buttons button:hover {
+            background: var(--primary-glow-color);
+            color: var(--background-color);
+            transform: scale(1.1);
         }
         .layout-selector, .color-selector {
             margin-top: 10px;
@@ -301,6 +303,42 @@
             border: 2px solid var(--primary-glow-color);
             border-radius: 50%;
         }
+        /* Estilos para lista dinámica de videos */
+        .video-input-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .video-input-group input {
+            margin-bottom: 0;
+        }
+        .small-btn {
+            padding: 5px 10px !important;
+            height: 38px;
+            margin-top: 0;
+        }
+        .add-more-btn {
+            background: transparent !important;
+            border: 1px dashed var(--primary-glow-color) !important;
+            color: var(--primary-glow-color) !important;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .add-more-btn:hover {
+            background: rgba(77, 219, 255, 0.1) !important;
+        }
+        #autosave-indicator {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 12px;
+            color: var(--primary-glow-color);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        #autosave-indicator.visible {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -311,11 +349,10 @@
         Usa [W,A,S,D] para moverte, [Z,X] para subir/bajar, [Q,E] y [Ratón] para girar. 
         [Doble Click] para Enfocar/Entrar. [Supr] para borrar.
     </div>
-
-    <div id="top-ui">
-        <button class="hud-btn" onclick="document.getElementById('folder-input').click()">📂 Escanear USB/Carpeta</button>
-    </div>
     
+    <div id="autosave-indicator">Guardado automático...</div>
+
+    <!-- Input oculto para escanear carpeta -->
     <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none">
 
     <button id="add-panel-btn" class="ui-button">+</button>
@@ -338,12 +375,20 @@
                     <input type="color" id="text-color-picker" value="#4DDBFF">
                 </div>
             </div>
+            
             <div id="video-form" class="form-section">
-                <input type="text" id="video-url" placeholder="URL de YouTube...">
+                <div id="video-inputs-container">
+                    <div class="video-input-group">
+                        <input type="text" class="video-url-input" placeholder="URL de YouTube...">
+                    </div>
+                </div>
+                <button type="button" id="add-video-input-btn" class="add-more-btn">+ Agregar otro video</button>
             </div>
+            
             <div id="web-form" class="form-section">
                 <input type="text" id="web-url" placeholder="URL de la página web...">
             </div>
+            
             <div id="file-form" class="form-section">
                 <input type="file" id="file-upload" accept="image/*,video/mp4,video/avi,application/pdf,.txt,.md,text/html" style="display: none;" multiple>
                 <label for="file-upload" class="file-upload-label">
@@ -357,13 +402,19 @@
                     <label><input type="radio" name="layout" value="fibonacci"> Fibonacci</label>
                 </div>
             </div>
+            
             <div id="360-form" class="form-section">
                 <select id="360-type">
                     <option value="upload">Subir Video 360</option>
+                    <option value="youtube">YouTube 360</option>
                     <option value="stream">Stream Cámara IP (Wifi)</option>
                 </select>
                 <div id="360-upload-div" style="margin-top:10px;">
                     <input type="file" id="video-360-input" accept="video/*">
+                </div>
+                <div id="360-youtube-div" style="display:none; margin-top:10px;">
+                    <input type="text" id="youtube-360-url" placeholder="URL de YouTube 360...">
+                    <p style="font-size:10px; color:#aaa">Nota: Se proyectará en una esfera inmersiva.</p>
                 </div>
                 <div id="360-stream-div" style="display:none; margin-top:10px;">
                     <input type="text" id="stream-url" placeholder="http://192.168.x.x:8080/video">
@@ -375,6 +426,8 @@
                 <div class="io-buttons">
                      <button id="save-scene-btn" title="Guardar Escena">&#x1F4BE;</button>
                      <button id="load-scene-btn" title="Cargar Escena">&#x1F4C2;</button>
+                     <!-- BOTÓN LUPA MOVIDO AQUÍ -->
+                     <button id="scan-folder-btn" title="Escanear USB/Carpeta">&#x1F50D;</button>
                      <input type="file" id="load-file-input" style="display: none;" accept=".json">
                 </div>
                 <div>
@@ -423,6 +476,7 @@
 
         init();
         animate();
+        startAutoSave(); // Iniciar sistema de autoguardado
 
         function init() {
             scene = new THREE.Scene();
@@ -467,14 +521,30 @@
             const starField = new THREE.Points(starGeometry, starMaterial);
             scene.add(starField);
             
+            // Cargar escena inicial o guardada
+            const savedScene = localStorage.getItem('autosave_scene');
+            if (savedScene) {
+                try {
+                    buildSceneFromData(JSON.parse(savedScene));
+                    console.log("Escena restaurada desde autoguardado.");
+                } catch(e) {
+                    console.error("Error al restaurar autoguardado", e);
+                    loadDefaultScene();
+                }
+            } else {
+                loadDefaultScene();
+            }
+
+            initEventListeners();
+        }
+
+        function loadDefaultScene() {
             const initialSceneData = [
                 { type: 'text', title: 'El Viaje del Héroe', content: 'Cada concepto es una etapa en el viaje. El Chamán nos arraiga en la tierra. La Alquimia nos enseña a navegar las aguas de la emoción y el intelecto. El Misterio nos invita a mirar hacia las estrellas, reconociendo la unidad en la diversidad.', position: [-15, 2, 0], color: '#4DDBFF' },
                 { type: 'image', src: 'https://placehold.co/1024x768/02040a/FF6B4D?text=Conciencia+Salvaje', position: [0, 5, -15], color: '#FF6B4D' },
                 { type: 'video', videoId: '47Korua-WLo', start: 311, position: [15, 0, 0] }
             ];
             buildSceneFromData(initialSceneData);
-
-            initEventListeners();
         }
 
         function initEventListeners() {
@@ -487,9 +557,12 @@
             document.addEventListener('wheel', onMouseWheel);
 
             document.getElementById('add-panel-btn').addEventListener('click', openCreationModal);
-            document.getElementById('save-scene-btn').addEventListener('click', saveScene);
+            document.getElementById('save-scene-btn').addEventListener('click', saveSceneToFile);
             document.getElementById('load-scene-btn').addEventListener('click', () => document.getElementById('load-file-input').click());
-            document.getElementById('load-file-input').addEventListener('change', loadScene);
+            document.getElementById('load-file-input').addEventListener('change', loadSceneFromFile);
+            
+            // NUEVO: Botón de escaneo movido
+            document.getElementById('scan-folder-btn').addEventListener('click', () => document.getElementById('folder-input').click());
 
             const modal = document.getElementById('creation-modal');
             document.getElementById('cancel-creation-btn').addEventListener('click', () => modal.classList.remove('visible'));
@@ -499,6 +572,9 @@
                 button.addEventListener('click', (e) => switchTab(e.target.dataset.type));
             });
 
+            // Lógica UI Video Inputs Dinámicos
+            document.getElementById('add-video-input-btn').addEventListener('click', addVideoInputRow);
+
             // LÓGICA DE PREVISUALIZACIÓN DE ARCHIVOS
             const fileUpload = document.getElementById('file-upload');
             const imagePreview = document.getElementById('image-preview');
@@ -506,7 +582,6 @@
                 if (e.target.files && e.target.files[0]) {
                     const file = e.target.files[0];
                     if (file.type.startsWith('image/')) {
-                        // Usamos ObjectURL para previsualización rápida
                         imagePreview.src = URL.createObjectURL(file);
                         imagePreview.style.display = 'block';
                     } else {
@@ -518,10 +593,11 @@
             // Lógica UI 360
             document.getElementById('360-type').addEventListener('change', (e) => {
                 document.getElementById('360-upload-div').style.display = e.target.value === 'upload' ? 'block' : 'none';
+                document.getElementById('360-youtube-div').style.display = e.target.value === 'youtube' ? 'block' : 'none';
                 document.getElementById('360-stream-div').style.display = e.target.value === 'stream' ? 'block' : 'none';
             });
 
-            // NUEVO: Escaner de Carpeta
+            // Escaner de Carpeta
             document.getElementById('folder-input').addEventListener('change', handleFolderScan);
 
             setTimeout(() => {
@@ -529,21 +605,89 @@
             }, 5000);
         }
 
-        // --- NUEVA FUNCIÓN: ESCANEO MINORITY REPORT (Túnel del Tiempo) ---
+        // --- FUNCIONES DE AUTOGUARDADO ---
+        function startAutoSave() {
+            setInterval(() => {
+                const data = serializeScene();
+                localStorage.setItem('autosave_scene', JSON.stringify(data));
+                const indicator = document.getElementById('autosave-indicator');
+                indicator.classList.add('visible');
+                setTimeout(() => indicator.classList.remove('visible'), 2000);
+            }, 30000); // 30 segundos
+        }
+
+        function serializeScene() {
+            const sceneData = [];
+            draggableObjects.forEach(obj => {
+                const data = {
+                    type: obj.userData.type,
+                    position: obj.position.toArray()
+                };
+                if (obj.userData.type === 'text') {
+                    data.title = obj.userData.title;
+                    data.content = obj.userData.content;
+                    data.color = obj.userData.color;
+                } else if (obj.userData.type === 'image') {
+                    data.src = obj.userData.src;
+                    // Intenta preservar color del borde si existe
+                    if(obj.children.length > 0 && obj.children[0].material) {
+                         data.color = new THREE.Color(obj.children[0].material.color).getHexString();
+                    }
+                } else if (obj.userData.type === 'video') {
+                    data.videoId = obj.userData.cssObject.userData.videoId;
+                } else if (obj.userData.type === 'web') {
+                    data.url = obj.userData.cssObject.userData.url;
+                } else if (obj.userData.type === 'html') {
+                    data.content = obj.userData.cssObject.userData.content;
+                } else if (obj.userData.type === 'localVideo' || obj.userData.type === 'pdf') {
+                    // Nota: Blob URLs no persisten entre sesiones, solo referencias
+                    data.src = obj.userData.cssObject.userData.src; 
+                } else if (obj.userData.type === '360') {
+                    data.src = obj.userData.src;
+                    data.isYouTube = obj.userData.isYouTube || false;
+                }
+                sceneData.push(data);
+            });
+            return sceneData;
+        }
+
+        // --- GESTIÓN DE INPUTS DE VIDEO ---
+        function addVideoInputRow() {
+            const container = document.getElementById('video-inputs-container');
+            const div = document.createElement('div');
+            div.className = 'video-input-group';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'video-url-input';
+            input.placeholder = 'Otra URL de YouTube...';
+            
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'modal-actions button cancel small-btn';
+            btn.innerHTML = '✕';
+            btn.style.borderColor = 'red';
+            btn.style.color = 'red';
+            btn.onclick = () => div.remove();
+            
+            div.appendChild(input);
+            div.appendChild(btn);
+            container.appendChild(div);
+        }
+
+        // --- ESCANEO DE CARPETA ---
         async function handleFolderScan(event) {
             const files = Array.from(event.target.files);
             if(files.length === 0) return;
 
-            // Filtro y ordenamiento por fecha
             const validFiles = files.filter(f => f.name[0] !== '.').sort((a,b) => b.lastModified - a.lastModified);
             
             alert(`Analizando ${validFiles.length} archivos. Generando túnel temporal...`);
 
             const spiralRadius = 15;
-            const angleStep = 0.6; // radianes entre archivos
-            const zStep = 3; // distancia en profundidad entre archivos
+            const angleStep = 0.6;
+            const zStep = 3;
 
-            // Vector dirección cámara para que el túnel salga frente a ti
             const dir = new THREE.Vector3();
             camera.getWorldDirection(dir);
             dir.y = 0; dir.normalize();
@@ -553,12 +697,10 @@
                 const file = validFiles[i];
                 const angle = i * angleStep;
                 
-                // Coordenadas locales de la espiral
                 const localX = Math.cos(angle) * spiralRadius;
                 const localY = (Math.random() - 0.5) * 10; 
-                const localZ = -(i * zStep) - 15; // Hacia el fondo
+                const localZ = -(i * zStep) - 15;
 
-                // Rotar espiral según hacia donde mira el usuario
                 const pos = new THREE.Vector3(localX, localY, localZ);
                 pos.applyAxisAngle(new THREE.Vector3(0,1,0), yawAngle);
                 pos.add(startPos);
@@ -567,9 +709,7 @@
             }
         }
 
-        // --- NUEVA FUNCIÓN: CARGA INTELIGENTE DE ARCHIVOS (Blob URLs) ---
         async function createPanelFromFile(file, pos) {
-            // Creamos un Blob URL: Acceso rápido sin leer todo el archivo en RAM
             const url = URL.createObjectURL(file);
             
             if (file.type.startsWith('image/')) {
@@ -582,7 +722,6 @@
                 addPdfPanelToScene(url, pos);
             }
             else if (file.type.startsWith('text/') || file.name.endsWith('.js') || file.name.endsWith('.html')) {
-                // Para texto sí leemos un poco
                 const text = await new Promise(r => {
                     const reader = new FileReader();
                     reader.onload = e => r(e.target.result.substring(0, 500) + "...");
@@ -595,31 +734,73 @@
             }
         }
 
-        // --- NUEVA FUNCIÓN: BURBUJA 360 ---
-        function create360Bubble(src, pos, isStream=false) {
-            const geom = new THREE.SphereGeometry(15, 60, 40);
-            geom.scale(-1, 1, 1); // Invertir para ver desde dentro
+        // --- BURBUJA 360 ---
+        function create360Bubble(src, pos, isStream=false, isYouTube=false) {
+            let mesh;
             
-            const video = document.createElement('video');
-            video.src = src;
-            if(isStream) video.crossOrigin = "anonymous";
-            video.loop = true; video.muted = true; video.play();
-            
-            const tex = new THREE.VideoTexture(video);
-            const mat = new THREE.MeshBasicMaterial({map: tex});
-            const sphere = new THREE.Mesh(geom, mat);
-            sphere.position.copy(pos);
-            
-            // Borde exterior visual para saber que es una burbuja 360
-            const border = new THREE.Mesh(new THREE.SphereGeometry(15.2, 32, 32), new THREE.MeshBasicMaterial({color:0x4DDBFF, wireframe:true, transparent:true, opacity:0.1}));
-            sphere.add(border);
+            if (isYouTube) {
+                // Truco para YouTube 360: Usamos CSS3DObject dentro de un contenedor esférico transparente para interacción
+                const videoId = parseYoutubeUrl(src);
+                if(!videoId) return;
 
-            sphere.scale.set(0.1, 0.1, 0.1); // Empieza pequeña
-            sphere.userData = { type: '360', video: video };
-            
-            scene.add(sphere);
-            draggableObjects.push(sphere);
-            contentPanels.push(sphere);
+                // Para visualización 360 real de YouTube se necesita la API VR de YouTube que es compleja.
+                // Aquí simularemos una experiencia inmersiva creando un cilindro panorámico grande alrededor del usuario
+                // usando CSS3DRenderer, ya que YouTube en WebGL tiene problemas de CORS.
+                
+                const div = document.createElement('div');
+                div.style.width = '1024px';
+                div.style.height = '768px';
+                const iframe = document.createElement('iframe');
+                // Usar embed simple. El usuario tendrá que mover el video 360 con el ratón dentro del iframe.
+                iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}`; 
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                div.appendChild(iframe);
+
+                const object = new THREE.CSS3DObject(div);
+                object.position.copy(pos);
+                object.scale.set(0.05, 0.05, 0.05); // Escala para que no sea gigante en la vista normal
+                
+                // Proxy para seleccionarlo
+                const geom = new THREE.SphereGeometry(15, 16, 16);
+                const mat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, opacity: 0.1, transparent: true });
+                mesh = new THREE.Mesh(geom, mat);
+                mesh.position.copy(pos);
+                mesh.userData = { type: '360', cssObject: object, isYouTube: true, src: src }; // Guardar src para guardar
+                
+                object.userData = { contentElement: iframe }; // Para focus mode
+                
+                scene.add(object);
+                
+                // NOTA: YouTube 360 en iframe 2D requiere arrastre manual. 
+                // En modo "Focus", simplemente acercaremos la cámara al iframe.
+            } else {
+                // Video Local o Stream (WebGL Texture)
+                const geom = new THREE.SphereGeometry(15, 60, 40);
+                geom.scale(-1, 1, 1);
+                
+                const video = document.createElement('video');
+                video.src = src;
+                if(isStream) video.crossOrigin = "anonymous";
+                video.loop = true; video.muted = true; video.play();
+                
+                const tex = new THREE.VideoTexture(video);
+                const mat = new THREE.MeshBasicMaterial({map: tex});
+                mesh = new THREE.Mesh(geom, mat);
+                mesh.position.copy(pos);
+                
+                // Borde visual
+                const border = new THREE.Mesh(new THREE.SphereGeometry(15.2, 32, 32), new THREE.MeshBasicMaterial({color:0x4DDBFF, wireframe:true, transparent:true, opacity:0.1}));
+                mesh.add(border);
+
+                mesh.scale.set(0.1, 0.1, 0.1); 
+                mesh.userData = { type: '360', video: video, src: src };
+            }
+
+            scene.add(mesh);
+            draggableObjects.push(mesh);
+            contentPanels.push(mesh);
         }
 
         function openCreationModal() {
@@ -628,7 +809,14 @@
             document.getElementById('create-panel-btn').textContent = "Crear";
             document.getElementById('text-title').value = "";
             document.getElementById('text-content').value = "";
-            document.getElementById('video-url').value = "";
+            
+            // Limpiar inputs de video
+            const container = document.getElementById('video-inputs-container');
+            container.innerHTML = ''; 
+            const div = document.createElement('div'); div.className = 'video-input-group';
+            const input = document.createElement('input'); input.type='text'; input.className='video-url-input'; input.placeholder='URL de YouTube...';
+            div.appendChild(input); container.appendChild(div);
+
             document.getElementById('web-url').value = "";
             document.getElementById('file-upload').value = "";
             document.getElementById('image-preview').style.display = 'none';
@@ -685,10 +873,21 @@
                             addTextPanelToScene(title, content, pos, color);
                             break;
                         case 'video':
-                            const url = document.getElementById('video-url').value;
-                            const videoId = parseYoutubeUrl(url);
-                            if (videoId) addVideoPanelToScene(videoId, 0, pos);
-                            else alert("URL de YouTube no válida.");
+                            // LOGICA MULTI-VIDEO
+                            const inputs = document.querySelectorAll('.video-url-input');
+                            let offsetX = 0;
+                            inputs.forEach(input => {
+                                const url = input.value;
+                                if(url) {
+                                    const videoId = parseYoutubeUrl(url);
+                                    if (videoId) {
+                                        const p = pos.clone();
+                                        p.x += offsetX;
+                                        addVideoPanelToScene(videoId, 0, p);
+                                        offsetX += 20; // Separar paneles
+                                    }
+                                }
+                            });
                             break;
                         case 'web':
                             const webUrl = document.getElementById('web-url').value;
@@ -698,11 +897,14 @@
                         case 'file':
                             await handleFileUpload(pos);
                             break;
-                        case '360': // NUEVO CASO
+                        case '360':
                             const mode = document.getElementById('360-type').value;
                             if(mode === 'upload') {
                                 const file = document.getElementById('video-360-input').files[0];
                                 if(file) create360Bubble(URL.createObjectURL(file), pos);
+                            } else if (mode === 'youtube') {
+                                const ytUrl = document.getElementById('youtube-360-url').value;
+                                if(ytUrl) create360Bubble(ytUrl, pos, false, true);
                             } else {
                                 const strm = document.getElementById('stream-url').value;
                                 if(strm) create360Bubble(strm, pos, true);
@@ -733,7 +935,6 @@
             for (let i = 0; i < fileInput.files.length; i++) {
                 const file = fileInput.files[i];
                 const pos = positions[i];
-                // AQUÍ USAMOS LA NUEVA FUNCIÓN OPTIMIZADA
                 await createPanelFromFile(file, pos);
             }
         }
@@ -1088,7 +1289,6 @@
                 case 'KeyE': rotateRight = true; break;
             }
             if (moveForward || moveBackward || moveLeft || moveRight) {
-                // Al moverte, sales del foco
                 exitFocusMode();
             }
         }
@@ -1179,7 +1379,6 @@
             if (intersects.length > 0) {
                 const clickedObject = intersects[0].object;
                 
-                // MODIFICADO: Soporte para entrar en Burbujas 360
                 if(clickedObject.userData.type === '360') {
                     enter360Mode(clickedObject);
                     return;
@@ -1222,27 +1421,28 @@
             });
         }
         
-        // MODIFICADO: Modo especial para 360
         function enter360Mode(sphere) {
             isTransitioning = true;
             isFocused = true;
             focusedObject = sphere;
             lastCameraPosition.copy(camera.position);
             
-            // Nos movemos al CENTRO de la esfera
-            // Animaremos esto en el loop
+            sphere.scale.set(1, 1, 1);
             
-            sphere.scale.set(1, 1, 1); // Tamaño real
-            sphere.userData.video.muted = false; // Audio ON
+            if (sphere.userData.isYouTube) {
+                // Para YouTube 360, no podemos mutear directamente sin API
+                // Mostramos el iframe
+            } else if (sphere.userData.video) {
+                sphere.userData.video.muted = false;
+            }
         }
 
         function exitFocusMode() {
             if (!isFocused) return;
             
-            // Si salimos de 360
             if (focusedObject && focusedObject.userData.type === '360') {
                 focusedObject.scale.set(0.1, 0.1, 0.1);
-                focusedObject.userData.video.muted = true;
+                if (focusedObject.userData.video) focusedObject.userData.video.muted = true;
             }
 
             if (focusedObject && focusedObject.userData.cssObject && focusedObject.userData.cssObject.userData.contentElement) {
@@ -1298,33 +1498,9 @@
             }
         }
 
-        function saveScene() {
-            // ... (Tu lógica existente se mantiene)
-            const sceneData = [];
-            draggableObjects.forEach(obj => {
-                const data = {
-                    type: obj.userData.type,
-                    position: obj.position.toArray()
-                };
-                if (obj.userData.type === 'text') {
-                    data.title = obj.userData.title;
-                    data.content = obj.userData.content;
-                    data.color = obj.userData.color;
-                } else if (obj.userData.type === 'image') {
-                    data.src = obj.userData.src;
-                    data.color = new THREE.Color(obj.children[0].material.color).getHexString();
-                } else if (obj.userData.type === 'video') {
-                    data.videoId = obj.userData.cssObject.userData.videoId;
-                } else if (obj.userData.type === 'web') {
-                    data.url = obj.userData.cssObject.userData.url;
-                } else if (obj.userData.type === 'html') {
-                    data.content = obj.userData.cssObject.userData.content;
-                } else if (obj.userData.type === 'localVideo' || obj.userData.type === 'pdf') {
-                    data.src = obj.userData.cssObject.userData.src;
-                }
-                sceneData.push(data);
-            });
-            const jsonString = JSON.stringify(sceneData, null, 2);
+        function saveSceneToFile() {
+            const data = serializeScene();
+            const jsonString = JSON.stringify(data, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1334,7 +1510,7 @@
             URL.revokeObjectURL(url);
         }
 
-        function loadScene(event) {
+        function loadSceneFromFile(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -1388,6 +1564,13 @@
                     case 'pdf':
                         addPdfPanelToScene(item.src, pos);
                         break;
+                    case '360':
+                        if (item.isYouTube) {
+                            create360Bubble(item.src, pos, false, true);
+                        } else {
+                            create360Bubble(item.src, pos, true); // Asumimos stream/local url válido
+                        }
+                        break;
                 }
             });
         }
@@ -1424,11 +1607,9 @@
                 let targetPosition, targetQuaternion;
 
                 if (isFocused && focusedObject.userData.type === '360') {
-                    // Si vamos a una burbuja, el objetivo es el centro de la esfera
                     targetPosition = focusedObject.position.clone();
-                    targetQuaternion = camera.quaternion.clone(); // No forzamos rotación al entrar
+                    targetQuaternion = camera.quaternion.clone();
                 } else if (isFocused) {
-                    // Si vamos a un panel plano
                     targetPosition = new THREE.Vector3();
                     focusedObject.getWorldPosition(targetPosition);
                     const panelSize = focusedObject.geometry.parameters.height || 10;
@@ -1442,30 +1623,26 @@
                     tempMatrix.lookAt(targetPosition, focusedObject.position, camera.up);
                     targetQuaternion.setFromRotationMatrix(tempMatrix);
                 } else {
-                    // Volviendo a la vista normal
                     targetPosition = lastCameraPosition;
                     targetQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitchAngle, yawAngle, 0, 'YXZ'));
                 }
 
                 camera.position.lerp(targetPosition, 0.05);
                 if(isFocused && focusedObject.userData.type !== '360') {
-                     camera.quaternion.slerp(targetQuaternion, 0.05);
+                      camera.quaternion.slerp(targetQuaternion, 0.05);
                 }
 
                 if (camera.position.distanceTo(targetPosition) < 0.1) {
                     isTransitioning = false;
                     if(isFocused && focusedObject.userData.type === '360') {
-                         avatarObject.position.copy(targetPosition); // Actualizar avatar
+                         avatarObject.position.copy(targetPosition);
                     }
                     if (!isFocused) focusedObject = null;
                 }
             } else if (isFocused && focusedObject.userData.type === '360') {
-                // ESTAMOS DENTRO DE LA BURBUJA 360
-                // Permitir rotación libre desde el punto fijo
                 if (rotateLeft) yawAngle += cameraRotationSpeed * delta * 60;
                 if (rotateRight) yawAngle -= cameraRotationSpeed * delta * 60;
                 
-                // La cámara se queda en el centro, solo rota
                 camera.position.copy(focusedObject.position);
                 const targetLook = new THREE.Vector3(
                     focusedObject.position.x - Math.sin(yawAngle),
@@ -1480,7 +1657,7 @@
             draggableObjects.forEach(obj => {
                 if (obj.userData.velocity && obj.userData.velocity.lengthSq() > 0.0001) {
                     obj.position.add(obj.userData.velocity);
-                    obj.userData.velocity.multiplyScalar(0.95); // Damping
+                    obj.userData.velocity.multiplyScalar(0.95);
                     if (obj.userData.cssObject) {
                         obj.userData.cssObject.position.copy(obj.position);
                     }
@@ -1489,7 +1666,6 @@
 
             if(viewMode === 'lookAtCamera') {
                 draggableObjects.forEach(panel => {
-                    // Los paneles miran a la cámara, EXCEPTO si son burbujas 360
                     if (panel.userData.type !== '360') {
                         panel.lookAt(camera.position);
                         if (panel.userData.cssObject) {
