@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chamalnquimyst - Micro-Universo de Contenido</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/BoxLineGeometry.js"></script>
+
+    <style>
+        :root {
+            --primary-glow-color: #4DDBFF;
+            --secondary-glow-color: #0077FF;
+            --text-color: #EAEAEA;
+            --background-color: #02040a;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: 'Lato', sans-serif;
+            cursor: default;
+        }
+        #webgl-container, #css-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #css-container {
+            pointer-events: none;
+        }
+        #css-container > div {
+            pointer-events: auto;
+        }
+        #blocker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0);
+            pointer-events: none;
+            z-index: 10;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9em;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 1s ease-out 5s;
+        }
+        
+        .content-panel-wrapper {
+            transition: transform 0.5s ease-out, box-shadow 0.3s ease;
+            box-sizing: border-box;
+        }
+        .content-panel-wrapper.selected {
+            box-shadow: 0 0 45px var(--primary-glow-color) !important;
+        }
+
+        .text-panel {
+            background: rgba(2, 4, 10, 0.7);
+            border: 5px solid;
+            box-shadow: 0 0 30px;
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+        .text-panel-title {
+            font-family: 'Cinzel', serif;
+            text-align: center;
+            padding: 20px;
+            font-size: 80px;
+            flex-shrink: 0;
+        }
+        .text-panel-content {
+            padding: 0 40px 40px 40px;
+            font-size: 32px;
+            flex-grow: 1;
+            overflow-y: auto;
+            &::-webkit-scrollbar { width: 12px; }
+            &::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+            &::-webkit-scrollbar-thumb {
+                background-color: var(--primary-glow-color);
+                border-radius: 20px;
+                border: 3px solid transparent;
+                background-clip: content-box;
+            }
+        }
+        .video-panel, .web-panel {
+            width: 1280px;
+            height: 720px;
+            border: 5px solid rgba(77, 219, 255, 0.5);
+            box-shadow: 0 0 30px rgba(77, 219, 255, 0.7);
+            background-color: #000;
+        }
+        .video-panel iframe, .video-panel video, .web-panel iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .pdf-panel {
+            width: 800px;
+            height: 1131px;
+            border: 5px solid rgba(77, 219, 255, 0.5);
+            box-shadow: 0 0 30px rgba(77, 219, 255, 0.7);
+            background-color: #333;
+            overflow-y: scroll !important;
+        }
+        .pdf-panel iframe, .pdf-panel embed {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .ui-button {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-glow-color);
+            color: var(--background-color);
+            border: none;
+            border-radius: 50%;
+            font-size: 36px;
+            line-height: 60px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 0 20px var(--primary-glow-color);
+            transition: transform 0.3s ease, background-color 0.3s ease, opacity 1s ease;
+            opacity: 1;
+        }
+        .ui-button.faded {
+            opacity: 0.1; /* Casi invisible */
+        }
+        .ui-button:hover {
+            transform: scale(1.1);
+            background-color: #fff;
+            opacity: 1 !important; /* Siempre visible al pasar el mouse */
+        }
+        #add-panel-btn {
+            top: 30px; /* Arriba */
+            right: 30px; /* Derecha */
+        }
+        #add-panel-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            background: var(--background-color);
+            border: 1px solid var(--primary-glow-color);
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 30px var(--secondary-glow-color);
+        }
+        .modal-content h3 {
+            font-family: 'Cinzel', serif;
+            color: var(--primary-glow-color);
+            margin-top: 0;
+            text-align: center;
+        }
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid var(--primary-glow-color);
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 1em;
+            opacity: 0.6;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-button.active {
+            opacity: 1;
+            border-bottom-color: var(--primary-glow-color);
+        }
+        .form-section { display: none; }
+        .form-section.active { display: block; }
+        .modal-content input, .modal-content textarea, .modal-content select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--primary-glow-color);
+            color: var(--text-color);
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .modal-content textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .modal-actions button {
+            background: var(--primary-glow-color);
+            color: var(--background-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .modal-actions button.cancel {
+            background: transparent;
+            border: 1px solid var(--primary-glow-color);
+            color: var(--primary-glow-color);
+        }
+        .file-upload-label {
+            display: block;
+            padding: 20px;
+            border: 2px dashed var(--primary-glow-color);
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        .file-upload-label:hover {
+            background: rgba(77, 219, 255, 0.1);
+        }
+        .file-preview {
+            max-width: 100%;
+            max-height: 150px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        .io-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .io-buttons button {
+            font-size: 18px;
+            padding: 8px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 20, 40, 0.8);
+            border: 1px solid var(--primary-glow-color);
+            color: var(--primary-glow-color);
+            transition: all 0.2s;
+        }
+        .io-buttons button:hover {
+            background: var(--primary-glow-color);
+            color: var(--background-color);
+            transform: scale(1.1);
+        }
+        .layout-selector, .color-selector {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .layout-selector label {
+            cursor: pointer;
+        }
+        input[type="color"] {
+            -webkit-appearance: none;
+            width: 40px;
+            height: 40px;
+            border: none;
+            cursor: pointer;
+            background: none;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid var(--primary-glow-color);
+            border-radius: 50%;
+        }
+        /* Estilos para listas dinámicas (video/web) */
+        .dynamic-input-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .dynamic-input-group input {
+            margin-bottom: 0;
+        }
+        .small-btn {
+            padding: 5px 10px !important;
+            height: 38px;
+            margin-top: 0;
+        }
+        .add-more-btn {
+            background: transparent !important;
+            border: 1px dashed var(--primary-glow-color) !important;
+            color: var(--primary-glow-color) !important;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .add-more-btn:hover {
+            background: rgba(77, 219, 255, 0.1) !important;
+        }
+        #autosave-indicator {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 12px;
+            color: var(--primary-glow-color);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        #autosave-indicator.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="webgl-container"></div>
+    <div id="css-container"></div>
+    <div id="blocker"></div>
+    <div id="instructions">
+        Usa [W,A,S,D] para moverte, [Z,X] para subir/bajar, [Q,E] y [Ratón] para girar. 
+        [Doble Click] para Enfocar/Entrar. [Supr] para borrar. [Flechas] para navegar en zoom. <br>
+        <strong>NUEVO: Arrastra el cuadro AMARILLO en la esquina inferior derecha para redimensionar.</strong>
+    </div>
+    
+    <div id="autosave-indicator">Guardado automático...</div>
+
+    <!-- Input oculto para escanear carpeta -->
+    <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none">
+
+    <button id="add-panel-btn" class="ui-button">+</button>
+
+    <div id="creation-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Crear Nuevo Panel</h3>
+            <div class="tab-buttons">
+                <button class="tab-button active" data-type="text">Texto</button>
+                <button class="tab-button" data-type="video">Video</button>
+                <button class="tab-button" data-type="web">Web</button>
+                <button class="tab-button" data-type="file">Archivo</button>
+                <button class="tab-button" data-type="360">360°/VR</button> </div>
+            
+            <div id="text-form" class="form-section active">
+                <input type="text" id="text-title" placeholder="Título...">
+                <textarea id="text-content" placeholder="Contenido..."></textarea>
+                <div class="color-selector">
+                    <label for="text-color-picker">Color del Marco:</label>
+                    <input type="color" id="text-color-picker" value="#4DDBFF">
+                </div>
+            </div>
+            
+            <div id="video-form" class="form-section">
+                <div id="video-inputs-container">
+                    <div class="dynamic-input-group">
+                        <input type="text" class="video-url-input" placeholder="URL de YouTube...">
+                    </div>
+                </div>
+                <button type="button" id="add-video-input-btn" class="add-more-btn">+ Agregar otro video</button>
+            </div>
+            
+            <div id="web-form" class="form-section">
+                <div id="web-inputs-container">
+                    <div class="dynamic-input-group">
+                        <input type="text" class="web-url-input" placeholder="URL de la página web...">
+                    </div>
+                </div>
+                <button type="button" id="add-web-input-btn" class="add-more-btn">+ Agregar otra web</button>
+            </div>
+            
+            <div id="file-form" class="form-section">
+                <input type="file" id="file-upload" accept="image/*,video/mp4,video/avi,application/pdf,.txt,.md,text/html" style="display: none;" multiple>
+                <label for="file-upload" class="file-upload-label">
+                    Haz clic para seleccionar archivos
+                    <img id="image-preview" class="file-preview" src="" alt="Vista previa" style="display:none;">
+                </label>
+                <div class="layout-selector">
+                    <strong>Disposición:</strong>
+                    <label><input type="radio" name="layout" value="sphere" checked> Esfera</label>
+                    <label><input type="radio" name="layout" value="cylinder"> Cilindro</label>
+                    <label><input type="radio" name="layout" value="fibonacci"> Fibonacci</label>
+                </div>
+            </div>
+            
+            <div id="360-form" class="form-section">
+                <select id="360-type">
+                    <option value="upload">Subir Video 360</option>
+                    <option value="youtube">YouTube 360</option>
+                    <option value="stream">Stream Cámara IP (Wifi)</option>
+                </select>
+                <div id="360-upload-div" style="margin-top:10px;">
+                    <input type="file" id="video-360-input" accept="video/*">
+                </div>
+                <div id="360-youtube-div" style="display:none; margin-top:10px;">
+                    <input type="text" id="youtube-360-url" placeholder="URL de YouTube 360...">
+                    <p style="font-size:10px; color:#aaa">Nota: Se proyectará en una esfera inmersiva.</p>
+                </div>
+                <div id="360-stream-div" style="display:none; margin-top:10px;">
+                    <input type="text" id="stream-url" placeholder="http://192.168.x.x:8080/video">
+                    <p style="font-size:10px; color:#aaa">Nota: Requiere una URL de stream compatible (MJPEG/HLS)</p>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <div class="io-buttons">
+                     <button id="save-scene-btn" title="Guardar Escena">&#x1F4BE;</button>
+                     <button id="load-scene-btn" title="Cargar Escena">&#x1F4C2;</button>
+                     <!-- BOTÓN LUPA -->
+                     <button id="scan-folder-btn" title="Escanear USB/Carpeta">&#x1F50D;</button>
+                     <input type="file" id="load-file-input" style="display: none;" accept=".json">
+                </div>
+                <div>
+                    <button id="cancel-creation-btn" class="cancel">Cancelar</button>
+                    <button id="create-panel-btn">Crear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SETUP BÁSICO ---
+        let scene, camera, webglRenderer, cssRenderer, clock;
+        let avatarObject;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, moveUp = false, moveDown = false;
+        let rotateLeft = false, rotateRight = false;
+        
+        let isCameraDragging = false;
+        let isObjectDragging = false;
+        let isResizing = false; // NUEVO: Estado de redimensionamiento
+        let resizeHandleSelected = null;
+        let draggedObject = null;
+        let dragPlane, offset = new THREE.Vector3();
+        let previousMousePosition = { x: 0, y: 0 };
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        let yawAngle = 0, pitchAngle = 0;
+        const mouseSensitivity = 0.002;
+        const cameraRotationSpeed = 0.02;
+        let initialFov;
+        let zoomDistance = 25;
+        
+        let contentPanels = [];
+        let draggableObjects = [];
+        const blocker = document.getElementById('blocker');
+        let lastClickTime = 0;
+        let editingPanel = null;
+        let selectedObject = null;
+        let viewMode = 'lookAtCamera';
+
+        // Focus mode
+        let isFocused = false;
+        let isTransitioning = false;
+        let focusedObject = null;
+        let lastCameraPosition = new THREE.Vector3();
+        let lastCameraQuaternion = new THREE.Quaternion();
+
+        // Button Idle Timer
+        let btnIdleTimer;
+
+        // Gestor de Video LOD Avanzado
+        const MAX_ACTIVE_VIDEOS = 3; 
+        const THUMBNAIL_DISTANCE = 1200; 
+        const PLAY_DISTANCE = 100; 
+        
+        let videoPanels = [];
+        let thumbnailQueue = [];
+        let isProcessingThumbnail = false;
+
+        init();
+        animate();
+        startAutoSave(); 
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x02040a, 50, 300); 
+            clock = new THREE.Clock();
+
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+            initialFov = camera.fov;
+            const avatarGeometry = new THREE.SphereGeometry(0.1, 16, 12);
+            const avatarMaterial = new THREE.MeshBasicMaterial({ visible: false });
+            avatarObject = new THREE.Mesh(avatarGeometry, avatarMaterial);
+            avatarObject.position.set(0, 0, 0);
+            scene.add(avatarObject);
+            
+            webglRenderer = new THREE.WebGLRenderer({ antialias: true });
+            webglRenderer.setPixelRatio(window.devicePixelRatio);
+            webglRenderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('webgl-container').appendChild(webglRenderer.domElement);
+
+            cssRenderer = new THREE.CSS3DRenderer();
+            cssRenderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('css-container').appendChild(cssRenderer.domElement);
+            
+            dragPlane = new THREE.Plane();
+            
+            const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xADD8E6, 0.8);
+            directionalLight.position.set(-1, 1, 1);
+            scene.add(directionalLight);
+
+            const starCount = 5000;
+            const starGeometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount; i++) {
+                positions[i * 3 + 0] = (Math.random() - 0.5) * 500;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 500;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 500;
+            }
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const starMaterial = new THREE.PointsMaterial({ color: 0xAAAAAA, size: 0.15 });
+            const starField = new THREE.Points(starGeometry, starMaterial);
+            scene.add(starField);
+            
+            loadDefaultScene();
+
+            initEventListeners();
+            resetBtnIdleTimer(); 
+            
+            setInterval(processThumbnailQueue, 500);
+        }
+
+        function loadDefaultScene() {
+            const initialSceneData = [
+                { type: 'text', title: 'El Viaje del Héroe', content: 'Cada concepto es una etapa en el viaje. El Chamán nos arraiga en la tierra. La Alquimia nos enseña a navegar las aguas de la emoción y el intelecto. El Misterio nos invita a mirar hacia las estrellas, reconociendo la unidad en la diversidad.', position: [-15, 2, 0], color: '#4DDBFF' },
+                { type: 'image', src: 'https://placehold.co/1024x768/02040a/FF6B4D?text=Conciencia+Salvaje', position: [0, 5, -15], color: '#FF6B4D' },
+                { type: 'video', videoId: '47Korua-WLo', start: 311, position: [15, 0, 0] }
+            ];
+            buildSceneFromData(initialSceneData);
+        }
+
+        function resetBtnIdleTimer() {
+            const btn = document.getElementById('add-panel-btn');
+            btn.classList.remove('faded');
+            clearTimeout(btnIdleTimer);
+            btnIdleTimer = setTimeout(() => {
+                btn.classList.add('faded');
+            }, 5000);
+        }
+
+        function initEventListeners() {
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            document.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mouseup', onMouseUp);
+            document.addEventListener('mousemove', (e) => {
+                onMouseMove(e);
+                resetBtnIdleTimer(); 
+            });
+            document.addEventListener('wheel', (e) => {
+                onMouseWheel(e);
+                resetBtnIdleTimer();
+            });
+
+            document.getElementById('add-panel-btn').addEventListener('click', openCreationModal);
+            document.getElementById('save-scene-btn').addEventListener('click', saveSceneToFile);
+            document.getElementById('load-scene-btn').addEventListener('click', () => document.getElementById('load-file-input').click());
+            document.getElementById('load-file-input').addEventListener('change', loadSceneFromFile);
+            
+            document.getElementById('scan-folder-btn').addEventListener('click', () => document.getElementById('folder-input').click());
+
+            const modal = document.getElementById('creation-modal');
+            document.getElementById('cancel-creation-btn').addEventListener('click', () => modal.classList.remove('visible'));
+            document.getElementById('create-panel-btn').addEventListener('click', handleCreateOrUpdatePanel);
+            
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', (e) => switchTab(e.target.dataset.type));
+            });
+
+            document.getElementById('add-video-input-btn').addEventListener('click', addVideoInputRow);
+            document.getElementById('add-web-input-btn').addEventListener('click', addWebInputRow); 
+
+            const fileUpload = document.getElementById('file-upload');
+            const imagePreview = document.getElementById('image-preview');
+            fileUpload.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    if (file.type.startsWith('image/')) {
+                        imagePreview.src = URL.createObjectURL(file);
+                        imagePreview.style.display = 'block';
+                    } else {
+                        imagePreview.style.display = 'none';
+                    }
+                }
+            });
+
+            document.getElementById('360-type').addEventListener('change', (e) => {
+                document.getElementById('360-upload-div').style.display = e.target.value === 'upload' ? 'block' : 'none';
+                document.getElementById('360-youtube-div').style.display = e.target.value === 'youtube' ? 'block' : 'none';
+                document.getElementById('360-stream-div').style.display = e.target.value === 'stream' ? 'block' : 'none';
+            });
+
+            document.getElementById('folder-input').addEventListener('change', handleFolderScan);
+
+            setTimeout(() => {
+                document.getElementById('instructions').style.opacity = '0';
+            }, 5000);
+        }
+
+        // --- FUNCIONES DE AUTOGUARDADO ---
+        function startAutoSave() {
+            setInterval(() => {
+                const data = serializeScene();
+                localStorage.setItem('autosave_scene', JSON.stringify(data));
+                const indicator = document.getElementById('autosave-indicator');
+                indicator.classList.add('visible');
+                setTimeout(() => indicator.classList.remove('visible'), 2000);
+            }, 30000); 
+        }
+
+        function serializeScene() {
+            const sceneData = [];
+            draggableObjects.forEach(obj => {
+                const data = {
+                    type: obj.userData.type,
+                    position: obj.position.toArray(),
+                    scale: obj.scale.toArray()
+                };
+                if (obj.userData.type === 'text') {
+                    data.title = obj.userData.title;
+                    data.content = obj.userData.content;
+                    data.color = obj.userData.color;
+                } else if (obj.userData.type === 'image') {
+                    data.src = obj.userData.src;
+                    if(obj.children.length > 0 && obj.children[0].material) {
+                         data.color = new THREE.Color(obj.children[0].material.color).getHexString();
+                    }
+                } else if (obj.userData.type === 'video') {
+                    data.videoId = obj.userData.cssObject.userData.videoId;
+                } else if (obj.userData.type === 'web') {
+                    data.url = obj.userData.cssObject.userData.url;
+                } else if (obj.userData.type === 'html') {
+                    data.content = obj.userData.cssObject.userData.content;
+                } else if (obj.userData.type === 'localVideo' || obj.userData.type === 'pdf') {
+                    data.src = obj.userData.cssObject ? obj.userData.cssObject.userData.src : obj.userData.src; 
+                } else if (obj.userData.type === '360') {
+                    data.src = obj.userData.src;
+                    data.isYouTube = obj.userData.isYouTube || false;
+                }
+                sceneData.push(data);
+            });
+            return sceneData;
+        }
+
+        function addVideoInputRow() {
+            const container = document.getElementById('video-inputs-container');
+            const div = document.createElement('div');
+            div.className = 'dynamic-input-group';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'video-url-input';
+            input.placeholder = 'Otra URL de YouTube...';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'modal-actions button cancel small-btn';
+            btn.innerHTML = '✕';
+            btn.style.borderColor = 'red';
+            btn.style.color = 'red';
+            btn.onclick = () => div.remove();
+            div.appendChild(input);
+            div.appendChild(btn);
+            container.appendChild(div);
+        }
+
+        function addWebInputRow() {
+            const container = document.getElementById('web-inputs-container');
+            const div = document.createElement('div');
+            div.className = 'dynamic-input-group';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'web-url-input';
+            input.placeholder = 'Otra URL web...';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'modal-actions button cancel small-btn';
+            btn.innerHTML = '✕';
+            btn.style.borderColor = 'red';
+            btn.style.color = 'red';
+            btn.onclick = () => div.remove();
+            div.appendChild(input);
+            div.appendChild(btn);
+            container.appendChild(div);
+        }
+
+        // --- ESCANEO DE CARPETA ---
+        async function handleFolderScan(event) {
+            const files = Array.from(event.target.files);
+            if(files.length === 0) return;
+
+            const validFiles = files.filter(f => {
+                return f.name[0] !== '.' && (f.type.startsWith('image/') || f.type.startsWith('video/'));
+            }).sort((a,b) => b.lastModified - a.lastModified);
+            
+            if (validFiles.length === 0) {
+                alert("No se encontraron imágenes o videos válidos en la carpeta seleccionada.");
+                return;
+            }
+
+            alert(`Procesando ${validFiles.length} archivos multimedia...`);
+
+            const goldenAngle = Math.PI * (3 - Math.sqrt(5)); 
+            const spreadFactor = 12; 
+            const zStep = 4; 
+
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            dir.y = 0; dir.normalize();
+            const startPos = avatarObject.position.clone();
+
+            for(let i=0; i<validFiles.length; i++) {
+                const file = validFiles[i];
+                
+                const r = spreadFactor * Math.sqrt(i + 1);
+                const theta = i * goldenAngle;
+                
+                const localX = r * Math.cos(theta);
+                const localY = r * Math.sin(theta);
+                const localZ = -(i * zStep) - 20; 
+
+                const pos = new THREE.Vector3(localX, localY, localZ);
+                pos.applyAxisAngle(new THREE.Vector3(0,1,0), yawAngle);
+                pos.add(startPos);
+
+                await createPanelFromFile(file, pos);
+            }
+        }
+
+        async function createPanelFromFile(file, pos) {
+            const url = URL.createObjectURL(file);
+            
+            if (file.type.startsWith('image/')) {
+                addImagePanelToScene(url, pos);
+            } 
+            else if (file.type.startsWith('video/')) {
+                addLocalVideoPanelToScene(url, pos);
+            } 
+        }
+
+        // --- SISTEMA GESTIÓN RECURSOS VIDEO (LOD) ---
+        function updateVideoLOD() {
+            if (videoPanels.length === 0) return;
+
+            // 1. Calcular distancia
+            videoPanels.forEach(panel => {
+                panel.distanceToCamera = panel.mesh.position.distanceTo(camera.position);
+            });
+
+            // 2. Ordenar
+            videoPanels.sort((a, b) => a.distanceToCamera - b.distanceToCamera);
+
+            // 3. Lógica
+            for (let i = 0; i < videoPanels.length; i++) {
+                const panel = videoPanels[i];
+                
+                // IMPORTANTE: Si el panel está enfocado o es el seleccionado, NO apagarlo por LOD
+                if (panel.mesh === focusedObject) continue;
+
+                const shouldPlay = (i < MAX_ACTIVE_VIDEOS) && (panel.distanceToCamera < PLAY_DISTANCE);
+                const shouldHaveThumbnail = (panel.distanceToCamera < THUMBNAIL_DISTANCE);
+
+                if (shouldPlay) {
+                    if (panel.status !== 'playing') {
+                        activateVideoPanel(panel);
+                    }
+                } else {
+                    if (panel.status === 'playing') {
+                        deactivateVideoPanel(panel);
+                    }
+                    
+                    if (shouldHaveThumbnail && !panel.textureLoaded && !panel.thumbnailLoading) {
+                        if (!thumbnailQueue.includes(panel)) {
+                            thumbnailQueue.push(panel);
+                        }
+                    }
+                }
+            }
+        }
+
+        function processThumbnailQueue() {
+            if (isProcessingThumbnail || thumbnailQueue.length === 0) return;
+            thumbnailQueue.sort((a, b) => a.distanceToCamera - b.distanceToCamera);
+            const panel = thumbnailQueue.shift();
+            if (panel.distanceToCamera > THUMBNAIL_DISTANCE) return; 
+            generateThumbnail(panel);
+        }
+
+        function generateThumbnail(panel) {
+            isProcessingThumbnail = true;
+            panel.thumbnailLoading = true;
+
+            const video = document.createElement('video');
+            video.src = panel.src;
+            video.crossOrigin = 'anonymous';
+            video.muted = true;
+            video.currentTime = 1.0; 
+            video.preload = 'metadata'; 
+
+            const cleanup = () => {
+                video.remove();
+                isProcessingThumbnail = false;
+                panel.thumbnailLoading = false;
+            };
+
+            const onSeeked = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 512; 
+                    canvas.height = 512 * (video.videoHeight / video.videoWidth) || 288;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    const texture = new THREE.CanvasTexture(canvas);
+                    panel.mesh.material.map = texture;
+                    panel.mesh.material.color.setHex(0xffffff);
+                    panel.mesh.material.needsUpdate = true;
+                    panel.textureLoaded = true;
+                } catch(e) { console.log("Error generando thumb", e); }
+                cleanup();
+            };
+
+            video.addEventListener('loadeddata', () => {
+                video.currentTime = 1.0;
+            });
+            video.addEventListener('seeked', onSeeked);
+            video.addEventListener('error', cleanup);
+            
+            setTimeout(cleanup, 4000);
+            video.load();
+        }
+
+        function activateVideoPanel(panel) {
+            if (!panel.videoElement) {
+                const video = document.createElement('video');
+                video.src = panel.src;
+                video.muted = true; 
+                video.loop = true;
+                video.autoplay = true;
+                video.width = 1280;
+                video.height = 720;
+                video.style.pointerEvents = 'none';
+                
+                const div = document.createElement('div');
+                div.className = 'video-panel';
+                div.appendChild(video);
+                
+                const cssObject = new THREE.CSS3DObject(div);
+                const scale = 0.015;
+                cssObject.scale.set(scale, scale, scale);
+                cssObject.position.copy(panel.mesh.position);
+                cssObject.rotation.copy(panel.mesh.rotation);
+                cssObject.scale.multiply(panel.mesh.scale); 
+
+                scene.add(cssObject);
+                
+                panel.videoElement = video;
+                panel.cssObject = cssObject;
+                panel.mesh.userData.cssObject = cssObject;
+                panel.mesh.userData.contentElement = video; 
+            }
+            
+            panel.videoElement.play().catch(e => {}); 
+            // FIX: NO OCULTAR MESH PARA EVITAR PANTALLA NEGRA
+            // panel.mesh.visible = false; 
+            panel.status = 'playing';
+        }
+
+        function deactivateVideoPanel(panel) {
+            if (panel.videoElement) {
+                panel.videoElement.pause();
+                if (panel.cssObject) {
+                    scene.remove(panel.cssObject);
+                }
+                panel.videoElement = null;
+                panel.cssObject = null;
+                panel.mesh.userData.cssObject = null;
+            }
+            // panel.mesh.visible = true; // Ya siempre es visible
+            panel.status = 'idle';
+        }
+
+        function addResizeHandle(mesh) {
+            const geometry = new THREE.BoxGeometry(1, 1, 0.2);
+            const material = new THREE.MeshBasicMaterial({ color: 0xFFFF00, visible: true }); // Visible para que el usuario sepa dónde clickear
+            const handle = new THREE.Mesh(geometry, material);
+            // Posicionar en esquina inferior derecha (asumiendo plano centrado)
+            // Geometría base suele ser 10.24 x 7.68 (aprox 5 x 3.8 del centro)
+            handle.position.set(5.12, -3.84, 0.1); 
+            handle.userData = { type: 'resizeHandle', parent: mesh };
+            mesh.add(handle);
+        }
+
+        function addLocalVideoPanelToScene(src, position, scale = new THREE.Vector3(1,1,1)) {
+            const geometry = new THREE.PlaneGeometry(10.24, 7.68);
+            const material = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide }); 
+            const proxyObject = new THREE.Mesh(geometry, material);
+            proxyObject.position.copy(position);
+            proxyObject.scale.copy(scale);
+            
+            const borderGeo = new THREE.BoxLineGeometry(10.34, 7.78, 0.1, 1, 1, 1);
+            const borderMat = new THREE.LineBasicMaterial({ color: 0xFF00FF, transparent: true, opacity: 0.8 });
+            const border = new THREE.LineSegments(borderGeo, borderMat);
+            proxyObject.add(border);
+
+            addResizeHandle(proxyObject); // Agregar agarradera
+
+            proxyObject.userData = { 
+                type: 'localVideo', 
+                src: src, 
+                velocity: new THREE.Vector3() 
+            };
+
+            scene.add(proxyObject);
+            draggableObjects.push(proxyObject);
+            contentPanels.push(proxyObject);
+
+            videoPanels.push({
+                mesh: proxyObject,
+                src: src,
+                status: 'idle',
+                distanceToCamera: Infinity,
+                textureLoaded: false,
+                thumbnailLoading: false
+            });
+        }
+
+        // --- BURBUJA 360 ---
+        function create360Bubble(src, pos, isStream=false, isYouTube=false) {
+            let mesh;
+            if (isYouTube) {
+                const videoId = parseYoutubeUrl(src);
+                if(!videoId) { alert("URL de Youtube no válida"); return; }
+                const div = document.createElement('div');
+                div.style.width = '1024px';
+                div.style.height = '768px';
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}`; 
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                div.appendChild(iframe);
+                const object = new THREE.CSS3DObject(div);
+                object.position.copy(pos);
+                object.scale.set(0.05, 0.05, 0.05); 
+                const geom = new THREE.SphereGeometry(15, 16, 16);
+                const mat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, opacity: 0.1, transparent: true });
+                mesh = new THREE.Mesh(geom, mat);
+                mesh.position.copy(pos);
+                mesh.userData = { type: '360', cssObject: object, isYouTube: true, src: src };
+                object.userData = { contentElement: iframe }; 
+                scene.add(object);
+            } else {
+                const geom = new THREE.SphereGeometry(15, 60, 40);
+                geom.scale(-1, 1, 1);
+                const video = document.createElement('video');
+                video.src = src;
+                if(isStream) video.crossOrigin = "anonymous";
+                video.loop = true; video.muted = true; video.play();
+                const tex = new THREE.VideoTexture(video);
+                const mat = new THREE.MeshBasicMaterial({map: tex});
+                mesh = new THREE.Mesh(geom, mat);
+                mesh.position.copy(pos);
+                const border = new THREE.Mesh(new THREE.SphereGeometry(15.2, 32, 32), new THREE.MeshBasicMaterial({color:0x4DDBFF, wireframe:true, transparent:true, opacity:0.1}));
+                mesh.add(border);
+                mesh.scale.set(0.1, 0.1, 0.1); 
+                mesh.userData = { type: '360', video: video, src: src };
+            }
+            scene.add(mesh);
+            draggableObjects.push(mesh);
+            contentPanels.push(mesh);
+        }
+
+        // --- CREACIÓN MANUAL ---
+        function openCreationModal() {
+            editingPanel = null;
+            document.getElementById('modal-title').textContent = "Crear Nuevo Panel";
+            document.getElementById('create-panel-btn').textContent = "Crear";
+            document.getElementById('text-title').value = "";
+            document.getElementById('text-content').value = "";
+            const vContainer = document.getElementById('video-inputs-container');
+            vContainer.innerHTML = ''; 
+            const vDiv = document.createElement('div'); vDiv.className = 'dynamic-input-group';
+            const vInput = document.createElement('input'); vInput.type='text'; vInput.className='video-url-input'; vInput.placeholder='URL de YouTube...';
+            vDiv.appendChild(vInput); vContainer.appendChild(vDiv);
+            const wContainer = document.getElementById('web-inputs-container');
+            wContainer.innerHTML = ''; 
+            const wDiv = document.createElement('div'); wDiv.className = 'dynamic-input-group';
+            const wInput = document.createElement('input'); wInput.type='text'; wInput.className='web-url-input'; wInput.placeholder='URL de la página web...';
+            wDiv.appendChild(wInput); wContainer.appendChild(wDiv);
+            document.getElementById('file-upload').value = "";
+            document.getElementById('image-preview').style.display = 'none';
+            document.getElementById('text-color-picker').value = "#4DDBFF";
+            switchTab('text');
+            document.getElementById('creation-modal').classList.add('visible');
+        }
+
+        function openEditModal(panel) {
+            editingPanel = panel;
+            document.getElementById('modal-title').textContent = "Editar Panel de Texto";
+            document.getElementById('create-panel-btn').textContent = "Actualizar";
+            document.getElementById('text-title').value = panel.userData.title;
+            document.getElementById('text-content').value = panel.userData.content;
+            document.getElementById('text-color-picker').value = panel.userData.color;
+            switchTab('text');
+            document.getElementById('creation-modal').classList.add('visible');
+        }
+
+        function switchTab(type) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tab-button[data-type="${type}"]`).classList.add('active');
+            document.querySelectorAll('.form-section').forEach(section => section.classList.remove('active'));
+            document.getElementById(`${type}-form`).classList.add('active');
+        }
+
+        async function handleCreateOrUpdatePanel() {
+            const createBtn = document.getElementById('create-panel-btn');
+            const originalText = createBtn.textContent;
+            createBtn.textContent = 'Creando...';
+            createBtn.disabled = true;
+            try {
+                if (editingPanel) {
+                    const newTitle = document.getElementById('text-title').value;
+                    const newContent = document.getElementById('text-content').value;
+                    const newColor = document.getElementById('text-color-picker').value;
+                    editingPanel.userData.title = newTitle;
+                    editingPanel.userData.content = newContent;
+                    editingPanel.userData.color = newColor;
+                    updateTextPanel(editingPanel);
+                } else {
+                    const activeTab = document.querySelector('.tab-button.active').dataset.type;
+                    const pos = new THREE.Vector3();
+                    const dir = new THREE.Vector3();
+                    camera.getWorldDirection(dir);
+                    pos.copy(camera.position).add(dir.multiplyScalar(15));
+                    
+                    switch (activeTab) {
+                        case 'text':
+                            const title = document.getElementById('text-title').value || "Sin Título";
+                            const content = document.getElementById('text-content').value || "Sin contenido.";
+                            const color = document.getElementById('text-color-picker').value;
+                            addTextPanelToScene(title, content, pos, color);
+                            break;
+                        case 'video':
+                            const vInputs = document.querySelectorAll('.video-url-input');
+                            let vOffsetX = 0;
+                            vInputs.forEach(input => {
+                                const url = input.value;
+                                if(url) {
+                                    const videoId = parseYoutubeUrl(url);
+                                    if (videoId) {
+                                        const p = pos.clone();
+                                        p.x += vOffsetX;
+                                        addVideoPanelToScene(videoId, 0, p);
+                                        vOffsetX += 20; 
+                                    } else { console.log("Video ID no encontrado para", url); }
+                                }
+                            });
+                            break;
+                        case 'web':
+                            const wInputs = document.querySelectorAll('.web-url-input');
+                            let wOffsetX = 0;
+                            wInputs.forEach(input => {
+                                const url = input.value;
+                                if(url) {
+                                    const p = pos.clone();
+                                    p.x += wOffsetX;
+                                    addWebPanelToScene(url, p);
+                                    wOffsetX += 20;
+                                }
+                            });
+                            break;
+                        case 'file':
+                            await handleFileUpload(pos);
+                            break;
+                        case '360':
+                            const mode = document.getElementById('360-type').value;
+                            if(mode === 'upload') {
+                                const file = document.getElementById('video-360-input').files[0];
+                                if(file) create360Bubble(URL.createObjectURL(file), pos);
+                            } else if (mode === 'youtube') {
+                                const ytUrl = document.getElementById('youtube-360-url').value;
+                                if(ytUrl) create360Bubble(ytUrl, pos, false, true);
+                            } else {
+                                const strm = document.getElementById('stream-url').value;
+                                if(strm) create360Bubble(strm, pos, true);
+                            }
+                            break;
+                    }
+                }
+            } catch (error) {
+                console.error("Error creating panel:", error);
+                alert("Hubo un error al crear el panel.");
+            } finally {
+                createBtn.textContent = originalText;
+                createBtn.disabled = false;
+                document.getElementById('creation-modal').classList.remove('visible');
+            }
+        }
+
+        async function handleFileUpload(basePosition) {
+            const fileInput = document.getElementById('file-upload');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("Por favor, selecciona uno o más archivos.");
+                return;
+            }
+            const layout = document.querySelector('input[name="layout"]:checked').value;
+            const positions = calculateLayoutPositions(fileInput.files.length, layout, basePosition);
+            for (let i = 0; i < fileInput.files.length; i++) {
+                const file = fileInput.files[i];
+                const pos = positions[i];
+                await createPanelFromFile(file, pos);
+            }
+        }
+
+        function calculateLayoutPositions(count, layout, center) {
+            const positions = [];
+            const radius = 25;
+            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+            switch(layout) {
+                case 'sphere':
+                    for (let i = 0; i < count; i++) {
+                        const y = 1 - (i / (count - 1)) * 2;
+                        const r = Math.sqrt(1 - y * y);
+                        const theta = goldenAngle * i;
+                        const x = Math.cos(theta) * r;
+                        const z = Math.sin(theta) * r;
+                        const pos = new THREE.Vector3(x, y, z).multiplyScalar(radius).add(center);
+                        positions.push(pos);
+                    }
+                    break;
+                case 'cylinder':
+                    const numRows = Math.ceil(Math.sqrt(count / 2));
+                    const numCols = Math.ceil(count / numRows);
+                    const colAngle = (Math.PI * 2) / numCols;
+                    for (let i = 0; i < count; i++) {
+                        const row = Math.floor(i / numCols);
+                        const col = i % numCols;
+                        const angle = col * colAngle;
+                        const x = Math.cos(angle) * radius;
+                        const z = Math.sin(angle) * radius;
+                        const y = (row - (numRows - 1) / 2) * 12;
+                        const pos = new THREE.Vector3(x, y, z).add(center);
+                        positions.push(pos);
+                    }
+                    break;
+                case 'fibonacci':
+                    const c = 8;
+                    for (let i = 0; i < count; i++) {
+                        const r = c * Math.sqrt(i + 1);
+                        const theta = i * goldenAngle;
+                        const x = r * Math.cos(theta);
+                        const y = r * Math.sin(theta);
+                        const pos = new THREE.Vector3(x, y, -i * 8).add(center);
+                        positions.push(pos);
+                    }
+                    break;
+            }
+            return positions;
+        }
+
+        function parseYoutubeUrl(url) {
+             const regExp = /^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/;
+             const match = url.match(regExp);
+             return (match && match[1].length >= 11) ? match[1] : null;
+        }
+        
+        function addTextPanelToScene(title, content, position, color = '#4DDBFF', scale=new THREE.Vector3(1,1,1)) {
+            const { cssObject, proxyObject } = createTextPanel(title, content, color);
+            cssObject.position.copy(position);
+            proxyObject.position.copy(position);
+            proxyObject.scale.copy(scale);
+            cssObject.scale.multiply(scale);
+
+            scene.add(cssObject, proxyObject);
+            contentPanels.push(cssObject, proxyObject);
+            draggableObjects.push(proxyObject);
+        }
+
+        function addImagePanelToScene(src, position, color = '#4DDBFF', scale=new THREE.Vector3(1,1,1)) {
+            const newPanel = createImagePanel(src, color);
+            newPanel.position.copy(position);
+            newPanel.scale.copy(scale);
+            scene.add(newPanel);
+            contentPanels.push(newPanel);
+            draggableObjects.push(newPanel);
+        }
+
+        function addVideoPanelToScene(videoId, start, position, scale=new THREE.Vector3(1,1,1)) {
+            const { videoCSSObject, videoProxyObject } = createVideoPanel(videoId, start);
+            videoCSSObject.position.copy(position);
+            videoProxyObject.position.copy(position);
+            videoProxyObject.scale.copy(scale);
+            videoCSSObject.scale.multiply(scale);
+
+            scene.add(videoCSSObject, videoProxyObject);
+            contentPanels.push(videoCSSObject, videoProxyObject);
+            draggableObjects.push(videoProxyObject);
+        }
+
+        function addWebPanelToScene(url, position, scale=new THREE.Vector3(1,1,1)) {
+            const { webCSSObject, webProxyObject } = createWebPanel(url);
+            webCSSObject.position.copy(position);
+            webProxyObject.position.copy(position);
+            webProxyObject.scale.copy(scale);
+            webCSSObject.scale.multiply(scale);
+
+            scene.add(webCSSObject, webProxyObject);
+            contentPanels.push(webCSSObject, webProxyObject);
+            draggableObjects.push(webProxyObject);
+        }
+
+        function addHtmlPanelToScene(htmlContent, position, scale=new THREE.Vector3(1,1,1)) {
+            const { htmlCSSObject, htmlProxyObject } = createHtmlPanel(htmlContent);
+            htmlCSSObject.position.copy(position);
+            htmlProxyObject.position.copy(position);
+            htmlProxyObject.scale.copy(scale);
+            htmlCSSObject.scale.multiply(scale);
+
+            scene.add(htmlCSSObject, htmlProxyObject);
+            contentPanels.push(htmlCSSObject, htmlProxyObject);
+            draggableObjects.push(htmlProxyObject);
+        }
+
+        function addPdfPanelToScene(src, position, scale=new THREE.Vector3(1,1,1)) {
+            const { pdfCSSObject, pdfProxyObject } = createPdfPanel(src);
+            pdfCSSObject.position.copy(position);
+            pdfProxyObject.position.copy(position);
+            pdfProxyObject.scale.copy(scale);
+            pdfCSSObject.scale.multiply(scale);
+
+            scene.add(pdfCSSObject, pdfProxyObject);
+            contentPanels.push(pdfCSSObject, pdfProxyObject);
+            draggableObjects.push(pdfProxyObject);
+        }
+
+        function createTextPanel(title, text, color) {
+            const div = document.createElement('div');
+            div.className = 'content-panel-wrapper text-panel';
+            div.style.width = '1024px';
+            div.style.height = '768px';
+            const titleElement = document.createElement('div');
+            titleElement.className = 'text-panel-title';
+            const contentElement = document.createElement('div');
+            contentElement.className = 'text-panel-content';
+            div.appendChild(titleElement);
+            div.appendChild(contentElement);
+            const cssObject = new THREE.CSS3DObject(div);
+            const scale = 0.01;
+            cssObject.scale.set(scale, scale, scale);
+            const proxyGeometry = new THREE.PlaneGeometry(1024 * scale, 768 * scale);
+            const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
+            const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
+            
+            addResizeHandle(proxyObject);
+
+            proxyObject.userData = { 
+                type: 'text', 
+                title, 
+                content: text, 
+                color, 
+                velocity: new THREE.Vector3(), 
+                cssObject 
+            };
+            cssObject.userData.proxyObject = proxyObject;
+            updateTextPanel(proxyObject);
+            return { cssObject, proxyObject };
+        }
+
+        function updateTextPanel(panel) {
+            const { title, content, color } = panel.userData;
+            const div = panel.userData.cssObject.element;
+            div.style.borderColor = color;
+            div.style.boxShadow = `0 0 30px ${color}`;
+            const titleElement = div.querySelector('.text-panel-title');
+            titleElement.textContent = title;
+            titleElement.style.color = color;
+            const contentElement = div.querySelector('.text-panel-content');
+            contentElement.textContent = content;
+        }
+
+        function createImagePanel(src, color) {
+            const textureLoader = new THREE.TextureLoader();
+            const texture = textureLoader.load(src);
+            const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+            const geometry = new THREE.PlaneGeometry(10.24, 7.68);
+            const panel = new THREE.Mesh(geometry, material);
+            panel.userData = { type: 'image', src: src, velocity: new THREE.Vector3() };
+            const borderGeo = new THREE.BoxLineGeometry(10.34, 7.78, 0.1, 1, 1, 1);
+            const borderMat = new THREE.LineBasicMaterial({ color: new THREE.Color(color), transparent: true, opacity: 0.8 });
+            const border = new THREE.LineSegments(borderGeo, borderMat);
+            panel.add(border);
+            
+            addResizeHandle(panel);
+
+            return panel;
+        }
+
+        function createVideoPanel(videoId, start) {
+            const div = document.createElement('div');
+            div.className = 'content-panel-wrapper';
+            const iframeWrapper = document.createElement('div');
+            iframeWrapper.className = 'video-panel';
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.youtube.com/embed/${videoId}?start=${start}&autoplay=1&mute=1&modestbranding=1&rel=0&controls=1&showinfo=0&loop=1&playlist=${videoId}`;
+            iframe.style.pointerEvents = 'none';
+            iframeWrapper.appendChild(iframe);
+            div.appendChild(iframeWrapper);
+            const cssObject = new THREE.CSS3DObject(div);
+            const scale = 0.015;
+            cssObject.scale.set(scale, scale, scale);
+            cssObject.userData = { type: 'video', videoId: videoId, contentElement: iframe };
+            const proxyGeometry = new THREE.PlaneGeometry(1280 * scale, 720 * scale);
+            const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
+            const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
+            
+            addResizeHandle(proxyObject);
+
+            proxyObject.userData.cssObject = cssObject;
+            proxyObject.userData.type = 'video';
+            proxyObject.userData.velocity = new THREE.Vector3();
+            return { videoCSSObject: cssObject, videoProxyObject: proxyObject };
+        }
+        
+        function createWebPanel(url) {
+            const div = document.createElement('div');
+            div.className = 'content-panel-wrapper';
+            const iframeWrapper = document.createElement('div');
+            iframeWrapper.className = 'web-panel'; 
+            iframeWrapper.style.width = '1280px';
+            iframeWrapper.style.height = '720px';
+            iframeWrapper.style.border = '5px solid var(--primary-glow-color)';
+            const iframe = document.createElement('iframe');
+            iframe.src = url.startsWith('http') ? url : `https://${url}`;
+            iframe.style.pointerEvents = 'none';
+            iframeWrapper.appendChild(iframe);
+            div.appendChild(iframeWrapper);
+            const cssObject = new THREE.CSS3DObject(div);
+            const scale = 0.015;
+            cssObject.scale.set(scale, scale, scale);
+            cssObject.userData = { type: 'web', url: url, contentElement: iframe };
+            const proxyGeometry = new THREE.PlaneGeometry(1280 * scale, 720 * scale);
+            const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
+            const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
+            
+            addResizeHandle(proxyObject);
+
+            proxyObject.userData.cssObject = cssObject;
+            proxyObject.userData.type = 'web';
+            proxyObject.userData.velocity = new THREE.Vector3();
+            return { webCSSObject: cssObject, webProxyObject: proxyObject };
+        }
+
+        function createHtmlPanel(htmlContent) {
+            const div = document.createElement('div');
+            div.className = 'content-panel-wrapper';
+            const iframeWrapper = document.createElement('div');
+            iframeWrapper.className = 'web-panel';
+             iframeWrapper.style.width = '1280px';
+            iframeWrapper.style.height = '720px';
+            iframeWrapper.style.border = '5px solid var(--primary-glow-color)';
+            const iframe = document.createElement('iframe');
+            iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
+            iframe.style.pointerEvents = 'none';
+            iframeWrapper.appendChild(iframe);
+            div.appendChild(iframeWrapper);
+            const cssObject = new THREE.CSS3DObject(div);
+            const scale = 0.015;
+            cssObject.scale.set(scale, scale, scale);
+            cssObject.userData = { type: 'html', content: htmlContent, contentElement: iframe };
+            const proxyGeometry = new THREE.PlaneGeometry(1280 * scale, 720 * scale);
+            const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
+            const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
+            
+            addResizeHandle(proxyObject);
+
+            proxyObject.userData.cssObject = cssObject;
+            proxyObject.userData.type = 'html';
+            proxyObject.userData.velocity = new THREE.Vector3();
+            return { htmlCSSObject: cssObject, htmlProxyObject: proxyObject };
+        }
+
+        function createPdfPanel(src) {
+            const div = document.createElement('div');
+            div.className = 'content-panel-wrapper';
+            const pdfWrapper = document.createElement('div');
+            pdfWrapper.className = 'pdf-panel';
+            const embed = document.createElement('embed');
+            embed.src = src;
+            embed.type = 'application/pdf';
+            embed.style.pointerEvents = 'none';
+            pdfWrapper.appendChild(embed);
+            div.appendChild(pdfWrapper);
+            const cssObject = new THREE.CSS3DObject(div);
+            const scale = 0.01;
+            cssObject.scale.set(scale, scale, scale);
+            cssObject.userData = { type: 'pdf', src: src, contentElement: embed };
+            const proxyGeometry = new THREE.PlaneGeometry(800 * scale, 1131 * scale);
+            const proxyMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide });
+            const proxyObject = new THREE.Mesh(proxyGeometry, proxyMaterial);
+            
+            addResizeHandle(proxyObject);
+
+            proxyObject.userData.cssObject = cssObject;
+            proxyObject.userData.type = 'pdf';
+            proxyObject.userData.velocity = new THREE.Vector3();
+            return { pdfCSSObject: cssObject, pdfProxyObject: proxyObject };
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            webglRenderer.setSize(window.innerWidth, window.innerHeight);
+            cssRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onKeyDown(event) {
+            if (event.key === "Escape" && (isFocused || isTransitioning)) {
+                exitFocusMode();
+                return;
+            }
+
+            if (selectedObject) {
+                if (event.key === '+' || event.code === 'NumpadAdd') {
+                    selectedObject.scale.multiplyScalar(1.1);
+                    if (selectedObject.userData.cssObject) {
+                        selectedObject.userData.cssObject.scale.multiplyScalar(1.1);
+                    }
+                }
+                if (event.key === '-' || event.code === 'NumpadSubtract') {
+                    selectedObject.scale.multiplyScalar(0.9);
+                    if (selectedObject.userData.cssObject) {
+                        selectedObject.userData.cssObject.scale.multiplyScalar(0.9);
+                    }
+                }
+            }
+
+            if (isFocused && !isTransitioning) {
+                let moveDir = null;
+                switch (event.code) {
+                    case 'ArrowRight': moveDir = new THREE.Vector3(1, 0, 0); break;
+                    case 'ArrowLeft':  moveDir = new THREE.Vector3(-1, 0, 0); break;
+                    case 'ArrowUp':    moveDir = new THREE.Vector3(0, 1, 0); break;
+                    case 'ArrowDown':  moveDir = new THREE.Vector3(0, -1, 0); break;
+                }
+                if (moveDir) {
+                    event.preventDefault();
+                    navigateToNearestPanel(moveDir);
+                    return;
+                }
+            }
+
+            if ((event.key === 'Delete' || event.key === 'Backspace') && selectedObject) {
+                event.preventDefault();
+                deleteObject(selectedObject);
+            }
+
+            switch (event.code) {
+                case 'KeyW': moveForward = true; break;
+                case 'KeyS': moveBackward = true; break;
+                case 'KeyA': moveLeft = true; break;
+                case 'KeyD': moveRight = true; break;
+                case 'KeyZ': moveUp = true; break;
+                case 'KeyX': moveDown = true; break;
+                case 'KeyQ': rotateLeft = true; break;
+                case 'KeyE': rotateRight = true; break;
+            }
+            if (moveForward || moveBackward || moveLeft || moveRight) {
+                exitFocusMode();
+            }
+        }
+
+        function onKeyUp(event) {
+            switch (event.code) {
+                case 'KeyW': moveForward = false; break;
+                case 'KeyS': moveBackward = false; break;
+                case 'KeyA': moveLeft = false; break;
+                case 'KeyD': moveRight = false; break;
+                case 'KeyZ': moveUp = false; break;
+                case 'KeyX': moveDown = false; break;
+                case 'KeyQ': rotateLeft = false; break;
+                case 'KeyE': rotateRight = false; break;
+            }
+        }
+
+        function navigateToNearestPanel(localDirection) {
+            if (!focusedObject) return;
+            const worldDir = localDirection.clone().applyQuaternion(camera.quaternion).normalize();
+            let nearest = null;
+            let minDistance = Infinity;
+            const angleThreshold = 0.7; 
+            draggableObjects.forEach(obj => {
+                if (obj === focusedObject) return;
+                const toCandidate = new THREE.Vector3().subVectors(obj.position, focusedObject.position);
+                const distance = toCandidate.length();
+                toCandidate.normalize();
+                const alignment = toCandidate.dot(worldDir);
+                if (alignment > angleThreshold) {
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearest = obj;
+                    }
+                }
+            });
+            if (nearest) {
+                enterFocusMode(nearest);
+            }
+        }
+        
+        function selectObject(object) {
+            if (selectedObject && selectedObject.userData.cssObject) {
+                selectedObject.userData.cssObject.element.classList.remove('selected');
+            }
+            selectedObject = object;
+            if (selectedObject && selectedObject.userData.cssObject) {
+                selectedObject.userData.cssObject.element.classList.add('selected');
+            }
+        }
+
+        function deleteObject(objectToDelete) {
+            scene.remove(objectToDelete);
+            if (objectToDelete.userData.cssObject) {
+                scene.remove(objectToDelete.userData.cssObject);
+            }
+            draggableObjects = draggableObjects.filter(obj => obj !== objectToDelete);
+            contentPanels = contentPanels.filter(obj => obj !== objectToDelete && (!obj.userData || obj.userData.proxyObject !== objectToDelete));
+            selectObject(null);
+        }
+        
+        function onMouseDown(event) {
+            if(event.target.closest('.hud-btn') || event.target.closest('.modal')) return;
+            const time = new Date().getTime();
+            const isDoubleClick = time - lastClickTime < 300;
+            lastClickTime = time;
+            if(isDoubleClick) {
+                handleDoubleClick();
+                return;
+            }
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Raycast incluyendo hijos (para detectar la agarradera de resize)
+            const intersects = raycaster.intersectObjects(draggableObjects, true);
+            
+            if (intersects.length > 0 && !isFocused) {
+                const hit = intersects[0];
+                // DETECTAR AGARRADERA
+                if(hit.object.userData.type === 'resizeHandle') {
+                    isResizing = true;
+                    resizeHandleSelected = hit.object.userData.parent;
+                    selectObject(resizeHandleSelected);
+                    blocker.style.pointerEvents = 'auto';
+                    return;
+                }
+
+                isObjectDragging = true;
+                // Si intersectamos un hijo (borde), ir al padre
+                draggedObject = hit.object.parent && hit.object.parent.type !== 'Scene' ? hit.object.parent : hit.object;
+                
+                // Asegurarnos de que draggedObject sea uno de los paneles
+                if(!draggableObjects.includes(draggedObject)) {
+                    // Buscar hacia arriba
+                    let p = hit.object;
+                    while(p && !draggableObjects.includes(p)) {
+                        p = p.parent;
+                    }
+                    if(p) draggedObject = p;
+                    else draggedObject = hit.object; 
+                }
+
+                selectObject(draggedObject);
+                draggedObject.userData.velocity.set(0, 0, 0);
+                dragPlane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(dragPlane.normal), draggedObject.position);
+                const intersectionPoint = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(dragPlane, intersectionPoint)) {
+                    offset.copy(intersectionPoint).sub(draggedObject.position);
+                }
+                blocker.style.pointerEvents = 'auto';
+            } else {
+                 if (!isFocused) {
+                    isCameraDragging = true;
+                    blocker.style.pointerEvents = 'auto';
+                }
+                selectObject(null);
+            }
+        }
+
+        function handleDoubleClick() {
+            if (isTransitioning) return;
+            if (isFocused) {
+                exitFocusMode();
+                return;
+            }
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(draggableObjects);
+            if (intersects.length > 0) {
+                const clickedObject = intersects[0].object;
+                if(clickedObject.userData.type === '360') {
+                    enter360Mode(clickedObject);
+                    return;
+                }
+                if (clickedObject.userData.type === 'text') {
+                    if (viewMode === 'fixed') {
+                        openEditModal(clickedObject);
+                    } else {
+                        enterFocusMode(clickedObject);
+                    }
+                } else if (['image', 'video', 'localVideo', 'pdf', 'web', 'html'].includes(clickedObject.userData.type)) {
+                    enterFocusMode(clickedObject);
+                }
+            }
+        }
+
+        function enterFocusMode(object) {
+            isTransitioning = true;
+            isFocused = true;
+            focusedObject = object;
+            lastCameraPosition.copy(camera.position);
+            lastCameraQuaternion.copy(camera.quaternion);
+
+            if (focusedObject.userData.cssObject && focusedObject.userData.cssObject.userData.contentElement) {
+                focusedObject.userData.cssObject.userData.contentElement.style.pointerEvents = 'auto';
+            }
+            
+            // Asegurar que el video/iframe se active si estaba apagado por LOD
+            if(focusedObject.userData.type === 'video' || focusedObject.userData.type === 'web' || focusedObject.userData.type === 'html') {
+                 // Buscar en videoPanels y forzar activación
+                 const vPanel = videoPanels.find(p => p.mesh === focusedObject);
+                 if(vPanel && vPanel.status !== 'playing') activateVideoPanel(vPanel);
+            }
+
+            contentPanels.forEach(obj => {
+                const isProxy = !!obj.userData.proxyObject;
+                const currentObj = isProxy ? obj.userData.proxyObject : obj;
+                const isFocusedObj = currentObj === focusedObject;
+
+                if (!isFocusedObj) {
+                    if (obj.element) obj.element.style.display = 'none'; // FIX: Verificar obj.element
+                    if(!isProxy) obj.visible = false;
+                }
+            });
+        }
+        
+        function enter360Mode(sphere) {
+            isTransitioning = true;
+            isFocused = true;
+            focusedObject = sphere;
+            lastCameraPosition.copy(camera.position);
+            sphere.scale.set(1, 1, 1);
+            if (sphere.userData.isYouTube) {
+            } else if (sphere.userData.video) {
+                sphere.userData.video.muted = false;
+            }
+        }
+
+        function exitFocusMode() {
+            if (!isFocused) return;
+            if (focusedObject && focusedObject.userData.type === '360') {
+                focusedObject.scale.set(0.1, 0.1, 0.1);
+                if (focusedObject.userData.video) focusedObject.userData.video.muted = true;
+            }
+            if (focusedObject && focusedObject.userData.cssObject && focusedObject.userData.cssObject.userData.contentElement) {
+                focusedObject.userData.cssObject.userData.contentElement.style.pointerEvents = 'none';
+            }
+            isTransitioning = true;
+            isFocused = false;
+            contentPanels.forEach(obj => {
+                 const isProxy = !!obj.userData.proxyObject;
+                 if (obj.element) obj.element.style.display = 'block'; 
+                 if(!isProxy) obj.visible = true;
+            });
+        }
+
+        function onMouseUp(event) {
+            isCameraDragging = false;
+            isObjectDragging = false;
+            isResizing = false;
+            draggedObject = null;
+            resizeHandleSelected = null;
+            blocker.style.pointerEvents = 'none';
+        }
+
+        function onMouseMove(event) {
+            const newMouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            const newMouseY = - (event.clientY / window.innerHeight) * 2 + 1;
+            
+            if (isResizing && resizeHandleSelected) {
+                const deltaY = event.clientY - previousMousePosition.y;
+                const scaleFactor = deltaY > 0 ? 0.98 : 1.02; // Simple scale based on Y movement
+                resizeHandleSelected.scale.multiplyScalar(scaleFactor);
+                if(resizeHandleSelected.userData.cssObject) {
+                    resizeHandleSelected.userData.cssObject.scale.multiplyScalar(scaleFactor);
+                }
+            }
+            else if (isObjectDragging && draggedObject) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersectionPoint = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(dragPlane, intersectionPoint)) {
+                    const newPosition = intersectionPoint.sub(offset);
+                    draggedObject.position.copy(newPosition);
+                    if (draggedObject.userData.cssObject) {
+                        draggedObject.userData.cssObject.position.copy(newPosition);
+                    }
+                }
+            } else if (isCameraDragging) {
+                exitFocusMode();
+                const deltaX = event.clientX - previousMousePosition.x;
+                const deltaY = event.clientY - previousMousePosition.y;
+                yawAngle -= deltaX * mouseSensitivity;
+                pitchAngle -= deltaY * mouseSensitivity;
+                pitchAngle = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitchAngle));
+            }
+            
+            mouse.x = newMouseX;
+            mouse.y = newMouseY;
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+        }
+        
+        function onMouseWheel(event) {
+            if (!isFocused && !isTransitioning) {
+                zoomDistance -= event.deltaY * 0.02;
+                zoomDistance = Math.max(5, Math.min(100, zoomDistance));
+            }
+        }
+
+        function saveSceneToFile() {
+            const data = serializeScene();
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'chamalnquimyst-scene.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadSceneFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const sceneData = JSON.parse(e.target.result);
+                    clearScene();
+                    buildSceneFromData(sceneData);
+                } catch (error) {
+                    alert("Error al cargar el archivo.");
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearScene() {
+            [...draggableObjects].forEach(obj => {
+                if (obj.userData.cssObject) {
+                    scene.remove(obj.userData.cssObject);
+                }
+                scene.remove(obj);
+            });
+            draggableObjects = [];
+            contentPanels = [];
+        }
+
+        function buildSceneFromData(data) {
+            data.forEach(item => {
+                const pos = new THREE.Vector3().fromArray(item.position);
+                const scale = item.scale ? new THREE.Vector3().fromArray(item.scale) : new THREE.Vector3(1,1,1); // Cargar escala
+                switch (item.type) {
+                    case 'text':
+                        addTextPanelToScene(item.title, item.content, pos, item.color, scale);
+                        break;
+                    case 'image':
+                        addImagePanelToScene(item.src, pos, item.color, scale);
+                        break;
+                    case 'video':
+                        addVideoPanelToScene(item.videoId, 0, pos, scale);
+                        break;
+                    case 'web':
+                        addWebPanelToScene(item.url, pos, scale);
+                        break;
+                    case 'html':
+                        addHtmlPanelToScene(item.content, pos, scale);
+                        break;
+                    case 'localVideo':
+                        addLocalVideoPanelToScene(item.src, pos, scale);
+                        break;
+                    case 'pdf':
+                        addPdfPanelToScene(item.src, pos, scale);
+                        break;
+                    case '360':
+                        if (item.isYouTube) {
+                            create360Bubble(item.src, pos, false, true);
+                        } else {
+                            create360Bubble(item.src, pos, true); 
+                        }
+                        break;
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            
+            updateVideoLOD(); // Actualizar sistema de videos cada frame
+
+            if (!isFocused && !isTransitioning) {
+                if (rotateLeft) yawAngle += cameraRotationSpeed * delta * 60;
+                if (rotateRight) yawAngle -= cameraRotationSpeed * delta * 60;
+
+                const speed = 10 * delta;
+                const direction = new THREE.Vector3();
+                camera.getWorldDirection(direction);
+
+                const right = new THREE.Vector3().crossVectors(camera.up, direction).normalize();
+
+                if (moveForward) avatarObject.position.addScaledVector(direction, speed);
+                if (moveBackward) avatarObject.position.addScaledVector(direction, -speed);
+                if (moveLeft) avatarObject.position.addScaledVector(right, -speed);
+                if (moveRight) avatarObject.position.addScaledVector(right, speed);
+                if (moveUp) avatarObject.position.y += speed;
+                if (moveDown) avatarObject.position.y -= speed;
+                
+                const targetQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitchAngle, yawAngle, 0, 'YXZ'));
+                avatarObject.quaternion.slerp(targetQuaternion, 0.1);
+                
+                const offset = new THREE.Vector3(0, 0, zoomDistance);
+                offset.applyQuaternion(avatarObject.quaternion);
+                camera.position.copy(avatarObject.position).add(offset);
+                camera.lookAt(avatarObject.position);
+            } else if (isTransitioning) {
+                let targetPosition, targetQuaternion;
+
+                if (isFocused && focusedObject.userData.type === '360') {
+                    targetPosition = focusedObject.position.clone();
+                    targetQuaternion = camera.quaternion.clone();
+                } else if (isFocused) {
+                    targetPosition = new THREE.Vector3();
+                    focusedObject.getWorldPosition(targetPosition);
+                    
+                    const vFOV = THREE.MathUtils.degToRad(camera.fov);
+                    const height = focusedObject.geometry.parameters.height || 10;
+                    const dist = height / (2 * Math.tan(vFOV / 2));
+                    const finalDist = dist * 1.1; // Margen 10%
+                    
+                    const direction = new THREE.Vector3();
+                    focusedObject.getWorldDirection(direction);
+                    targetPosition.addScaledVector(direction, finalDist);
+                    
+                    targetQuaternion = new THREE.Quaternion();
+                    const tempMatrix = new THREE.Matrix4();
+                    tempMatrix.lookAt(targetPosition, focusedObject.position, camera.up);
+                    targetQuaternion.setFromRotationMatrix(tempMatrix);
+                } else {
+                    targetPosition = lastCameraPosition;
+                    targetQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitchAngle, yawAngle, 0, 'YXZ'));
+                }
+
+                camera.position.lerp(targetPosition, 0.05);
+                if(isFocused && focusedObject.userData.type !== '360') {
+                      camera.quaternion.slerp(targetQuaternion, 0.05);
+                }
+
+                if (camera.position.distanceTo(targetPosition) < 0.1) {
+                    isTransitioning = false;
+                    if(isFocused && focusedObject.userData.type === '360') {
+                         avatarObject.position.copy(targetPosition);
+                    }
+                    if (!isFocused) focusedObject = null;
+                }
+            } else if (isFocused && focusedObject.userData.type === '360') {
+                if (rotateLeft) yawAngle += cameraRotationSpeed * delta * 60;
+                if (rotateRight) yawAngle -= cameraRotationSpeed * delta * 60;
+                
+                camera.position.copy(focusedObject.position);
+                const targetLook = new THREE.Vector3(
+                    focusedObject.position.x - Math.sin(yawAngle),
+                    focusedObject.position.y,
+                    focusedObject.position.z - Math.cos(yawAngle)
+                );
+                camera.lookAt(targetLook);
+            }
+            
+            camera.updateProjectionMatrix();
+
+            draggableObjects.forEach(obj => {
+                if (obj.userData.velocity && obj.userData.velocity.lengthSq() > 0.0001) {
+                    obj.position.add(obj.userData.velocity);
+                    obj.userData.velocity.multiplyScalar(0.95);
+                    if (obj.userData.cssObject) {
+                        obj.userData.cssObject.position.copy(obj.position);
+                    }
+                }
+            });
+
+            if(viewMode === 'lookAtCamera') {
+                draggableObjects.forEach(panel => {
+                    if (panel.userData.type !== '360') {
+                        panel.lookAt(camera.position);
+                        if (panel.userData.cssObject) {
+                            panel.userData.cssObject.quaternion.copy(panel.quaternion);
+                        }
+                    }
+                });
+            }
+
+            webglRenderer.render(scene, camera);
+            cssRenderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
