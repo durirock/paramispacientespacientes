@@ -1474,25 +1474,34 @@
         }
 
         function navigateToNearestPanel(localDirection) {
-            if (!focusedObject) return;
+            if (!focusedObject || isTransitioning || !localDirection) return;
+
             const worldDir = localDirection.clone().applyQuaternion(camera.quaternion).normalize();
             let nearest = null;
             let minDistance = Infinity;
-            const angleThreshold = 0.7; 
+            const angleThreshold = 0.5; 
+
             draggableObjects.forEach(obj => {
-                if (obj === focusedObject) return;
+                // Solo navegar hacia objetos que NO sean el actual y que tengan posición válida
+                if (obj === focusedObject || !obj.position) return;
+
                 const toCandidate = new THREE.Vector3().subVectors(obj.position, focusedObject.position);
                 const distance = toCandidate.length();
                 toCandidate.normalize();
+                
                 const alignment = toCandidate.dot(worldDir);
-                if (alignment > angleThreshold) {
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        nearest = obj;
-                    }
+
+                if (alignment > angleThreshold && distance < minDistance) {
+                    minDistance = distance;
+                    nearest = obj;
                 }
             });
+
             if (nearest) {
+                // Limpiar el panel actual antes de saltar
+                if (focusedObject.userData && focusedObject.userData.cssObject && focusedObject.userData.cssObject.userData.contentElement) {
+                    focusedObject.userData.cssObject.userData.contentElement.style.pointerEvents = 'none';
+                }
                 enterFocusMode(nearest);
             }
         }
@@ -1551,25 +1560,27 @@
 
         function handleDoubleClick() {
             if (isTransitioning) return;
+
+            // Si ya estamos en zoom, salir sin importar dónde se haga el clic
             if (isFocused) {
                 exitFocusMode();
+                blocker.style.pointerEvents = 'none';
                 return;
             }
+
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(draggableObjects);
+            
             if (intersects.length > 0) {
                 const clickedObject = intersects[0].object;
+                
                 if(clickedObject.userData.type === '360') {
                     enter360Mode(clickedObject);
                     return;
                 }
-                if (clickedObject.userData.type === 'text') {
-                    if (viewMode === 'fixed') {
-                        openEditModal(clickedObject);
-                    } else {
-                        enterFocusMode(clickedObject);
-                    }
-                } else if (['image', 'video', 'localVideo', 'pdf', 'web', 'html'].includes(clickedObject.userData.type)) {
+                
+                // Entrar en modo foco para cualquier panel válido
+                if (['text', 'image', 'video', 'localVideo', 'pdf', 'web', 'html'].includes(clickedObject.userData.type)) {
                     enterFocusMode(clickedObject);
                 }
             }
@@ -1581,20 +1592,33 @@
             focusedObject = object;
             lastCameraPosition.copy(camera.position);
             lastCameraQuaternion.copy(camera.quaternion);
+            
 
+            // Habilitar interacción con el contenido (iframe/video)
             if (focusedObject.userData.cssObject && focusedObject.userData.cssObject.userData.contentElement) {
                 focusedObject.userData.cssObject.userData.contentElement.style.pointerEvents = 'auto';
             }
 
+            // Ocultar los demás paneles para mejorar rendimiento, pero asegurar que el actual sea visible
             contentPanels.forEach(obj => {
-                const isProxy = !!obj.userData.proxyObject;
-                const currentObj = isProxy ? obj.userData.proxyObject : obj;
-                const isFocusedObj = currentObj === focusedObject;
+                // Determinamos si este objeto es el que estamos enfocando
+                const isCurrentFocused = (obj === focusedObject || (obj.userData && obj.userData.proxyObject === focusedObject) || (focusedObject.userData && focusedObject.userData.cssObject === obj));
 
-                if (!isFocusedObj) {
-                    if (obj.element) obj.element.style.display = 'none'; // FIX: Verificar obj.element
-                    if(!isProxy) obj.visible = false;
+                if (!isCurrentFocused) {
+                    // Si tiene elemento HTML (CSS3D), lo ocultamos con display
+                    if (obj.element) {
+                        obj.element.style.display = 'none';
+                    }
+                    // Si es un objeto de WebGL (Imagen o Proxy), lo hacemos invisible
+                    obj.visible = false;
+                } else {
+                    // Aseguramos que el objeto enfocado y sus componentes sean visibles
+                    if (obj.element) {
+                        obj.element.style.display = 'block';
+                    }
+                    obj.visible = true;
                 }
+            blocker.style.pointerEvents = 'none';
             });
         }
         
@@ -1612,19 +1636,21 @@
 
         function exitFocusMode() {
             if (!isFocused) return;
-            if (focusedObject && focusedObject.userData.type === '360') {
-                focusedObject.scale.set(0.1, 0.1, 0.1);
-                if (focusedObject.userData.video) focusedObject.userData.video.muted = true;
-            }
+            
+            // Deshabilitar interacción para que el movimiento de cámara funcione
             if (focusedObject && focusedObject.userData.cssObject && focusedObject.userData.cssObject.userData.contentElement) {
                 focusedObject.userData.cssObject.userData.contentElement.style.pointerEvents = 'none';
             }
+
             isTransitioning = true;
             isFocused = false;
+            
+            // Restaurar visibilidad de todos los paneles
             contentPanels.forEach(obj => {
-                 const isProxy = !!obj.userData.proxyObject;
-                 if (obj.element) obj.element.style.display = 'block'; // FIX: Verificar obj.element
-                 if(!isProxy) obj.visible = true;
+                if (obj.element) {
+                    obj.element.style.display = 'block';
+                }
+                obj.visible = true;
             });
         }
 
@@ -1773,40 +1799,57 @@
                 camera.position.copy(avatarObject.position).add(offset);
                 camera.lookAt(avatarObject.position);
             } else if (isTransitioning) {
-                let targetPosition, targetQuaternion;
+                // Validación de seguridad para evitar "Cannot read properties of undefined (reading 'x')"
+                if (!focusedObject && isFocused) {
+                    isTransitioning = false;
+                    return;
+                }
+
+                let targetPosition = new THREE.Vector3();
+                let targetQuaternion = new THREE.Quaternion();
 
                 if (isFocused && focusedObject.userData.type === '360') {
-                    targetPosition = focusedObject.position.clone();
-                    targetQuaternion = camera.quaternion.clone();
+                    targetPosition.copy(focusedObject.position);
+                    targetQuaternion.copy(camera.quaternion);
                 } else if (isFocused) {
-                    targetPosition = new THREE.Vector3();
                     focusedObject.getWorldPosition(targetPosition);
-                    const panelSize = focusedObject.geometry.parameters.height || 10;
-                    const focusDistance = (panelSize / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+                    
+                    // Verificación de geometría para asegurar visibilidad del panel
+                    const panelHeight = (focusedObject.geometry && focusedObject.geometry.parameters) ? 
+                                        focusedObject.geometry.parameters.height : 8;
+                    
+                    const focusDistance = (panelHeight / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
                     const direction = new THREE.Vector3();
                     focusedObject.getWorldDirection(direction);
                     targetPosition.addScaledVector(direction, focusDistance * 1.25);
                     
-                    targetQuaternion = new THREE.Quaternion();
                     const tempMatrix = new THREE.Matrix4();
                     tempMatrix.lookAt(targetPosition, focusedObject.position, camera.up);
                     targetQuaternion.setFromRotationMatrix(tempMatrix);
                 } else {
-                    targetPosition = lastCameraPosition;
-                    targetQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitchAngle, yawAngle, 0, 'YXZ'));
+                    // Valores para cuando estamos saliendo del zoom
+                    targetPosition.copy(lastCameraPosition);
+                    targetQuaternion.setFromEuler(new THREE.Euler(pitchAngle, yawAngle, 0, 'YXZ'));
                 }
 
-                camera.position.lerp(targetPosition, 0.05);
-                if(isFocused && focusedObject.userData.type !== '360') {
-                      camera.quaternion.slerp(targetQuaternion, 0.05);
-                }
-
-                if (camera.position.distanceTo(targetPosition) < 0.1) {
-                    isTransitioning = false;
-                    if(isFocused && focusedObject.userData.type === '360') {
-                         avatarObject.position.copy(targetPosition);
+                // Solo ejecutar el movimiento si la posición es válida
+                if (targetPosition && typeof targetPosition.x !== 'undefined') {
+                    camera.position.lerp(targetPosition, 0.05);
+                    
+                    if (isFocused && focusedObject.userData.type !== '360') {
+                        camera.quaternion.slerp(targetQuaternion, 0.05);
                     }
-                    if (!isFocused) focusedObject = null;
+
+                    if (camera.position.distanceTo(targetPosition) < 0.1) {
+                        isTransitioning = false;
+                        if (!isFocused) {
+                            focusedObject = null;
+                            // Reactivamos el control para asegurar que el doble clic funcione al salir
+                            blocker.style.pointerEvents = 'none';
+                        } else if (focusedObject.userData.type === '360') {
+                            avatarObject.position.copy(targetPosition);
+                        }
+                    }
                 }
             } else if (isFocused && focusedObject.userData.type === '360') {
                 if (rotateLeft) yawAngle += cameraRotationSpeed * delta * 60;
