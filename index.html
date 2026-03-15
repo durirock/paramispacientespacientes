@@ -1890,6 +1890,163 @@
             webglRenderer.render(scene, camera);
             cssRenderer.render(scene, camera);
         }
+
+        /*
+        ╔══════════════════════════════════════════════════════════════════╗
+        ║  COSMOS BRIDGE v1.0                                              ║
+        ║  Pega este bloque al FINAL del <script> principal de cada        ║
+        ║  universo. Cirugía limpia — cero interferencia con tu código.    ║
+        ║                                                                  ║
+        ║  CAMBIAR _COSMOS_ID por el id de este universo:                  ║
+        ║    index.html      → 'musicosmos'                               ║
+        ║    kalpa6.0.html   → 'kalpa'                                    ║
+        ║    planetafunk.html→ 'planetafunk'                              ║
+        ║    archhtml.html   → 'mundointerior'             a               ║
+        ╚══════════════════════════════════════════════════════════════════╝
+        */
+
+        // ── COSMOS BRIDGE ──────────────────────────────────────────────────
+        ;(function() {
+            const _COSMOS_ID = 'mundointerior';   // ← CAMBIAR según el universo
+
+            // Solo activa el bridge si estamos dentro del cosmos-shell (como iframe)
+            // Si el archivo se abre directamente, el bridge existe pero no hace nada dañino
+            const _inShell = window.parent !== window;
+            const _channel = new BroadcastChannel('cosmos-hifa');
+
+            // ── Escucha mensajes del shell ──────────────────────────────────
+            _channel.onmessage = (e) => {
+                const d = e.data;
+
+                // El shell avisa que este universo se volvió activo
+                if (d.type === 'universe-activated' && d.universe === _COSMOS_ID) {
+                    _onActivated(d.state);
+                }
+
+                // El shell avisa que este universo va a quedar en background
+                if (d.type === 'universe-leaving' && d.universe === _COSMOS_ID) {
+                    _onBackground();
+                }
+
+                // El usuario viene viajando hacia aquí — preparar animación de llegada
+                if (d.type === 'universe-incoming' && d.universe === _COSMOS_ID) {
+                    _onIncoming(d.portalType, d.origin);
+                }
+
+                // Evento de Killer Pendiente propagado por el shell
+                if (d.type === 'cegg-event') {
+                    _onCEGGEvent(d.payload);
+                }
+            };
+
+            // ── Handlers de ciclo de vida ───────────────────────────────────
+            // (Personalizar cada uno según el universo)
+
+            function _onActivated(cosmosState) {
+                // Universo se vuelve activo (iframe visible)
+                // Reanudar audio, animaciones costosas, etc.
+                console.log(`[${_COSMOS_ID}] ⬡ Activado`);
+
+                // MUSICOSMOS: reanudar audioContext si estaba suspendido
+                // if (typeof audioContext !== 'undefined' && audioContext.state === 'suspended') {
+                //     audioContext.resume();
+                // }
+
+                // KALPA: reanudar el clock del shader
+                // if (typeof clock !== 'undefined') clock.running = true;
+
+                // TODOS: sincronizar posición desde CosmosState
+                // if (cosmosState?.position && typeof avatarObject !== 'undefined') {
+                //     avatarObject.position.set(cosmosState.position.x, cosmosState.position.y, cosmosState.position.z);
+                // }
+            }
+
+            function _onBackground() {
+                // Universo pasa a background (iframe oculto)
+                // Pausar procesos costosos para ahorrar CPU/GPU
+                console.log(`[${_COSMOS_ID}] ⬡ Background`);
+
+                // OPCIONAL: pausar audio
+                // if (typeof audioContext !== 'undefined' && audioContext.state === 'running') {
+                //     audioContext.suspend();
+                // }
+            }
+
+            function _onIncoming(portalType, origin) {
+                // El usuario viene viajando hacia este universo
+                // Puedes preparar una animación especial de "llegada"
+                console.log(`[${_COSMOS_ID}] ⬡ Llegada via ${portalType} desde ${origin}`);
+
+                // Ejemplo por universo:
+                // MUSICOSMOS: hacer que las nebulosas "respiren" más rápido al recibir al viajero
+                // KALPA: hacer que el túnel se abra suavemente
+                // PLANETAFUNK: comenzar desde la atmósfera alta
+                // MUNDOINTERIOR: encender las partículas de bienvenida
+            }
+
+            function _onCEGGEvent(payload) {
+                // Evento de Killer Pendiente (tarea completada, PV ganado, etc.)
+                // Cada universo decide cómo reaccionar
+                console.log(`[${_COSMOS_ID}] ⬡ CEGG event:`, payload);
+
+                // Ejemplos:
+                // if (payload.type === 'TASK_COMPLETE') {
+                //     // MUSICOSMOS: explotar una nebulosa
+                //     // KALPA: acelerar el pulso del túnel
+                //     // PLANETAFUNK: crear una nueva montaña en el terreno
+                //     // MUNDOINTERIOR: añadir un nuevo nodo en el árbol de archivos
+                // }
+            }
+
+            // ── API pública del bridge ──────────────────────────────────────
+            // Llama a _cosmosPortal() desde el loop 3D cuando el usuario llegue
+            // a las coordenadas de un portal.
+
+            window._cosmosPortal = function(destino, tipoOpcional) {
+                _channel.postMessage({
+                    type: 'portal-request',
+                    from: _COSMOS_ID,
+                    to: destino,
+                    portalType: tipoOpcional || null
+                });
+            };
+
+            window._cosmosStateUpdate = function(partial) {
+                // Envía actualizaciones de estado al shell (posición, PV, etc.)
+                _channel.postMessage({
+                    type: partial.position ? 'position-update' : 'stats-update',
+                    ...partial
+                });
+            };
+
+            // ── Detección de zonas de portal en el loop Three.js ───────────
+            // Copia y adapta este bloque dentro de tu función animate() / render()
+            //
+            // const PORTALES_COORDS = {
+            //   kalpa:         new THREE.Vector3(0, 0, -500),   // ← ajustar coords reales
+            //   planetafunk:   new THREE.Vector3(500, 0, 0),
+            //   mundointerior: new THREE.Vector3(-500, 0, 0),
+            //   musicosmos:    new THREE.Vector3(0, 0, 500),
+            // };
+            // const PORTAL_RADIO = 60;
+            // let _portalTimeout = null;
+            //
+            // function checkPortals() {
+            //   if (!avatarObject || _portalTimeout) return;
+            //   for (const [dest, pos] of Object.entries(PORTALES_COORDS)) {
+            //     if (avatarObject.position.distanceTo(pos) < PORTAL_RADIO) {
+            //       _portalTimeout = setTimeout(() => { _portalTimeout = null; }, 4000); // cooldown
+            //       window._cosmosPortal(dest);
+            //       break;
+            //     }
+            //   }
+            // }
+            // // Llamar checkPortals() dentro de tu animate() loop.
+
+            console.log(`%c⬡ Cosmos Bridge activo: ${_COSMOS_ID}`, 'color:#00D4AA;font-size:11px;');
+        })();
+        // ── FIN COSMOS BRIDGE ──────────────────────────────────────────────
+
     </script>
 </body>
 </html>
