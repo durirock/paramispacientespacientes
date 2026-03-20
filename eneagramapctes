@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MenteIntegra - Eneagrama: Mapa de Procesos</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg-dark:#0a0a0f;--bg-card:#12121a;--bg-input:#1a1a25;--accent:#00d4aa;--accent-dim:#00a885;--warning:#ff9500;--danger:#ff3b3b;--purple:#b266ff;--blue:#4a9eff;--cyan:#5ce0d8;--text:#e8e8e8;--text-dim:#888;--border:#2a2a35;--section1:#ff6b4a;--section2:#ffb833;--section3:#00d4aa;--shock:#b266ff}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg-dark);color:var(--text);min-height:100vh;font-size:16px;line-height:1.6}
+.nav{background:var(--bg-card);border-bottom:1px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:100}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:20px}
+.logo{font-size:1.3em;font-weight:700;color:var(--accent);padding:14px 0;white-space:nowrap}
+.nav-tabs{display:flex;gap:3px;overflow-x:auto}
+.nav-tab{padding:14px 16px;background:none;border:none;color:var(--text-dim);font-size:.9em;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.nav-tab:hover{color:var(--text)}.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.main{max-width:1200px;margin:0 auto;padding:20px}
+.page{display:none}.page.active{display:block}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:20px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;padding-bottom:15px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.card-title{font-size:1.15em;font-weight:600;color:var(--accent)}
+.template-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:18px}
+.template-card{background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s}
+.template-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.template-card.active{border-color:var(--accent);background:rgba(0,212,170,.06)}
+.template-card h4{color:var(--accent);margin-bottom:4px;font-size:.95em}
+.template-card p{color:var(--text-dim);font-size:.8em;line-height:1.4}
+.legend{display:flex;flex-wrap:wrap;gap:14px;padding:12px 14px;background:var(--bg-input);border-radius:8px;font-size:.82em;margin-bottom:14px}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-dot{width:12px;height:12px;border-radius:50%}
+.walk-controls{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg-input);border-radius:8px;margin-bottom:14px;flex-wrap:wrap}
+.walk-controls .step-label{font-family:'Courier New',monospace;color:var(--accent);font-size:.9em}
+.btn{padding:9px 18px;border:none;border-radius:8px;font-size:.92em;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#000}.btn-primary:hover{background:var(--accent-dim)}
+.btn-secondary{background:var(--bg-input);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--accent)}
+.enneagram-container{display:flex;gap:20px;align-items:flex-start}
+.enneagram-svg-wrap{flex:1.1;min-width:0;max-width:520px}
+.enneagram-info{flex:1;min-width:280px}
+svg.enneagram{width:100%;height:auto}
+.enn-circle{fill:none;stroke:var(--border);stroke-width:1.5}
+.enn-progress-arc{fill:none;stroke:var(--warning);stroke-width:4;stroke-linecap:round;opacity:.7;transition:stroke-dashoffset .6s ease}
+.enn-triangle-line{stroke:var(--shock);stroke-width:1.5;stroke-dasharray:8 4;opacity:.4}
+.enn-hex-line{stroke:var(--text-dim);stroke-width:1;opacity:.2;transition:all .3s}
+.enn-hex-line.highlight{opacity:.65;stroke:var(--accent);stroke-width:1.5}
+.enn-point{cursor:pointer;transition:all .3s}
+.enn-point circle{transition:all .3s}
+.enn-point:hover circle{filter:brightness(1.3)}
+.enn-point.active circle{filter:brightness(1.4);stroke:#fff;stroke-width:2.5}
+.enn-point text{fill:#fff;font-size:14px;font-weight:700;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.enn-label{font-size:9.5px;fill:var(--text-dim);text-anchor:middle;pointer-events:none;transition:fill .3s}
+.enn-label.active{fill:#fff;font-weight:600;font-size:10px}
+.point-info{background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:14px;min-height:160px;transition:all .3s}
+.point-info.shock{border-left:3px solid var(--shock)}
+.point-info .point-number{font-size:2.2em;font-weight:700;font-family:'Courier New',monospace;line-height:1;margin-bottom:4px}
+.point-info .point-section-label{font-size:.72em;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;display:inline-block;padding:2px 8px;border-radius:4px}
+.point-info .point-title{font-size:1.1em;font-weight:600;margin-bottom:6px}
+.point-info .point-desc{font-size:.92em;color:var(--text-dim);line-height:1.6}
+.point-info .point-example{margin-top:10px;padding:10px 12px;background:rgba(0,212,170,.04);border-left:2px solid var(--accent);border-radius:0 6px 6px 0;font-size:.85em;line-height:1.5}
+.point-info .octave-label{margin-top:8px;font-family:'Courier New',monospace;font-size:.82em;color:var(--purple)}
+.octave-bar{display:flex;align-items:center;gap:0;padding:8px 10px;background:var(--bg-input);border-radius:10px;overflow-x:auto;margin-top:12px}
+.octave-note{flex:1;text-align:center;padding:8px 3px;font-family:'Courier New',monospace;font-size:.78em;color:var(--text-dim);min-width:36px;cursor:pointer;transition:all .3s;border-radius:5px}
+.octave-note.active{color:#fff;font-weight:700}
+.octave-note.s1.active{background:rgba(255,107,74,.2);color:var(--section1)}
+.octave-note.s2.active{background:rgba(255,184,51,.2);color:var(--section2)}
+.octave-note.s3.active{background:rgba(0,212,170,.2);color:var(--section3)}
+.octave-note.sk.active{background:rgba(178,102,255,.2);color:var(--shock)}
+.octave-gap{width:4px;height:28px;background:var(--danger);border-radius:2px;margin:0 2px;opacity:.6;position:relative}
+.octave-gap::after{content:'⚡';position:absolute;top:-16px;left:-6px;font-size:.65em}
+.octave-arrow{color:var(--border);font-size:.65em;padding:0 1px}
+.connections-box{margin-top:12px;font-size:.82em;color:var(--text-dim)}
+.connections-box span{font-family:'Courier New',monospace;color:var(--accent);font-size:.9em}
+.guide-section{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.guide-header{padding:16px 20px;background:var(--bg-input);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.guide-header:hover{background:#1f1f2a}
+.guide-header h3{font-size:1.05em;color:var(--accent)}
+.guide-toggle{font-size:1.2em;color:var(--text-dim);transition:transform .3s}
+.guide-section.open .guide-toggle{transform:rotate(180deg)}
+.guide-body{padding:0;max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s}
+.guide-section.open .guide-body{padding:22px;max-height:6000px}
+.diagram{background:#0d0d12;color:#00ff88;font-family:'Courier New',monospace;padding:16px;border-radius:8px;font-size:.82em;overflow-x:auto;white-space:pre;line-height:1.5;margin-bottom:12px}
+.diagram.amber{color:var(--warning)}.diagram.cyan{color:var(--cyan)}.diagram.purple{color:var(--purple)}
+.guide-note{padding:12px 16px;background:rgba(92,224,216,.06);border-left:3px solid var(--cyan);border-radius:0 8px 8px 0;font-size:.92em;line-height:1.6;color:var(--text);margin:12px 0}
+.guide-note.warning{background:rgba(255,149,0,.06);border-left-color:var(--warning)}
+.guide-note.purple{background:rgba(178,102,255,.06);border-left-color:var(--purple)}
+.crear-grid{display:flex;flex-direction:column;gap:8px}
+.crear-row{display:flex;align-items:center;gap:10px}
+.crear-label{min-width:36px;font-family:'Courier New',monospace;font-weight:700;font-size:1.1em;text-align:center}
+.crear-section-divider{padding:8px 14px;font-size:.78em;text-transform:uppercase;letter-spacing:2px;font-weight:600;border-radius:6px;margin:6px 0 2px}
+.form-input{padding:10px 12px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.92em;transition:border-color .2s;width:100%}
+.form-input:focus{outline:none;border-color:var(--accent)}
+.form-input.shock-input{border-color:rgba(178,102,255,.4)}.form-input.shock-input:focus{border-color:var(--shock)}
+.output-area{background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:20px;font-family:'Courier New',monospace;font-size:.88em;line-height:1.6;white-space:pre-wrap;max-height:500px;overflow-y:auto}
+.btn-group{display:flex;gap:10px;flex-wrap:wrap}
+.copy-toast{position:fixed;bottom:30px;right:30px;background:var(--accent);color:#000;padding:12px 24px;border-radius:8px;font-weight:600;transform:translateY(100px);opacity:0;transition:all .3s;z-index:200}
+.copy-toast.show{transform:translateY(0);opacity:1}
+.vector-canvas{width:100%;height:auto;margin:10px 0}
+@media(max-width:800px){.enneagram-container{flex-direction:column}.enneagram-svg-wrap{max-width:100%}.enneagram-info{min-width:0}.nav-inner{gap:10px}.logo{font-size:1.1em}.nav-tab{padding:12px 10px;font-size:.82em}.template-grid{grid-template-columns:1fr 1fr}body{font-size:15px}}
+@media(max-width:480px){.template-grid{grid-template-columns:1fr}.main{padding:12px}.card{padding:16px}.walk-controls{gap:8px}.btn{padding:8px 14px;font-size:.85em}}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-inner"><div class="logo">🧠 MenteIntegra</div><div class="nav-tabs">
+<button class="nav-tab active" data-page="mapa">◎ Mapa</button>
+<button class="nav-tab" data-page="leyes">⚖️ Leyes</button>
+<button class="nav-tab" data-page="crear">✏️ Crear</button>
+<button class="nav-tab" data-page="teoria">📚 Teoría</button>
+</div></div></nav>
+<main class="main">
+
+<!-- MAPA -->
+<div class="page active" id="page-mapa"><div class="card">
+<div class="card-header"><span class="card-title">◎ Eneagrama como Mapa de Procesos</span><span style="font-size:.82em;color:var(--text-dim)">Click en cada punto</span></div>
+<div class="template-grid">
+<div class="template-card active" data-template="infelicidad" onclick="loadT('infelicidad')"><h4>🔄 El reto de la infelicidad</h4><p>Transformación personal — Vollmar/Gurdjieff</p></div>
+<div class="template-card" data-template="cuerpoAlmaEspiritu" onclick="loadT('cuerpoAlmaEspiritu')"><h4>🧬 Cuerpo–Alma–Espíritu</h4><p>Desarrollo integral del ser humano</p></div>
+<div class="template-card" data-template="cocina" onclick="loadT('cocina')"><h4>🍳 La cocina como cosmos</h4><p>Preparar un alimento — Bennett</p></div>
+<div class="template-card" data-template="libro" onclick="loadT('libro')"><h4>📖 Escribir un libro</h4><p>El proceso creativo de Vollmar</p></div>
+</div>
+<div class="legend">
+<div class="legend-item"><div class="legend-dot" style="background:var(--section1)"></div> Sección 1</div>
+<div class="legend-item"><div class="legend-dot" style="background:var(--section2)"></div> Sección 2</div>
+<div class="legend-item"><div class="legend-dot" style="background:var(--section3)"></div> Sección 3</div>
+<div class="legend-item"><div class="legend-dot" style="background:var(--shock)"></div> Choque (3,6,9)</div>
+</div>
+<div class="walk-controls">
+<button class="btn btn-secondary" onclick="wP()">◀</button>
+<span class="step-label" id="stepLabel">— / 9</span>
+<button class="btn btn-primary" onclick="wN()">▶ Siguiente</button>
+<button class="btn btn-secondary" onclick="wR()">↺</button>
+<label style="font-size:.78em;color:var(--text-dim);display:flex;align-items:center;gap:4px;margin-left:auto"><input type="checkbox" id="shH" checked onchange="tH()"> Hex</label>
+<label style="font-size:.78em;color:var(--text-dim);display:flex;align-items:center;gap:4px"><input type="checkbox" id="shT" checked onchange="tT()"> Tri</label>
+</div>
+<div class="enneagram-container">
+<div class="enneagram-svg-wrap">
+<svg class="enneagram" viewBox="0 0 500 520" id="ennSvg">
+<text x="250" y="22" font-size="12" fill="#5ce0d8" text-anchor="middle" font-weight="500" opacity=".85">→ sentido reloj: secuencia funcional →</text>
+<text x="250" y="510" font-size="12" fill="#5ce0d8" text-anchor="middle" font-weight="500" opacity=".85">← anti-reloj: visión desde la meta (Merlín) ←</text>
+<circle class="enn-circle" cx="250" cy="260" r="200"/>
+<circle class="enn-progress-arc" id="pArc" cx="250" cy="260" r="200" stroke-dasharray="1256.64" stroke-dashoffset="1256.64" transform="rotate(-90 250 260)"/>
+<line x1="250" y1="55" x2="250" y2="465" stroke="var(--border)" stroke-width=".5" stroke-dasharray="4 4" opacity=".25"/>
+<text x="140" y="265" font-size="9" fill="var(--text-dim)" opacity=".35">EFECTOS</text>
+<text x="330" y="265" font-size="9" fill="var(--text-dim)" opacity=".35">CAUSAS</text>
+<g id="tG"></g><g id="hG"></g><g id="pG"></g><g id="lG"></g>
+</svg>
+</div>
+<div class="enneagram-info">
+<div class="point-info" id="pI">
+<div class="point-number" id="piN" style="color:var(--accent)">◎</div>
+<div class="point-section-label" id="piS"></div>
+<div class="point-title" id="piT">Selecciona un punto</div>
+<div class="point-desc" id="piD">Click en cualquier punto (1-9) o usa ▶ para recorrer paso a paso.</div>
+<div class="point-example" id="piE" style="display:none"></div>
+<div class="octave-label" id="piO" style="display:none"></div>
+</div>
+<div class="octave-bar">
+<div class="octave-note s1" data-n="1">DO</div><div class="octave-arrow">→</div>
+<div class="octave-note s1" data-n="2">RE</div><div class="octave-arrow">→</div>
+<div class="octave-note s1" data-n="3">MI</div><div class="octave-gap"></div>
+<div class="octave-note sk" data-n="3">FA</div><div class="octave-arrow">→</div>
+<div class="octave-note s2" data-n="4">SOL</div><div class="octave-arrow">→</div>
+<div class="octave-note s2" data-n="5">LA</div><div class="octave-arrow">→</div>
+<div class="octave-note s3" data-n="6">SI</div><div class="octave-gap"></div>
+<div class="octave-note sk" data-n="6">DO'</div><div class="octave-arrow">→</div>
+<div class="octave-note s3" data-n="7">RE'</div><div class="octave-arrow">→</div>
+<div class="octave-note s3" data-n="8">MI'</div>
+</div>
+<div class="connections-box"><div style="margin-bottom:4px">Conexiones:</div><span id="cD"></span></div>
+</div>
+</div>
+</div></div>
+
+<!-- LEYES -->
+<div class="page" id="page-leyes">
+<div class="guide-section open"><div class="guide-header" onclick="this.parentElement.classList.toggle('open')"><h3>♪ Ley de la Octava — La desviación natural</h3><span class="guide-toggle">▼</span></div>
+<div class="guide-body">
+<div class="diagram">DO ─── RE ─── MI ─╳─ FA ─── SOL ─── LA ─── SI ─╳─ DO'
+ 1       2       3    3       4        5       6    6
+       tono    tono  ½      tono     tono    tono  ½
+                    FALTA                          FALTA
+                    SEMITONO                       SEMITONO
+                      ↑                              ↑
+                 CHOQUE 1                       CHOQUE 2</div>
+<div class="guide-note">En la naturaleza, estos intervalos sin semitono hacen que toda vibración tienda a <strong style="color:var(--warning)">desviarse</strong> en MI→FA y SI→DO. Sin intervención consciente (autorrecuerdo), tu proceso se desvía sin que te des cuenta.</div>
+<svg class="vector-canvas" viewBox="0 0 700 130">
+<line x1="50" y1="65" x2="650" y2="65" stroke="var(--accent)" stroke-width="1" stroke-dasharray="6 4" opacity=".3"/>
+<text x="660" y="69" font-size="11" fill="var(--accent)" opacity=".6">META</text>
+<text x="15" y="69" font-size="11" fill="var(--text-dim)">DO</text>
+<path d="M50,65 L150,63 L220,60 Q260,56 280,66 L350,72 L420,78 Q460,83 480,75 L550,68 L620,63" stroke="var(--warning)" stroke-width="2.5" fill="none" opacity=".8"/>
+<circle cx="260" cy="56" r="7" fill="var(--shock)" opacity=".7"/><text x="260" y="40" font-size="10" fill="var(--shock)" text-anchor="middle">MI→FA</text>
+<circle cx="460" cy="83" r="7" fill="var(--shock)" opacity=".7"/><text x="460" y="104" font-size="10" fill="var(--shock)" text-anchor="middle">SI→DO'</text>
+<path d="M260,56 Q350,38 500,18" stroke="var(--danger)" stroke-width="1" fill="none" stroke-dasharray="4 3" opacity=".4"/>
+<text x="510" y="18" font-size="9" fill="var(--danger)" opacity=".5">sin autorrecuerdo</text>
+<path d="M460,83 Q550,98 650,115" stroke="var(--danger)" stroke-width="1" fill="none" stroke-dasharray="4 3" opacity=".4"/>
+</svg>
+<div class="diagram amber">OUSPENSKY — La Ley de la Desviación:
+
+"Cuando quiero hacer algo, trazo un vector en línea recta
+hacia mi meta. Pero no observo que vienen fuerzas externas
+que van desviando el vector. Si no vuelvo a mi camino,
+sigo para otro lado."
+
+Los puntos 3 y 6 son estos puntos de desviación natural.
+Sin el AUTORRECUERDO — el acto consciente de rellenar
+el semitono faltante — el proceso se desvía.
+
+AUTORRECUERDO = ¿Dónde estoy ahora?
+                ¿Qué centro está activo?
+                ¿Me fui del camino sin darme cuenta?</div>
+</div></div>
+
+<div class="guide-section"><div class="guide-header" onclick="this.parentElement.classList.toggle('open')"><h3>📐 La Matemática del 9</h3><span class="guide-toggle">▼</span></div>
+<div class="guide-body"><div class="diagram">1 ÷ 7 = 0.142857142857...
+
+Secuencia interna del hexagrama: 1→4→2→8→5→7
+(NO es 1,2,3,4,5... — es la dinámica oculta)
+
+El 3, 6 y 9 NO aparecen en 1/7.
+Son el TRIÁNGULO — las fuerzas externas.
+
+ 1/3 = 0.333...  →  3
+ 2/3 = 0.666...  →  6
+ 3/3 = 0.999...  →  9
+
+┌──────────────────────────────────────────┐
+│ CÍRCULO    = totalidad, tiempo, proceso  │
+│ TRIÁNGULO  = tres choques (3, 6, 9)     │
+│ HEXAGRAMA  = dinámica interna (142857)  │
+└──────────────────────────────────────────┘
+
+Puntos del hexagrama: 1+4+2+8+5+7 = 27 = 3×9
+→ La completitud está en cada fragmento.</div>
+</div></div>
+
+<div class="guide-section"><div class="guide-header" onclick="this.parentElement.classList.toggle('open')"><h3>⚡ Las Tres Fuerzas</h3><span class="guide-toggle">▼</span></div>
+<div class="guide-body">
+<div class="guide-note purple">Para que <strong>cualquier proceso en el universo</strong> pueda ocurrir, se necesitan tres fuerzas simultáneas. No dos — tres. Siempre miramos lo positivo y lo negativo, pero olvidamos la fuerza <strong>neutralizante</strong>. Como Fight y Flight… olvidando que existe <strong>Freeze</strong>.</div>
+<div class="diagram cyan">LAS TRES FUERZAS (Ley del Tres):
+
+FUERZA ACTIVA (+)  → "Santa Afirmación" → Punto 3
+  La que INICIA, propone, empuja
+
+FUERZA PASIVA (−)  → "Santa Negación" → Punto 6
+  La que RESISTE, frena, cuestiona
+
+FUERZA NEUTRALIZANTE (≈) → "Santa Reconciliación" → Punto 9
+  La que RECONCILIA, une, transforma
+  Sin ella las otras dos se anulan
+
+ (+) Sin (−) = impulso ciego
+ (−) Sin (+) = parálisis
+ (+) y (−) sin (≈) = conflicto eterno
+ (+) + (−) + (≈) = PROCESO REAL
+
+ Fight sin Flight = agresión
+ Flight sin Fight = cobardía
+ Ambos sin Freeze = no hay pausa para VER
+ Las tres juntas = respuesta CONSCIENTE</div>
+<div class="diagram amber" style="margin-top:14px">LA METÁFORA DEL CARRUAJE (Gurdjieff):
+
+ ┌──────────────┐
+ │   EL SELF    │ ← El pasajero DENTRO del carruaje
+ │   (El Amo)   │   Sabe adónde quiere ir, pero hasta
+ │              │   el punto 6 está DORMIDO o AUSENTE.
+ └──────┬───────┘   Es quien da sentido al viaje.
+        │
+ ┌──────▼───────┐
+ │   COCHERO    │ ← El Intelecto
+ │              │   Puede conducir, pero sin el Amo
+ │              │   no sabe adónde ir. Se queda
+ │              │   dormido en el pescante. A veces
+ │              │   entra a la taberna y se emborracha.
+ └──────┬───────┘
+        │ riendas
+ ┌──────▼───────┐
+ │   CABALLOS   │ ← Los Sentimientos
+ │              │   Tiran del carruaje con fuerza.
+ │              │   Sin cochero despierto marchan
+ │              │   desbocados hacia donde quieren.
+ │              │   Reaccionan a cada estímulo externo.
+ └──────┬───────┘
+        │ arneses
+ ┌──────▼───────┐
+ │   CARRUAJE   │ ← El Cuerpo
+ │              │   El vehículo físico. Si está
+ │              │   deteriorado, ningún viaje es
+ │              │   posible, por bueno que sea el Amo.
+ └──────────────┘
+
+Sin el Self, no hay nadie que diga adónde ir.
+El cochero (intelecto) se duerme.
+Los caballos (sentimientos) marchan desbocados.
+El viaje termina en la cuneta.
+
+El "despertar" del punto 6 es el momento en que
+el Self finalmente aparece, se sienta en el carruaje
+y dice: "Vamos hacia allá."
+
+Nota: Las riendas son la conexión entre pensar y
+sentir. Los arneses conectan sentir con el cuerpo.
+Si las riendas están rotas (desconexión pensar-sentir),
+no importa cuán despierto esté el cochero.</div>
+</div></div>
+</div>
+
+<!-- CREAR -->
+<div class="page" id="page-crear"><div class="card">
+<div class="card-header"><span class="card-title">✏️ Crea tu propio Eneagrama de Proceso</span></div>
+<div class="guide-note" style="margin-bottom:18px">Mapea cualquier proceso en los 9 puntos. Recuerda: la asignación de Cuerpo/Sentimiento/Mente a las secciones <strong>no es rígida</strong> — puede variar según tu proceso y tu enfoque. Esto es solo la punta del iceberg.</div>
+<div style="margin-bottom:14px"><label style="font-size:.85em;color:var(--text-dim);margin-bottom:5px;display:block">Nombre del proceso</label>
+<input type="text" class="form-input" id="cN" placeholder="Ej: Aprender piano, Abrir un negocio, Sanar una relación..."></div>
+<div class="crear-grid">
+<div class="crear-section-divider" style="background:rgba(255,107,74,.1);color:var(--section1)">Sección 1 — Material / Cuerpo</div>
+<div class="crear-row"><div class="crear-label" style="color:var(--section1)">1</div><input type="text" class="form-input" id="cp1" placeholder="Situación inicial, condición material"></div>
+<div class="crear-row"><div class="crear-label" style="color:var(--section1)">2</div><input type="text" class="form-input" id="cp2" placeholder="Preparación, reunir recursos"></div>
+<div class="crear-section-divider" style="background:rgba(178,102,255,.1);color:var(--shock)">⚡ Choque 1 — MI→FA</div>
+<div class="crear-row"><div class="crear-label" style="color:var(--shock)">3</div><input type="text" class="form-input shock-input" id="cp3" placeholder="¿Qué fuerza externa necesito?"></div>
+<div class="crear-section-divider" style="background:rgba(255,184,51,.1);color:var(--section2)">Sección 2 — Sentimiento / Acción</div>
+<div class="crear-row"><div class="crear-label" style="color:var(--section2)">4</div><input type="text" class="form-input" id="cp4" placeholder="Conflicto, tensión, mecanismos de defensa"></div>
+<div class="crear-row"><div class="crear-label" style="color:var(--section2)">5</div><input type="text" class="form-input" id="cp5" placeholder="Uso creativo de la tensión"></div>
+<div class="crear-section-divider" style="background:rgba(178,102,255,.1);color:var(--shock)">⚡ Choque 2 — SI→DO'</div>
+<div class="crear-row"><div class="crear-label" style="color:var(--shock)">6</div><input type="text" class="form-input shock-input" id="cp6" placeholder="¿Qué segundo impulso necesito?"></div>
+<div class="crear-section-divider" style="background:rgba(0,212,170,.1);color:var(--section3)">Sección 3 — Mente / Resultado</div>
+<div class="crear-row"><div class="crear-label" style="color:var(--section3)">7</div><input type="text" class="form-input" id="cp7" placeholder="Servir a la meta con toda la energía"></div>
+<div class="crear-row"><div class="crear-label" style="color:var(--section3)">8</div><input type="text" class="form-input" id="cp8" placeholder="Logro de la meta"></div>
+<div class="crear-section-divider" style="background:rgba(178,102,255,.08);color:var(--purple)">Nuevo Ciclo</div>
+<div class="crear-row"><div class="crear-label" style="color:var(--purple)">9</div><input type="text" class="form-input" id="cp9" placeholder="¿Qué nuevo ciclo comienza?"></div>
+</div>
+<div class="btn-group" style="margin-top:18px"><button class="btn btn-primary" onclick="loadC()">◎ Ver en Eneagrama</button><button class="btn btn-secondary" onclick="expC()">📋 Copiar</button></div>
+</div>
+<div class="card" style="display:none" id="cOC"><div class="card-header"><span class="card-title">📄 Tu Eneagrama</span></div><div class="output-area" id="cO"></div></div>
+</div>
+
+<!-- TEORIA -->
+<div class="page" id="page-teoria">
+<div class="guide-section open"><div class="guide-header" onclick="this.parentElement.classList.toggle('open')"><h3>1. ¿Qué es el Eneagrama de Procesos?</h3><span class="guide-toggle">▼</span></div>
+<div class="guide-body">
+<div class="guide-note">El eneagrama <strong>no es</strong> una tipología de personalidad. Eso vino después. Originalmente es un <strong>diagrama de movimiento dinámico</strong> — un mapa universal para cualquier proceso que se completa.</div>
+<p style="margin:12px 0;font-size:.95em;color:var(--text-dim);line-height:1.7">Gurdjieff lo introdujo en 1916: el crecimiento de una planta, un proyecto, una relación, un proceso terapéutico, cocinar una comida. Cualquier cosa con inicio, desarrollo y conclusión puede mapearse aquí.</p>
+<div class="diagram" style="font-size:.88em">"Cada totalidad, cada cosmos, cada organismo,
+ cada planta, es un Eneagrama."  — Gurdjieff
+
+"Un Eneagrama que no está en movimiento
+ es un símbolo muerto."  — Ouspensky</div>
+<div class="guide-note warning" style="margin-top:12px">Todo lo que encuentras aquí es solo <strong>la punta del iceberg</strong>. El eneagrama tiene capas que se revelan con la práctica. No intentes comprenderlo todo de una vez.</div>
+</div></div>
+
+<div class="guide-section"><div class="guide-header" onclick="this.parentElement.classList.toggle('open')"><h3>2. Las Tres Secciones del Círculo</h3><span class="guide-toggle">▼</span></div>
+<div class="guide-body">
+<div class="guide-note"><strong>Importante:</strong> la asignación Cuerpo→Sentimiento→Mente no es fija — depende del proceso, tu enfoque y tu situación. Si eres más intelectual, el intelecto puede ir en la sección 1.</div>
+<div class="diagram" style="font-size:.85em">SECCIÓN 1 (puntos 1, 2) — Reacción RÁPIDA
+ Automática, inconsciente, mecánica
+ Condiciones materiales previas
+ Patrones repetitivos. Se aprende por imitación.
+
+SECCIÓN 2 (puntos 4, 5) — Reacción MEDIA
+ CONFLICTOS y TENSIONES viven aquí
+ "Fuego interior en la sangre" (alquimia)
+ Aquí se forma la VOLUNTAD consciente
+
+SECCIÓN 3 (puntos 7, 8) — Reacción LENTA
+ Toda la energía hacia la meta
+ Comprensión de mí y mi entorno
+ Resultados mentales y espirituales</div>
+<p style="margin:12px 0;font-size:.95em;color:var(--text-dim);line-height:1.7"><strong style="color:var(--cyan)">Ejemplo:</strong> Un niño cruza la calle. Centro motor: frenas instintivamente (rápido). Centro emocional: reacción histérica (medio). Centro mental: piensas qué pasó (lento).</p>
+</div></div>
+
+<div class="guide-section"><div class="guide-header" onclick="this.parentElement.classList.toggle('open')"><h3>3. El Loop Trampa: 4→1→2→4</h3><span class="guide-toggle">▼</span></div>
+<div class="guide-body"><div class="diagram" style="font-size:.85em">En el punto 4, los mecanismos de defensa CONTRAATACAN:
+ ├─ "Pereza" disfrazada (que es protección)
+ ├─ Racionalización: "esto es pérdida de tiempo"
+ ├─ Nostalgia: "antes estaba mejor" (gafas rosa)
+ └─ Huida: nueva relación/proyecto/distracción
+
+Si NO soporto la tensión:
+ 4 ──(escape)──→ 1 ──→ 2 ──→ 4 (LOOP NEURÓTICO)
+
+SI sostengo la tensión:
+ → Punto 5: Veo claro pero DUELE
+ → Punto 6: DESPERTAR — los egos se funden</div>
+</div></div>
+
+<div class="guide-section"><div class="guide-header" onclick="this.parentElement.classList.toggle('open')"><h3>4. Sentido Reloj vs Anti-reloj (Merlín)</h3><span class="guide-toggle">▼</span></div>
+<div class="guide-body"><div class="diagram" style="font-size:.85em">SENTIDO RELOJ (1→9): Paso a paso funcional
+ "¿Qué hago primero? ¿Qué sigue?"
+
+ANTI-RELOJ (9→1): Visión desde la META
+ "Si ya logré esto, ¿qué necesité?"
+ La perspectiva del MAGO MERLÍN
+ Ideal para PLANIFICACIÓN</div>
+</div></div>
+
+<div class="guide-section"><div class="guide-header" onclick="this.parentElement.classList.toggle('open')"><h3>5. El Autorrecuerdo</h3><span class="guide-toggle">▼</span></div>
+<div class="guide-body">
+<div class="guide-note">El autorrecuerdo es la <strong>práctica central</strong> de Gurdjieff. Es el acto de "rellenar el semitono faltante" — la intervención consciente que impide que el proceso se desvíe.</div>
+<div class="diagram" style="font-size:.85em">Detén todo. Pregúntate:
+
+ 1. ¿Cuál de mis centros está activo ahora?
+    Intelectual / Emocional / Motor
+
+ 2. ¿Están trabajando adecuadamente?
+
+ 3. Pronuncia "YO" en voz alta.
+    ¿En qué centro resuena?
+
+LO OPUESTO = IDENTIFICACIÓN
+ Atención SOLO en algo externo
+ "Como una hoja en el viento"
+
+AUTORRECUERDO = división de la atención
+ Simultáneamente en MÍ y en el MUNDO</div>
+</div></div>
+</div>
+
+</main>
+<div class="copy-toast" id="cT">✓ Copiado</div>
+
+<script>
+const T={infelicidad:{name:"El reto de la infelicidad",points:{1:{title:"Soy infeliz",desc:"Me percato de que me siento infeliz. Esta infelicidad crea un conflicto que me impulsa a la acción.",example:"Desde el punto 1 miro hacia el 7 y veo un aspecto de la meta.",octave:"DO — Inicio"},2:{title:"Percibo situaciones repetitivas",desc:"Reconozco los patrones mecánicos. Los mismos comportamientos que me hacen infeliz. Neurosis: patrón compulsivo que coloca la felicidad más allá del alcance.",example:"Ahora puedo ver más claro mi propósito (punto 8).",octave:"RE"},3:{title:"Algo nuevo entra en mi vida",desc:"⚡ CHOQUE 1 (MI→FA). Necesito un estímulo EXTERNO: maestro, libro, terapeuta, grupo. Sin este impulso, permaneceré atrapado.",example:"Aquí la vibración se DESVÍA si no intervengo conscientemente.",octave:"MI→FA — ¡Sin semitono!"},4:{title:"Confronto mis mecanismos de defensa",desc:"Enormes tensiones internas. Hábitos antiguos dan batalla. PELIGRO: el punto 4 se conecta HACIA ATRÁS con 1 y 2 — tiendo a mirar el pasado con gafas rosa.",example:"Puedo romper con la terapia, buscar distracción, convencerme de que estoy bien.",octave:"SOL"},5:{title:"Uso la energía del conflicto",desc:"La liberación NO llega todavía. Pero reconozco qué me mantiene satisfecho. Debo aceptar el SUFRIMIENTO CONSCIENTE.",example:"El sufrimiento consciente prolongado rompe la programación.",octave:"LA"},6:{title:"Me despierto",desc:"⚡ CHOQUE 2 (SI→DO'). Los múltiples egos se funden en uno. TRANSMUTATIO alquímica. Se necesita nuevamente algo externo.",example:"El Self aparece en el carruaje y dice: vamos hacia allá.",octave:"SI→DO' — ¡Sin semitono!"},7:{title:"Sirvo a mi meta",desc:"Enfoco toda mi energía. Puedo servir con voluntad orientada.",example:"Veo claramente el punto 1 (origen) y el punto 5 (uso del conflicto).",octave:"RE'"},8:{title:"Logro mi meta",desc:"Alcanzo mi propósito. Reconozco que mis automatismos eran el origen de mi infelicidad.",example:"Lo que parecía insoportable en el punto 4 era necesario.",octave:"MI'"},9:{title:"Amor / Conciencia superior",desc:"Libre de entrar en un NUEVO proceso con conciencia ampliada. Amor consciente. Fin y principio: nuevo DO en octava superior.",example:"El punto 9 es simultáneamente fin y principio.",octave:"DO nueva octava"}}},cuerpoAlmaEspiritu:{name:"Cuerpo–Alma–Espíritu",points:{1:{title:"Mi cuerpo es flexible",desc:"Requisito previo para reconocer sentimientos (4) y comprenderme (7)."},2:{title:"Mantengo mi cuerpo sano",desc:"Esfuerzos para conservarme sano, alcanzar libertad (8) y contactar sentimientos (4).",example:"Reich: en un cuerpo inflexible solo habitan sentimientos rastreros."},3:{title:"Psiquis (sentimiento)",desc:"⚡ Descubro que existe algo más — estados de ánimo que no se tratan con duchas frías."},4:{title:"Percibo mis sentimientos",desc:"Me relaciono con mis sentimientos. Experimento dependencia de impulsos que surgen del cuerpo."},5:{title:"Influyo sobre mis sentimientos",desc:"Para no ser esclavo de estados de ánimo. Se necesita una nueva cualidad."},6:{title:"Espíritu (intelecto)",desc:"⚡ Descubro el poder del espíritu. Comienzo a comprenderme en un nuevo nivel."},7:{title:"Me comprendo",desc:"Solo cuando cuerpo es flexible (1) y soy dueño de sentimientos (5). Los tres centros cooperan."},8:{title:"Alcanzo la libertad",desc:"Domino sentimientos (5) y cuerpo (2). El Self aparece y da dirección.",example:"El cochero dirige los caballos, el carruaje llega a destino."},9:{title:"Ser humano integrado",desc:"Coniunctio alquímica. Más allá de lo masculino y femenino."}}},cocina:{name:"La cocina como cosmos",points:{1:{title:"La cocina está lista",desc:"Condiciones materiales preparadas. Cocina = Cuerpo."},2:{title:"Comienza el trabajo",desc:"Proceso mecánico. Manos en acción."},3:{title:"Los ingredientes",desc:"⚡ Lo que viene de AFUERA. Sin ingredientes no hay comida.",example:"Ingredientes = experiencias / alma"},4:{title:"Preparando ingredientes",desc:"Transformar lo crudo. Cortar, pelar, medir."},5:{title:"Cocinando",desc:"El fuego transforma. No se puede apurar."},6:{title:"El grupo que recibirá",desc:"⚡ La presencia de quienes recibirán da sentido a todo."},7:{title:"Sirviendo",desc:"Presentar lo creado."},8:{title:"Consumiendo",desc:"La meta se cumple. El alimento nutre."},9:{title:"Vida",desc:"El alimento se transforma en vida. Nuevo ciclo.",example:"Cocinero = voluntad/espíritu"}}},libro:{name:"Escribir un libro (Vollmar)",points:{1:{title:"Ordenador con programa",desc:"Condición material para componer."},2:{title:"Leer, acumular experiencia",desc:"Conocimiento práctico y experiencia."},3:{title:"La idea (la Musa)",desc:"⚡ Surgió en conversación con el editor."},4:{title:"Ordenar el material",desc:"Qué incluir/excluir. Establecer límites."},5:{title:"Planificar estructura",desc:"Tarea más difícil: índice, organización."},6:{title:"El editor",desc:"⚡ Longitud, alcance, contrato."},7:{title:"Se publica",desc:"Toda la energía al servicio de la meta."},8:{title:"Se lee el libro",desc:"Si el lector sigue leyendo, la meta se cumplió."},9:{title:"Ideas para otro libro",desc:"El lector aplica el eneagrama. Nuevo ciclo.",example:"Punto 9 de este libro = punto 1 de tu eneagrama."}}}};
+
+let cT='infelicidad',aP=null,wS=-1;
+const cx=250,cy=260,R=200,circ=2*Math.PI*R;
+const pC={1:'var(--section1)',2:'var(--section1)',3:'var(--shock)',4:'var(--section2)',5:'var(--section2)',6:'var(--shock)',7:'var(--section3)',8:'var(--section3)',9:'var(--purple)'};
+const sO={1:1,2:1,3:0,4:2,5:2,6:0,7:3,8:3,9:0};
+const sN={1:'Sección 1',2:'Sección 2',3:'Sección 3',0:'Choque'};
+const sC={1:'var(--section1)',2:'var(--section2)',3:'var(--section3)',0:'var(--shock)'};
+const hS=[1,4,2,8,5,7],tS=[3,6,9];
+
+function gP(n){const a=((n%9)*40-90)*Math.PI/180;return{x:cx+R*Math.cos(a),y:cy+R*Math.sin(a)}}
+function gL(n){const a=((n%9)*40-90)*Math.PI/180;const lr=R+28;return{x:cx+lr*Math.cos(a),y:cy+lr*Math.sin(a)}}
+
+document.addEventListener('DOMContentLoaded',()=>{
+document.querySelectorAll('.nav-tab').forEach(t=>t.addEventListener('click',()=>{
+document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+t.classList.add('active');document.getElementById('page-'+t.dataset.page).classList.add('active');
+}));
+bS();loadT('infelicidad');
+});
+
+function bS(){
+const tG=document.getElementById('tG'),hG=document.getElementById('hG'),pG=document.getElementById('pG'),lG=document.getElementById('lG');
+for(let i=0;i<3;i++){const p1=gP(tS[i]),p2=gP(tS[(i+1)%3]);const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',p1.x);l.setAttribute('y1',p1.y);l.setAttribute('x2',p2.x);l.setAttribute('y2',p2.y);l.setAttribute('class','enn-triangle-line');tG.appendChild(l);}
+for(let i=0;i<hS.length;i++){const p1=gP(hS[i]),p2=gP(hS[(i+1)%hS.length]);const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',p1.x);l.setAttribute('y1',p1.y);l.setAttribute('x2',p2.x);l.setAttribute('y2',p2.y);l.setAttribute('class','enn-hex-line');l.dataset.f=hS[i];l.dataset.t=hS[(i+1)%hS.length];hG.appendChild(l);}
+for(let n=1;n<=9;n++){const p=gP(n),lp=gL(n);const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('class','enn-point');g.dataset.p=n;g.addEventListener('click',()=>sP(n));
+const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r',18);c.setAttribute('fill',pC[n]);c.setAttribute('opacity','.85');
+const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',p.x);t.setAttribute('y',p.y);t.textContent=n;
+g.appendChild(c);g.appendChild(t);pG.appendChild(g);
+const lb=document.createElementNS('http://www.w3.org/2000/svg','text');lb.setAttribute('x',lp.x);lb.setAttribute('y',lp.y+4);lb.setAttribute('class','enn-label');lb.id='l-'+n;lG.appendChild(lb);}}
+
+function uPA(n){const a=document.getElementById('pArc');if(!n||n<1){a.style.strokeDashoffset=circ;return;}a.style.strokeDashoffset=circ*(1-(n%9)/9);}
+
+function loadT(k){cT=k;aP=null;wS=-1;
+document.querySelectorAll('.template-card').forEach(c=>c.classList.toggle('active',c.dataset.template===k));
+const tm=T[k];for(let n=1;n<=9;n++){const lb=document.getElementById('l-'+n);const t=tm.points[n]?.title||'';lb.textContent=t.length>20?t.slice(0,18)+'…':t;}
+document.getElementById('piN').textContent='◎';document.getElementById('piN').style.color='var(--accent)';
+document.getElementById('piS').textContent='';document.getElementById('piT').textContent=tm.name;
+document.getElementById('piD').textContent='Click en cualquier punto (1-9) o usa ▶';
+document.getElementById('piE').style.display='none';document.getElementById('piO').style.display='none';
+document.getElementById('cD').textContent='';document.getElementById('pI').classList.remove('shock');
+document.querySelectorAll('.enn-point').forEach(g=>g.classList.remove('active'));
+document.querySelectorAll('.enn-hex-line').forEach(l=>l.classList.remove('highlight'));
+document.querySelectorAll('.enn-label').forEach(l=>l.classList.remove('active'));
+document.querySelectorAll('.octave-note').forEach(n=>n.classList.remove('active'));
+uPA(0);uSL();}
+
+function sP(n){aP=n;wS=n-1;const tm=T[cT];const d=tm.points[n];if(!d)return;const s=sO[n];
+document.getElementById('piN').textContent=n;document.getElementById('piN').style.color=pC[n];
+const sl=document.getElementById('piS');sl.textContent=sN[s];sl.style.background=sC[s];sl.style.color=s===0?'#fff':'#000';sl.style.opacity='.8';
+document.getElementById('piT').textContent=d.title;document.getElementById('piD').textContent=d.desc;
+const e=document.getElementById('piE');if(d.example){e.textContent=d.example;e.style.display='block';}else e.style.display='none';
+const o=document.getElementById('piO');if(d.octave){o.textContent='♪ '+d.octave;o.style.display='block';}else o.style.display='none';
+document.getElementById('pI').classList.toggle('shock',n===3||n===6);
+document.querySelectorAll('.enn-point').forEach(g=>g.classList.toggle('active',parseInt(g.dataset.p)===n));
+document.querySelectorAll('.enn-label').forEach(l=>l.classList.toggle('active',parseInt(l.id.split('-')[1])===n));
+document.querySelectorAll('.enn-hex-line').forEach(l=>{const f=parseInt(l.dataset.f),t=parseInt(l.dataset.t);l.classList.toggle('highlight',f===n||t===n);});
+document.querySelectorAll('.octave-note').forEach(x=>x.classList.toggle('active',parseInt(x.dataset.n)===n));
+uPA(n);
+const ln=[];const hi=hS.indexOf(n);if(hi!==-1)ln.push('Hex: '+hS[(hi-1+6)%6]+'→['+n+']→'+hS[(hi+1)%6]);
+const ti=tS.indexOf(n);if(ti!==-1)ln.push('Tri: '+tS[(ti-1+3)%3]+'→['+n+']→'+tS[(ti+1)%3]);
+ln.push('Círculo: '+(n===1?9:n-1)+'→['+n+']→'+(n===9?1:n+1));
+document.getElementById('cD').innerHTML=ln.join('<br>');uSL();}
+
+function wN(){wS=(wS+1)%9;sP(wS+1);}
+function wP(){wS=(wS-1+9)%9;sP(wS+1);}
+function wR(){wS=-1;loadT(cT);}
+function uSL(){document.getElementById('stepLabel').textContent=aP?'Punto '+aP+' / 9':'— / 9';}
+function tH(){document.getElementById('hG').style.display=document.getElementById('shH').checked?'':'none';}
+function tT(){document.getElementById('tG').style.display=document.getElementById('shT').checked?'':'none';}
+
+function loadC(){const nm=document.getElementById('cN').value||'Mi proceso';const c={name:nm,points:{}};
+for(let n=1;n<=9;n++){const v=document.getElementById('cp'+n).value;c.points[n]={title:v||'Punto '+n,desc:n===3?'⚡ Choque 1 (MI→FA)':n===6?'⚡ Choque 2 (SI→DO\')':n===9?'Nuevo ciclo':'Punto '+n,octave:n===3?'MI→FA':n===6?'SI→DO\'':null};}
+T._c=c;cT='_c';for(let n=1;n<=9;n++){const lb=document.getElementById('l-'+n);const t=c.points[n]?.title||'';lb.textContent=t.length>20?t.slice(0,18)+'…':t;}
+document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+document.querySelector('[data-page="mapa"]').classList.add('active');
+document.getElementById('page-mapa').classList.add('active');
+document.querySelectorAll('.template-card').forEach(c=>c.classList.remove('active'));sP(1);}
+
+function expC(){const nm=document.getElementById('cN').value||'Mi proceso';
+let o='ENEAGRAMA: '+nm+'\n'+'═'.repeat(40)+'\n\n';
+o+='SECCIÓN 1:\n  1. '+(document.getElementById('cp1').value||'—')+'\n  2. '+(document.getElementById('cp2').value||'—')+'\n\n';
+o+='⚡ CHOQUE 1:\n  3. '+(document.getElementById('cp3').value||'—')+'\n\n';
+o+='SECCIÓN 2:\n  4. '+(document.getElementById('cp4').value||'—')+'\n  5. '+(document.getElementById('cp5').value||'—')+'\n\n';
+o+='⚡ CHOQUE 2:\n  6. '+(document.getElementById('cp6').value||'—')+'\n\n';
+o+='SECCIÓN 3:\n  7. '+(document.getElementById('cp7').value||'—')+'\n  8. '+(document.getElementById('cp8').value||'—')+'\n\n';
+o+='NUEVO CICLO:\n  9. '+(document.getElementById('cp9').value||'—')+'\n';
+document.getElementById('cOC').style.display='block';document.getElementById('cO').textContent=o;
+navigator.clipboard?.writeText(o).then(()=>{const t=document.getElementById('cT');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);});}
+</script>
+</body></html>
