@@ -1,0 +1,670 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+--ink:#1c2333;--ink2:#4a5568;--ink3:#8892a4;
+--paper:#fafaf8;--card:#ffffff;--line:#e8e6e0;
+--blue-d:#1e3a5f;--blue-m:#2e6da4;--blue-l:#e8f0f9;
+--teal-d:#1a4a3e;--teal-m:#2a8a72;--teal-l:#e5f5f0;
+--amber-d:#5c3a00;--amber-m:#b07800;--amber-l:#fdf5e0;
+--red-d:#5c1a1a;--red-m:#c0392b;--red-l:#fdf0f0;
+--r:10px;--r-sm:6px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.6}
+h1,h2,h3{font-family:'Lora',serif;font-weight:500}
+
+.app{display:grid;grid-template-columns:220px 1fr;min-height:600px}
+
+.sidebar{background:var(--blue-d);padding:0;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sidebar-logo h1{font-size:15px;color:#fff;line-height:1.3;letter-spacing:-0.2px}
+.sidebar-logo p{font-size:11px;color:rgba(255,255,255,0.45);margin-top:3px}
+.sidebar-patient{padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sidebar-patient label{font-size:10px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:6px}
+.sidebar-patient input{width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:var(--r-sm);padding:7px 10px;color:#fff;font-size:13px;font-family:'DM Sans',sans-serif}
+.sidebar-patient input::placeholder{color:rgba(255,255,255,0.3)}
+.sidebar-nav{flex:1;padding:10px 0}
+.nav-section{padding:8px 18px 4px;font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 18px;cursor:pointer;color:rgba(255,255,255,0.65);font-size:13px;transition:all 0.15s;border-left:2px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:#fff}
+.nav-item.active{background:rgba(255,255,255,0.1);color:#fff;border-left-color:#7ab3e0}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);flex-shrink:0}
+.nav-item.active .nav-dot{background:#7ab3e0}
+.nav-item.done .nav-dot{background:#4caf7d}
+.sidebar-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,0.1);font-size:11px;color:rgba(255,255,255,0.3);line-height:1.5}
+
+.main{display:flex;flex-direction:column}
+.topbar{padding:16px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:var(--card)}
+.topbar-title{font-family:'Lora',serif;font-size:17px;color:var(--ink)}
+.topbar-meta{font-size:12px;color:var(--ink3)}
+.topbar-actions{display:flex;gap:8px}
+.btn{padding:7px 14px;border-radius:var(--r-sm);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.15s;border:1px solid var(--line)}
+.btn-ghost{background:transparent;color:var(--ink2)}
+.btn-ghost:hover{background:var(--paper)}
+.btn-primary{background:var(--blue-d);color:#fff;border-color:var(--blue-d)}
+.btn-primary:hover{background:var(--blue-m)}
+.btn-save{background:var(--teal-d);color:#fff;border-color:var(--teal-d);font-size:12px;padding:6px 12px}
+.btn-save:hover{background:var(--teal-m)}
+
+.content{flex:1;padding:28px;overflow-y:auto}
+.panel{display:none}
+.panel.active{display:block}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:18px}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.card-head h2{font-size:15px;color:var(--ink)}
+.card-tag{font-size:10px;padding:3px 8px;border-radius:12px;font-weight:500;letter-spacing:0.3px}
+.tag-blue{background:var(--blue-l);color:var(--blue-d)}
+.tag-teal{background:var(--teal-l);color:var(--teal-d)}
+.tag-amber{background:var(--amber-l);color:var(--amber-d)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;color:var(--ink2);font-weight:500}
+.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--paper);transition:border-color 0.15s;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--blue-m);background:#fff}
+.field textarea{min-height:80px}
+.field-note{font-size:11px;color:var(--ink3);font-style:italic;margin-top:2px}
+
+.trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+.universo-card{border-radius:var(--r);padding:16px;border:1px solid}
+.universo-1{background:var(--blue-l);border-color:#c8ddf0}
+.universo-2{background:var(--teal-l);border-color:#b8e0d6}
+.universo-3{background:var(--amber-l);border-color:#f0dfb0}
+.universo-card h3{font-size:13px;font-weight:500;margin-bottom:4px}
+.u1 h3{color:var(--blue-d)} .u2 h3{color:var(--teal-d)} .u3 h3{color:var(--amber-d)}
+.universo-card p{font-size:11px;color:var(--ink2);margin-bottom:10px;line-height:1.5}
+.universo-card textarea{width:100%;border:1px solid rgba(0,0,0,0.1);border-radius:var(--r-sm);padding:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.7);color:var(--ink);min-height:90px;resize:vertical}
+
+.dialog-block{margin-bottom:14px}
+.dialog-row{display:grid;grid-template-columns:80px 1fr;gap:0;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
+.dialog-speaker{padding:10px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:flex-start}
+.sp-clinico{background:var(--blue-l);color:var(--blue-d)}
+.sp-paciente{background:var(--teal-l);color:var(--teal-d)}
+.sp-nota{background:var(--amber-l);color:var(--amber-d)}
+.dialog-text{padding:10px 12px;font-size:13px;color:var(--ink);font-style:italic;background:var(--card);border-left:1px solid var(--line)}
+.dialog-tech{font-size:11px;color:var(--ink3);background:var(--paper);padding:5px 12px;border-top:1px solid var(--line);font-style:normal}
+
+.beck-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.beck-item{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px}
+.beck-item label{font-size:11px;color:var(--ink2);display:block;margin-bottom:4px}
+.beck-item select{width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--ink);font-family:'DM Sans',sans-serif}
+.beck-score{display:flex;align-items:center;gap:12px;padding:12px;background:var(--blue-l);border-radius:var(--r-sm);margin-top:12px}
+.beck-score .score-num{font-family:'Lora',serif;font-size:28px;color:var(--blue-d);font-weight:500}
+.beck-score .score-label{font-size:12px;color:var(--blue-d)}
+.beck-score .score-interp{font-size:13px;font-weight:500}
+
+.cog5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}
+.cog5-head{font-size:11px;font-weight:500;color:var(--ink2);text-align:center;background:var(--paper);padding:6px;border-radius:var(--r-sm) var(--r-sm) 0 0;border:1px solid var(--line);border-bottom:none}
+.cog5-body{background:var(--card);border:1px solid var(--line);border-radius:0 0 var(--r-sm) var(--r-sm);padding:6px}
+.cog5-body textarea{width:100%;border:none;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--ink);resize:vertical;min-height:70px;background:transparent}
+.cog5-body textarea:focus{outline:none}
+
+.plan-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
+.plan-col{border-radius:var(--r-sm);padding:12px;border:1px solid}
+.pc-blue{background:var(--blue-l);border-color:#c8ddf0}
+.pc-teal{background:var(--teal-l);border-color:#b8e0d6}
+.pc-amber{background:var(--amber-l);border-color:#f0dfb0}
+.plan-col h4{font-size:12px;font-weight:500;margin-bottom:8px}
+.pc-blue h4{color:var(--blue-d)}.pc-teal h4{color:var(--teal-d)}.pc-amber h4{color:var(--amber-d)}
+.plan-col textarea{width:100%;background:rgba(255,255,255,0.6);border:1px solid rgba(0,0,0,0.08);border-radius:4px;padding:6px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--ink);min-height:90px;resize:vertical}
+
+.quedo-box{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px;margin-top:12px}
+.quedo-box textarea{width:100%;border:none;background:transparent;font-family:'Lora',serif;font-size:14px;color:var(--ink);line-height:1.7;resize:vertical;min-height:120px}
+.quedo-box textarea:focus{outline:none}
+.quedo-box textarea::placeholder{color:var(--ink3);font-style:italic}
+
+.lake-wrap{margin:14px 0;padding:14px;background:var(--blue-l);border-radius:var(--r-sm);border:1px solid #c8ddf0}
+.lake-label{font-size:12px;color:var(--blue-d);font-weight:500;margin-bottom:8px}
+.lake-slider{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.lake-slider label{font-size:12px;color:var(--ink2);width:120px;flex-shrink:0}
+.lake-slider input[type=range]{flex:1}
+.lake-slider span{font-size:12px;font-weight:500;color:var(--blue-d);width:24px;text-align:right}
+.lake-interp{font-size:12px;color:var(--blue-d);font-style:italic;margin-top:4px}
+
+.session-list{display:flex;flex-direction:column;gap:8px}
+.session-item{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color 0.15s}
+.session-item:hover{border-color:#a8c5e0}
+.session-num{width:28px;height:28px;border-radius:50%;background:var(--blue-l);color:var(--blue-d);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0}
+.session-meta{flex:1}
+.session-meta strong{font-size:13px;color:var(--ink);display:block}
+.session-meta span{font-size:12px;color:var(--ink3)}
+.session-badge{font-size:11px;padding:3px 8px;border-radius:10px}
+.badge-done{background:var(--teal-l);color:var(--teal-d)}
+.badge-pending{background:var(--amber-l);color:var(--amber-d)}
+.add-session{border:1px dashed var(--line);background:transparent;border-radius:var(--r-sm);padding:12px;text-align:center;cursor:pointer;color:var(--ink3);font-size:13px;font-family:'DM Sans',sans-serif;width:100%;transition:all 0.15s}
+.add-session:hover{border-color:#a8c5e0;color:var(--blue-m)}
+
+.pharma-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+.pharma-table th{background:var(--paper);padding:7px 10px;text-align:left;font-size:11px;font-weight:500;color:var(--ink2);border-bottom:2px solid var(--line)}
+.pharma-table td{padding:7px 10px;border-bottom:1px solid var(--line)}
+.pharma-table td input{border:none;background:transparent;width:100%;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink)}
+.pharma-table td input:focus{outline:none;background:var(--paper);padding:3px 6px;border-radius:3px}
+.add-row{font-size:12px;color:var(--blue-m);cursor:pointer;padding:6px 0;display:inline-flex;align-items:center;gap:4px;background:none;border:none;font-family:'DM Sans',sans-serif}
+.add-row:hover{color:var(--blue-d)}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--ink3)}
+.empty-state p{font-size:13px;margin-top:6px}
+
+.progress-bar{height:3px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;background:var(--teal-m);border-radius:2px;transition:width 0.3s}
+
+.section-divider{font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink3);font-weight:500;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+
+.saved-toast{position:absolute;top:12px;right:16px;background:var(--teal-d);color:#fff;padding:7px 14px;border-radius:var(--r-sm);font-size:12px;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.saved-toast.show{opacity:1}
+</style>
+
+<h2 class="sr-only">Ficha clínica interactiva — Metodología Prado-Meersohn</h2>
+
+<div style="position:relative">
+<div class="app">
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>Chamalnquimyst<br>Labs</h1>
+    <p>Consulta privada · A. Prado C.</p>
+  </div>
+  <div class="sidebar-patient">
+    <label>Paciente activo</label>
+    <input type="text" id="patientName" placeholder="Nombre del paciente" oninput="updatePatient()">
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Ingreso</div>
+    <div class="nav-item active" onclick="goTo('ingreso',this)"><div class="nav-dot"></div>Datos generales</div>
+    <div class="nav-item" onclick="goTo('universos',this)"><div class="nav-dot"></div>Tres universos</div>
+    <div class="nav-item" onclick="goTo('cognitiva',this)"><div class="nav-dot"></div>Conceptualización</div>
+    <div class="nav-section">Sesiones</div>
+    <div class="nav-item" onclick="goTo('sesiones',this)"><div class="nav-dot"></div>Historial</div>
+    <div class="nav-item" onclick="goTo('sesion_actual',this)"><div class="nav-dot"></div>Sesión actual</div>
+    <div class="nav-item" onclick="goTo('quedo',this)"><div class="nav-dot"></div>Con lo que me quedo</div>
+    <div class="nav-section">Escalas</div>
+    <div class="nav-item" onclick="goTo('beck',this)"><div class="nav-dot"></div>Beck II (BDI-2)</div>
+    <div class="nav-item" onclick="goTo('eeag',this)"><div class="nav-dot"></div>EEAG</div>
+    <div class="nav-section">Plan</div>
+    <div class="nav-item" onclick="goTo('plan',this)"><div class="nav-dot"></div>Plan terapéutico</div>
+    <div class="nav-item" onclick="goTo('farmacos',this)"><div class="nav-dot"></div>Farmacoterapia</div>
+  </nav>
+  <div class="sidebar-footer">Metodología Prado–Meersohn<br>+ Marco Evolutivo · v1.0</div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topTitle">Datos de ingreso</div>
+      <div class="topbar-meta" id="topDate"></div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" onclick="clearForm()">Nuevo paciente</button>
+      <button class="btn btn-save" onclick="saveAll()">Guardar sesión</button>
+    </div>
+  </div>
+
+  <div class="content" id="content">
+
+    <!-- PANEL: INGRESO -->
+    <div class="panel active" id="panel-ingreso">
+      <div class="card">
+        <div class="card-head"><h2>Identificación y contexto vital</h2><span class="card-tag tag-blue">Meersohn — contexto amplio</span></div>
+        <div class="grid3" style="margin-bottom:14px">
+          <div class="field"><label>Nombre completo</label><input type="text" id="ing_nombre" placeholder="Apellido Nombre"></div>
+          <div class="field"><label>Edad</label><input type="number" id="ing_edad" placeholder="38"></div>
+          <div class="field"><label>Fecha de ingreso</label><input type="date" id="ing_fecha"></div>
+        </div>
+        <div class="grid3" style="margin-bottom:14px">
+          <div class="field"><label>Ocupación</label><input type="text" id="ing_ocup" placeholder=""></div>
+          <div class="field"><label>Estado civil</label><select id="ing_ec"><option value="">—</option><option>Soltero/a</option><option>Casado/a</option><option>Pareja estable</option><option>Separado/a</option><option>Viudo/a</option></select></div>
+          <div class="field"><label>Con quién vive</label><input type="text" id="ing_vive" placeholder="Solo, pareja, familia..."></div>
+        </div>
+        <div class="grid2" style="margin-bottom:14px">
+          <div class="field"><label>Ideas religiosas / políticas <span style="color:var(--ink3);font-weight:400">(contexto de identidad)</span></label><input type="text" id="ing_relig" placeholder="Meersohn: dato de identidad, no irrelevante"></div>
+          <div class="field"><label>Hobbies / intereses <span style="color:var(--ink3);font-weight:400">(ventana al nicho)</span></label><input type="text" id="ing_hobbies" placeholder="¿Qué hace cuando nadie lo evalúa?"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Red de apoyo real</label><input type="text" id="ing_red" placeholder="Tribu real vs. red formal"></div>
+          <div class="field"><label>Motivo declarado de consulta</label><input type="text" id="ing_motivo" placeholder="En palabras del paciente"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Escucha libre — apertura sin agenda</h2><span class="card-tag tag-blue">3–5 min sin interrumpir</span></div>
+        <div style="background:var(--blue-l);border-radius:var(--r-sm);padding:12px;margin-bottom:12px;border:1px solid #c8ddf0">
+          <div style="font-size:12px;color:var(--blue-d);font-weight:500;margin-bottom:4px">Pregunta de apertura estándar</div>
+          <div style="font-family:'Lora',serif;font-size:15px;color:var(--ink);font-style:italic">"¿Qué lo trajo hasta aquí, en sus propias palabras?"</div>
+        </div>
+        <div class="field" style="margin-bottom:12px"><label>Relato libre del paciente</label><textarea id="ing_relato" placeholder="Transcribir o sintetizar sin interpretar todavía..." style="min-height:110px"></textarea></div>
+        <div class="grid3">
+          <div class="field"><label>¿Ubica malestar en...?</label><select id="ing_ubica"><option value="">—</option><option>Sí mismo</option><option>El entorno / sistema</option><option>Ambos</option><option>No lo identifica</option></select></div>
+          <div class="field"><label>¿Primera persona vulnerable?</label><select id="ing_primera"><option value="">—</option><option>Sí, usa primera persona</option><option>Elude, habla en tercera</option><option>Oscila</option></select></div>
+          <div class="field"><label>¿Aparece el cuerpo?</label><select id="ing_cuerpo"><option value="">—</option><option>Sí, desde el inicio</option><option>Solo síntomas</option><option>No aparece</option></select></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Antecedentes clínicos</h2></div>
+        <div class="section-divider">Episodios previos</div>
+        <table class="pharma-table" id="epTable">
+          <thead><tr><th>#</th><th>Diagnóstico / descripción</th><th>Fecha aprox.</th><th>Tratamiento / resolución</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><input placeholder="Ep. depresivo, ansiedad..."></td><td><input placeholder="2020"></td><td><input placeholder="Farmacoterapia, resuelto..."></td></tr>
+            <tr><td>2</td><td><input placeholder=""></td><td><input placeholder=""></td><td><input placeholder=""></td></tr>
+          </tbody>
+        </table>
+        <button class="add-row" onclick="addEpRow()">+ Agregar episodio</button>
+        <div class="section-divider" style="margin-top:16px">Antecedentes médicos</div>
+        <div class="field"><textarea id="ing_medicos" placeholder="Enfermedades crónicas, alergias, condiciones relevantes..." style="min-height:60px"></textarea></div>
+      </div>
+    </div>
+
+    <!-- PANEL: UNIVERSOS -->
+    <div class="panel" id="panel-universos">
+      <div class="card">
+        <div class="card-head"><h2>Tres universos vitales</h2><span class="card-tag tag-teal">Metodología A. Prado Ceroni</span></div>
+        <div style="font-size:12px;color:var(--ink3);font-style:italic;margin-bottom:16px;line-height:1.6">El lago: la claridad del paciente depende del estado de sus tres esferas. El malestar en una contamina a las otras. La intervención puede entrar por cualquier puerta.</div>
+
+        <div class="lake-wrap">
+          <div class="lake-label">Lago de integración — nivel de claridad percibido</div>
+          <div class="lake-slider"><label>Universo laboral</label><input type="range" min="0" max="10" value="5" id="lake1" oninput="updateLake()" step="1"><span id="lake1v">5</span></div>
+          <div class="lake-slider"><label>Universo relacional</label><input type="range" min="0" max="10" value="5" id="lake2" oninput="updateLake()" step="1"><span id="lake2v">5</span></div>
+          <div class="lake-slider"><label>Universo interior</label><input type="range" min="0" max="10" value="5" id="lake3" oninput="updateLake()" step="1"><span id="lake3v">5</span></div>
+          <div class="lake-interp" id="lakeInterp">Lago en equilibrio provisional — explorar tensiones entre universos</div>
+        </div>
+
+        <div class="trio">
+          <div class="universo-card universo-1 u1">
+            <h3>Universo 1 — Laboral</h3>
+            <p>¿Tiene agencia real o identidad de función? ¿Nicho que energiza o mismatch crónico?</p>
+            <textarea id="u1_text" placeholder="Trabajo, ocupación, vocación, agencia..."></textarea>
+            <div style="margin-top:8px"><div class="field"><label style="font-size:11px;color:var(--blue-d)">Lectura evolutiva</label><input type="text" id="u1_evol" placeholder="Mismatch / nicho natural / agencia" style="font-size:12px;background:rgba(255,255,255,0.7);border:1px solid rgba(0,0,0,0.1);border-radius:4px;padding:5px 8px;width:100%"></div></div>
+          </div>
+          <div class="universo-card universo-2 u2">
+            <h3>Universo 2 — Relacional</h3>
+            <p>¿A quién acude primero? Figuras de autoridad. ¿Tribu real o red formal?</p>
+            <textarea id="u2_text" placeholder="Familia, pareja, amigos, figuras de autoridad..."></textarea>
+            <div style="margin-top:8px"><div class="field"><label style="font-size:11px;color:var(--teal-d)">Lectura evolutiva</label><input type="text" id="u2_evol" placeholder="Sistema vagal / tribu / señales de seguridad" style="font-size:12px;background:rgba(255,255,255,0.7);border:1px solid rgba(0,0,0,0.1);border-radius:4px;padding:5px 8px;width:100%"></div></div>
+          </div>
+          <div class="universo-card universo-3 u3">
+            <h3>Universo 3 — Interior</h3>
+            <p>¿Pierde la noción del tiempo con algo? ¿Tiene espacio que el sistema no administre?</p>
+            <textarea id="u3_text" placeholder="Mundo interior, espiritualidad, hobbies, naturaleza..."></textarea>
+            <div style="margin-top:8px"><div class="field"><label style="font-size:11px;color:var(--amber-d)">Lectura evolutiva</label><input type="text" id="u3_evol" placeholder="Nicho ecológico / biofilia / agencia encarnada" style="font-size:12px;background:rgba(255,255,255,0.7);border:1px solid rgba(0,0,0,0.1);border-radius:4px;padding:5px 8px;width:100%"></div></div>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:4px"><label>Hipótesis del universo dominante del malestar</label><textarea id="u_hipotesis" placeholder="¿Por dónde entra el trabajo clínico? ¿Qué universo está más comprometido?" style="min-height:70px"></textarea></div>
+      </div>
+    </div>
+
+    <!-- PANEL: COGNITIVA -->
+    <div class="panel" id="panel-cognitiva">
+      <div class="card">
+        <div class="card-head"><h2>Conceptualización cognitiva</h2><span class="card-tag tag-blue">5 columnas — Meersohn</span></div>
+        <div class="cog5">
+          <div><div class="cog5-head">Situación activante</div><div class="cog5-body"><textarea id="cog1" placeholder="¿Qué pasó?"></textarea></div></div>
+          <div><div class="cog5-head">Pensamiento automático</div><div class="cog5-body"><textarea id="cog2" placeholder="¿Qué pensó en ese momento?"></textarea></div></div>
+          <div><div class="cog5-head">Emoción</div><div class="cog5-body"><textarea id="cog3" placeholder="¿Qué sintió? (0–10)"></textarea></div></div>
+          <div><div class="cog5-head">Conducta</div><div class="cog5-body"><textarea id="cog4" placeholder="¿Qué hizo?"></textarea></div></div>
+          <div><div class="cog5-head">Creencia subyacente</div><div class="cog5-body"><textarea id="cog5" placeholder="¿Qué dice de usted mismo?"></textarea></div></div>
+        </div>
+        <button class="add-row" style="margin-top:10px" onclick="addCogRow()">+ Agregar situación</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Patrón central — formulación diagnóstica</h2></div>
+        <div class="grid2">
+          <div>
+            <div class="field" style="margin-bottom:12px"><label>Diagnóstico multiaxial</label>
+              <input type="text" id="dx_eje1" placeholder="Eje I — cuadro clínico" style="margin-bottom:6px">
+              <input type="text" id="dx_eje2" placeholder="Eje II — personalidad / rasgos" style="margin-bottom:6px">
+              <input type="text" id="dx_eje3" placeholder="Eje III — condición médica">
+            </div>
+          </div>
+          <div>
+            <div class="field"><label>Lectura evolutiva del patrón central</label>
+              <textarea id="dx_evol" placeholder="¿Mismatch ecológico? ¿Sistema de valor externalizado? ¿Patrón de rango? ¿Captura dopaminérgica? ¿Nicho natural identificado?" style="min-height:90px"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label>Creencia raíz identificada</label>
+          <div style="background:var(--blue-l);border-radius:var(--r-sm);padding:12px;border:1px solid #c8ddf0;margin-top:4px">
+            <div style="font-size:11px;color:var(--blue-d);margin-bottom:6px;font-weight:500">Pregunta socrática de cierre (siempre formular):</div>
+            <div style="font-family:'Lora',serif;font-size:14px;color:var(--ink);font-style:italic;margin-bottom:10px">"¿Hay algo que usted quiera — no que crea que debería querer — sino que genuinamente quiera, aunque no sepa de dónde viene?"</div>
+            <div class="field"><textarea id="dx_creencia" placeholder="Respuesta del paciente a esta pregunta..." style="min-height:60px;background:rgba(255,255,255,0.7);border:1px solid rgba(0,0,0,0.08)"></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: SESIONES -->
+    <div class="panel" id="panel-sesiones">
+      <div class="card">
+        <div class="card-head"><h2>Historial de sesiones</h2><span class="card-tag tag-blue" id="sessionCount">0 sesiones</span></div>
+        <div class="session-list" id="sessionList">
+          <div class="empty-state">
+            <div style="font-size:24px;color:var(--line)">—</div>
+            <p>No hay sesiones registradas aún.<br>Crea la primera desde "Sesión actual".</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: SESIÓN ACTUAL -->
+    <div class="panel" id="panel-sesion_actual">
+      <div class="card">
+        <div class="card-head"><h2>Sesión actual</h2><span class="card-tag tag-teal" id="sesNum">Sesión 1</span></div>
+        <div class="grid3" style="margin-bottom:14px">
+          <div class="field"><label>Fecha de sesión</label><input type="date" id="ses_fecha"></div>
+          <div class="field"><label>N° de sesión</label><input type="number" id="ses_num" value="1" min="1"></div>
+          <div class="field"><label>Modalidad</label><select id="ses_modal"><option>Presencial</option><option>Online</option></select></div>
+        </div>
+        <div class="field" style="margin-bottom:14px"><label>Motivo de la sesión / continuación</label><textarea id="ses_motivo" placeholder="¿Qué trae hoy el paciente?" style="min-height:70px"></textarea></div>
+
+        <div class="section-divider">Diálogo clínico — secuencia metodológica</div>
+
+        <div class="dialog-block">
+          <div class="dialog-row"><div class="dialog-speaker sp-clinico">Clínico</div><div class="dialog-text" style="font-style:normal"><textarea id="d_apertura" placeholder='Apertura sin agenda: "¿Qué lo trae hoy?"' style="width:100%;border:none;background:transparent;font-size:13px;font-family:&apos;DM Sans&apos;,sans-serif;color:var(--ink);resize:vertical;min-height:50px"></textarea></div></div>
+          <div class="dialog-tech">Fase 1 — escucha libre · sin hipótesis previa</div>
+        </div>
+
+        <div class="dialog-block">
+          <div class="dialog-row"><div class="dialog-speaker sp-paciente">Paciente</div><div class="dialog-text" style="font-style:normal"><textarea id="d_respuesta" placeholder="Relato del paciente — transcribir o sintetizar" style="width:100%;border:none;background:transparent;font-size:13px;font-family:&apos;DM Sans&apos;,sans-serif;color:var(--ink);resize:vertical;min-height:60px"></textarea></div></div>
+        </div>
+
+        <div class="dialog-block">
+          <div class="dialog-row"><div class="dialog-speaker sp-clinico">Bisturí</div><div class="dialog-text" style="font-style:normal"><textarea id="d_bisturi" placeholder='Pregunta socrática identificada — ¿qué contradicción aparece?' style="width:100%;border:none;background:transparent;font-size:13px;font-family:&apos;DM Sans&apos;,sans-serif;color:var(--ink);resize:vertical;min-height:50px"></textarea></div></div>
+          <div class="dialog-tech">Fase 2 — cuestionamiento socrático · captura la disonancia</div>
+        </div>
+
+        <div class="dialog-block">
+          <div class="dialog-row"><div class="dialog-speaker sp-nota">Nota</div><div class="dialog-text" style="font-style:normal"><textarea id="d_nota" placeholder="Hipótesis clínica que emerge — solo para el clínico" style="width:100%;border:none;background:transparent;font-size:13px;font-family:&apos;DM Sans&apos;,sans-serif;color:var(--ink);resize:vertical;min-height:50px"></textarea></div></div>
+          <div class="dialog-tech">Nota interna — lectura evolutiva / hipótesis diagnóstica</div>
+        </div>
+
+        <div class="dialog-block">
+          <div class="dialog-row"><div class="dialog-speaker sp-clinico">Cierre</div><div class="dialog-text" style="font-style:normal"><textarea id="d_cierre" placeholder="Reencuadre o psicoeducación ofrecida al cierre" style="width:100%;border:none;background:transparent;font-size:13px;font-family:&apos;DM Sans&apos;,sans-serif;color:var(--ink);resize:vertical;min-height:50px"></textarea></div></div>
+          <div class="dialog-tech">Fase 3 — reencuadre · validación + confrontación empática</div>
+        </div>
+
+        <div style="margin-top:14px"><div class="field"><label>Tarea / compromiso del paciente para próxima sesión</label><input type="text" id="ses_tarea" placeholder="Una acción pequeña, concreta, elegida sin audiencia..."></div></div>
+        <div style="margin-top:10px;display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="saveSession()">Guardar esta sesión</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: QUEDO -->
+    <div class="panel" id="panel-quedo">
+      <div class="card">
+        <div class="card-head"><h2>Con lo que me quedo de esta sesión</h2><span class="card-tag tag-amber">Espacio del clínico</span></div>
+        <div style="font-size:12px;color:var(--ink3);font-style:italic;margin-bottom:12px">Reflexión post-sesión. ¿Qué resonó? ¿Qué quedó sin nombrar? ¿Qué hipótesis emergió y aún no se verificó? Protocolo A. Prado Ceroni.</div>
+        <div class="quedo-box">
+          <textarea id="quedo_text" placeholder="Escribir libremente lo que queda después de la sesión...
+
+¿Qué me movió de este encuentro?
+¿Qué no pudo decirse todavía?
+¿Qué hipótesis debo llevar a la próxima sesión?
+¿Hubo algo del paciente que resonó en mí?"></textarea>
+        </div>
+        <div style="margin-top:12px"><div class="field"><label>Hipótesis para próxima sesión</label><input type="text" id="quedo_hipotesis" placeholder="¿Qué quiero explorar la próxima vez?"></div></div>
+        <div style="margin-top:10px"><div class="field"><label>Fecha de próxima sesión</label><input type="date" id="quedo_prox"></div></div>
+      </div>
+    </div>
+
+    <!-- PANEL: BECK -->
+    <div class="panel" id="panel-beck">
+      <div class="card">
+        <div class="card-head"><h2>Inventario de Depresión de Beck II (BDI-2)</h2><span class="card-tag tag-blue">Escala validada</span></div>
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:4px">Instrucción: seleccionar el enunciado que mejor describe el estado en las últimas dos semanas incluyendo hoy.</div>
+        <div id="beckScoreBar" class="beck-score" style="margin-bottom:14px">
+          <div class="score-num" id="beckNum">0</div>
+          <div><div class="score-label">Puntaje total</div><div class="score-interp" id="beckInterp">Sin síntomas depresivos</div></div>
+          <div style="flex:1"><div class="progress-bar"><div class="progress-fill" id="beckProg" style="width:0%"></div></div></div>
+        </div>
+        <div class="beck-grid" id="beckItems"></div>
+      </div>
+    </div>
+
+    <!-- PANEL: EEAG -->
+    <div class="panel" id="panel-eeag">
+      <div class="card">
+        <div class="card-head"><h2>Escala de Evaluación de la Actividad Global (EEAG / GAF)</h2><span class="card-tag tag-teal">Evaluación clínica</span></div>
+        <div style="margin-bottom:16px">
+          <div class="field"><label>Puntaje EEAG</label>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:6px">
+              <input type="range" min="1" max="100" value="65" id="eeagSlider" oninput="updateEeag()" step="1" style="flex:1">
+              <span style="font-family:'Lora',serif;font-size:28px;font-weight:500;color:var(--blue-d);min-width:40px" id="eeagNum">65</span>
+            </div>
+          </div>
+          <div id="eeagDesc" style="margin-top:10px;padding:12px;background:var(--blue-l);border-radius:var(--r-sm);border:1px solid #c8ddf0;font-size:13px;color:var(--blue-d);line-height:1.6"></div>
+        </div>
+        <div class="field"><label>Observación clínica del funcionamiento</label><textarea id="eeag_obs" placeholder="Descripción del nivel de funcionamiento actual..." style="min-height:80px"></textarea></div>
+      </div>
+    </div>
+
+    <!-- PANEL: PLAN -->
+    <div class="panel" id="panel-plan">
+      <div class="card">
+        <div class="card-head"><h2>Plan terapéutico</h2><span class="card-tag tag-teal">Tres ejes integrados</span></div>
+        <div class="plan-grid">
+          <div class="plan-col pc-blue"><h4>Eje 1 — Cognitivo (Meersohn)</h4><textarea id="plan1" placeholder="Cuestionamiento socrático del sistema de valor&#10;Doble estándar&#10;Reestructuración de creencia raíz&#10;Bibliografía asignada:"></textarea></div>
+          <div class="plan-col pc-teal"><h4>Eje 2 — Relacional / grupal</h4><textarea id="plan2" placeholder="Figura de autoridad activa en síntoma&#10;Red de apoyo real vs. formal&#10;¿Requiere espacio grupal?&#10;Patrón de rango activo:"></textarea></div>
+          <div class="plan-col pc-amber"><h4>Eje 3 — Evolutivo / ecológico</h4><textarea id="plan3" placeholder="Nicho ecológico natural identificado&#10;Acción pequeña semanal sin audiencia&#10;Regulación circadiana&#10;¿Farmacoterapia indicada?"></textarea></div>
+        </div>
+        <div style="margin-top:14px"><div class="field"><label>Objetivo terapéutico principal</label><input type="text" id="plan_obj" placeholder="En una frase — ¿qué cambia si el proceso va bien?"></div></div>
+        <div style="margin-top:10px"><div class="field"><label>Frecuencia de sesiones propuesta</label><select id="plan_frec"><option>Semanal</option><option>Quincenal</option><option>Mensual</option><option>A demanda</option></select></div></div>
+      </div>
+    </div>
+
+    <!-- PANEL: FÁRMACOS -->
+    <div class="panel" id="panel-farmacos">
+      <div class="card">
+        <div class="card-head"><h2>Farmacoterapia</h2><span class="card-tag tag-blue">Registro estructurado</span></div>
+        <table class="pharma-table" id="pharmaTable">
+          <thead><tr><th>Fármaco</th><th>Dosis</th><th>Frecuencia</th><th>Inicio</th><th>Tolerancia</th><th>Observaciones</th></tr></thead>
+          <tbody id="pharmBody">
+            <tr><td><input placeholder="Nombre del fármaco"></td><td><input placeholder="mg"></td><td><input placeholder="1x día"></td><td><input placeholder="DD/MM/AAAA"></td><td><select><option>Buena</option><option>Regular</option><option>Mala</option><option>Sin datos</option></select></td><td><input placeholder="Notas..."></td></tr>
+          </tbody>
+        </table>
+        <button class="add-row" onclick="addPharmaRow()">+ Agregar fármaco</button>
+        <div style="margin-top:14px"><div class="field"><label>Exámenes solicitados</label><textarea id="pharma_ex" placeholder="Hemograma, perfil tiroideo, niveles plasmáticos..." style="min-height:60px"></textarea></div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+<div class="saved-toast" id="toast">Sesión guardada</div>
+</div>
+
+<script>
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('ing_fecha').value = today;
+document.getElementById('ses_fecha').value = today;
+document.getElementById('topDate').textContent = new Date().toLocaleDateString('es-CL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+const panels = {
+  ingreso:'Datos de ingreso',universos:'Tres universos vitales',cognitiva:'Conceptualización cognitiva',
+  sesiones:'Historial de sesiones',sesion_actual:'Sesión actual',quedo:'Con lo que me quedo',
+  beck:'Beck II — BDI-2',eeag:'EEAG / GAF',plan:'Plan terapéutico',farmacos:'Farmacoterapia'
+};
+
+function goTo(id, el) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const p = document.getElementById('panel-'+id);
+  if(p) p.classList.add('active');
+  if(el) el.classList.add('active');
+  document.getElementById('topTitle').textContent = panels[id]||id;
+}
+
+function updatePatient() {
+  const n = document.getElementById('patientName').value;
+  document.getElementById('ing_nombre').value = n;
+}
+
+function updateLake() {
+  const v1=+document.getElementById('lake1').value;
+  const v2=+document.getElementById('lake2').value;
+  const v3=+document.getElementById('lake3').value;
+  document.getElementById('lake1v').textContent=v1;
+  document.getElementById('lake2v').textContent=v2;
+  document.getElementById('lake3v').textContent=v3;
+  const avg=(v1+v2+v3)/3;
+  const min=Math.min(v1,v2,v3);
+  let interp='';
+  if(avg>=7&&min>=5) interp='Lago con buena claridad general — observar tensiones entre universos';
+  else if(avg>=5&&min>=3) interp='Lago parcialmente turbio — identificar universo dominante del malestar';
+  else if(min<=2) interp='Contaminación severa en al menos un universo — requiere atención prioritaria';
+  else interp='Lago en tensión — explorar conexión entre esferas comprometidas';
+  document.getElementById('lakeInterp').textContent=interp;
+}
+
+const sessions=[];
+function saveSession(){
+  const s={
+    num:document.getElementById('ses_num').value,
+    fecha:document.getElementById('ses_fecha').value,
+    modal:document.getElementById('ses_modal').value,
+    motivo:document.getElementById('ses_motivo').value,
+    apertura:document.getElementById('d_apertura').value,
+    respuesta:document.getElementById('d_respuesta').value,
+    bisturi:document.getElementById('d_bisturi').value,
+    nota:document.getElementById('d_nota').value,
+    cierre:document.getElementById('d_cierre').value,
+    tarea:document.getElementById('ses_tarea').value,
+  };
+  sessions.push(s);
+  updateSessionList();
+  showToast();
+  document.getElementById('ses_num').value=+s.num+1;
+}
+
+function updateSessionList(){
+  const list=document.getElementById('sessionList');
+  document.getElementById('sessionCount').textContent=sessions.length+' sesiones';
+  if(!sessions.length){
+    list.innerHTML='<div class="empty-state"><div style="font-size:24px;color:var(--line)">—</div><p>No hay sesiones registradas aún.</p></div>';
+    return;
+  }
+  list.innerHTML=sessions.map((s,i)=>`
+    <div class="session-item">
+      <div class="session-num">${s.num}</div>
+      <div class="session-meta"><strong>Sesión ${s.num} — ${s.fecha}</strong><span>${s.modal} · ${s.motivo?s.motivo.substring(0,60)+'...':'Sin motivo registrado'}</span></div>
+      <span class="session-badge badge-done">Completada</span>
+    </div>`).join('');
+}
+
+function addEpRow(){
+  const tb=document.querySelector('#epTable tbody');
+  const r=document.createElement('tr');
+  const n=tb.rows.length+1;
+  r.innerHTML=`<td>${n}</td><td><input placeholder=""></td><td><input placeholder=""></td><td><input placeholder=""></td>`;
+  tb.appendChild(r);
+}
+
+function addPharmaRow(){
+  const tb=document.getElementById('pharmBody');
+  const r=document.createElement('tr');
+  r.innerHTML=`<td><input placeholder="Fármaco"></td><td><input placeholder="mg"></td><td><input placeholder="1x día"></td><td><input placeholder="DD/MM/AAAA"></td><td><select><option>Buena</option><option>Regular</option><option>Mala</option></select></td><td><input placeholder="Notas"></td>`;
+  tb.appendChild(r);
+}
+
+let cogRows=1;
+function addCogRow(){
+  const grid=document.querySelector('.cog5').parentElement;
+  const row=document.createElement('div');
+  row.className='cog5';row.style.marginTop='10px';
+  row.innerHTML=['Situación','Pensamiento','Emoción','Conducta','Creencia'].map((h,i)=>`<div><div class="cog5-head">${h}</div><div class="cog5-body"><textarea placeholder="..."></textarea></div></div>`).join('');
+  grid.insertBefore(row,grid.querySelector('button'));
+}
+
+function showToast(){
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+function saveAll(){ showToast(); }
+function clearForm(){
+  if(!confirm('¿Nuevo paciente? Se perderán los datos no guardados.')) return;
+  document.querySelectorAll('input[type=text],input[type=number],input[type=date],textarea,select').forEach(el=>{
+    if(el.tagName==='SELECT') el.selectedIndex=0;
+    else el.value='';
+  });
+  sessions.length=0;
+  updateSessionList();
+  document.getElementById('ing_fecha').value=today;
+  document.getElementById('ses_fecha').value=today;
+}
+
+const beckData=[
+  {l:'Tristeza',opts:['No me siento triste','Me siento triste gran parte del tiempo','Me siento triste todo el tiempo','Tan triste que no puedo soportarlo']},
+  {l:'Pesimismo',opts:['No estoy desalentado','Me siento más desalentado del futuro','No espero que las cosas funcionen','No hay esperanza, solo puede empeorar']},
+  {l:'Fracaso',opts:['No me siento fracasado','He fracasado más de lo que debería','Veo muchos fracasos al mirar atrás','Como persona soy un fracaso total']},
+  {l:'Pérdida de placer',opts:['Obtengo tanto placer como siempre','No disfruto tanto como solía','Obtengo muy poco placer','No puedo obtener ningún placer']},
+  {l:'Culpa',opts:['No me siento culpable','Me siento culpable de varias cosas','Me siento bastante culpable','Me siento culpable todo el tiempo']},
+  {l:'Castigo',opts:['No siento que estoy siendo castigado','Tal vez pueda ser castigado','Espero ser castigado','Siento que estoy siendo castigado']},
+  {l:'Autoconcepto',opts:['Siento lo mismo de siempre sobre mí','He perdido confianza en mí mismo','Estoy decepcionado conmigo','No me gusto a mí mismo']},
+  {l:'Autocrítica',opts:['No me critico más de lo habitual','Estoy más crítico conmigo mismo','Me critico por todos mis errores','Me culpo por todo lo malo que sucede']},
+  {l:'Ideación suicida',opts:['Sin pensamientos de hacerme daño','He tenido pensamientos pero no lo haría','Querría hacerme daño','Me haría daño si tuviera la oportunidad']},
+  {l:'Llanto',opts:['No lloro más de lo usual','Lloro más de lo usual','Lloro por cualquier pequeñez','Siento ganas de llorar pero no puedo']},
+  {l:'Agitación',opts:['No más inquieto que lo habitual','Más inquieto que lo habitual','Muy inquieto, difícil quedarme quieto','Tan agitado que debo estar en movimiento']},
+  {l:'Pérdida de interés',opts:['No perdí interés en otras cosas','Menos interesado que antes','Perdí casi todo interés','Difícil interesarme por algo']},
+  {l:'Indecisión',opts:['Tomo decisiones tan bien como siempre','Más difícil que de costumbre','Mucha más dificultad para decidir','Problemas para cualquier decisión']},
+  {l:'Desvalorización',opts:['No me siento sin valor','No tan valioso como antes','Me siento menos valioso que otros','Siento que no valgo nada']},
+  {l:'Energía',opts:['Tanta energía como siempre','Menos energía que antes','No suficiente para hacer mucho','No suficiente para hacer nada']},
+  {l:'Sueño',opts:['Sin cambio en sueño','Duermo un poco más / menos de lo usual','Duermo mucho más / menos','Duermo casi todo el día / me despierto muy temprano']},
+  {l:'Irritabilidad',opts:['No más irritable que lo habitual','Más irritable que lo habitual','Mucho más irritable','Irritable todo el tiempo']},
+  {l:'Apetito',opts:['Sin cambio en apetito','Apetito un poco menor / mayor','Apetito mucho menor / mayor','Sin apetito / quiero comer todo el día']},
+  {l:'Concentración',opts:['Me concentro tan bien como siempre','No tan bien como habitualmente','Difícil mantener mente en algo','No puedo concentrarme en nada']},
+  {l:'Cansancio',opts:['No más cansado que lo habitual','Me fatigo más fácil que lo habitual','Demasiado fatigado para muchas cosas','Demasiado fatigado para casi todo']},
+  {l:'Interés sexual',opts:['Sin cambio en interés sexual','Menos interesado en sexo','Mucho menos interesado','Perdí completamente el interés']},
+];
+
+const beckGrid=document.getElementById('beckItems');
+beckData.forEach((item,i)=>{
+  const div=document.createElement('div');
+  div.className='beck-item';
+  div.innerHTML=`<label>${item.l}</label><select id="beck_${i}" onchange="calcBeck()"><option value="0">0 — ${item.opts[0].substring(0,28)}...</option><option value="1">1 — ${item.opts[1].substring(0,28)}...</option><option value="2">2 — ${item.opts[2].substring(0,28)}...</option><option value="3">3 — ${item.opts[3].substring(0,28)}...</option></select>`;
+  beckGrid.appendChild(div);
+});
+
+function calcBeck(){
+  let total=0;
+  beckData.forEach((_,i)=>{ total+=parseInt(document.getElementById('beck_'+i).value||0); });
+  document.getElementById('beckNum').textContent=total;
+  let interp='',color='var(--teal-d)';
+  if(total<=13){interp='Mínima o sin depresión';color='var(--teal-d)';}
+  else if(total<=19){interp='Depresión leve';color='var(--amber-d)';}
+  else if(total<=28){interp='Depresión moderada';color='var(--amber-m)';}
+  else{interp='Depresión grave';color='var(--red-d)';}
+  document.getElementById('beckInterp').textContent=interp;
+  document.getElementById('beckInterp').style.color=color;
+  document.getElementById('beckProg').style.width=Math.round(total/63*100)+'%';
+}
+
+const eeagDescriptions={
+  100:'Actividad satisfactoria en una amplia gama de actividades. Sin síntomas.',
+  90:'Síntomas ausentes o mínimos. Buena actividad en todas las áreas. Generalmente satisfecho de su vida.',
+  80:'Síntomas transitorios como reacción a estresores. Ligera alteración de actividad social o laboral.',
+  70:'Algunos síntomas leves o dificultad en actividad social/laboral. Funciona bastante bien.',
+  60:'Síntomas moderados o dificultades moderadas en actividad social, laboral o escolar.',
+  50:'Síntomas graves o alteración grave en actividad social/laboral.',
+  40:'Alteración de verificación de realidad o alteración importante en varias áreas.',
+  30:'Conducta considerablemente influida por ideas delirantes o grave alteración del juicio.',
+  20:'Algún peligro de causar lesiones a otros o a sí mismo.',
+  10:'Peligro persistente de hacerse daño grave o incapacidad para mantener higiene personal mínima.',
+  1:'Peligro inminente de hacerse daño grave o incapacidad para funcionar.',
+};
+
+function updateEeag(){
+  const v=+document.getElementById('eeagSlider').value;
+  document.getElementById('eeagNum').textContent=v;
+  const key=Object.keys(eeagDescriptions).reverse().find(k=>v>=+k)||1;
+  document.getElementById('eeagDesc').textContent=`${key}–${Math.min(+key+9,100)}: ${eeagDescriptions[key]}`;
+}
+updateEeag();
+</script>
