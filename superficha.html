@@ -1,0 +1,2706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chamalnquimyst Labs · Plataforma Clínica</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════
+   CHAMALNQUIMYST LABS v3 — NEURO-PALETTE
+   Paleta científica TDAH:
+   · Dopamina: cian/azul profundo (foco/recompensa)
+   · Noradrenalina: ámbar cálido (alerta calibrada)
+   · Serotonina: verde-azulado (calma/integración)
+   · Cortisol-off: sin rojo salvo en alertas reales
+   ════════════════════════════════════════════ */
+:root {
+  /* MODO CLARO — papel clínico */
+  --bg:       #f4f2ed;
+  --surface:  #ffffff;
+  --surface2: #f0ede6;
+  --surface3: #e8e3da;
+  --border:   rgba(30,60,100,0.10);
+  --border2:  rgba(30,60,100,0.20);
+
+  /* Texto */
+  --tx:  #1a2540;
+  --tx2: #3d5070;
+  --mu:  #8898b0;
+
+  /* Neuro-palette */
+  --dopa:   #1e6fa8;  /* azul dopamina — foco */
+  --dopa2:  #e8f2fb;  /* fondo dopamina */
+  --nor:    #c47820;  /* ámbar noradrenalina — alerta */
+  --nor2:   #fdf5e4;  /* fondo nor */
+  --sero:   #1a7a62;  /* verde serotonina — calma */
+  --sero2:  #e4f5ef;  /* fondo sero */
+  --alert:  #c0392b;  /* rojo cortisol — solo crisis */
+  --alert2: #fdf0ee;
+
+  /* Universos */
+  --u1:  #2060a0; --u1b: #e8f0fb; /* Laboral — azul */
+  --u2:  #1a7a62; --u2b: #e4f5ef; /* Relacional — verde */
+  --u3:  #7040b0; --u3b: #f0eafc; /* Interior — violeta */
+  --lago:#2878a8;
+
+  /* Timer */
+  --timer-ok:     #1a7a62;
+  --timer-warn:   #d46000;
+  --timer-danger: #c0392b;
+  --timer-panic:  #c020a0;
+
+  /* Tipografías */
+  --fd: 'Lora', serif;
+  --fb: 'DM Sans', sans-serif;
+  --fm: 'JetBrains Mono', monospace;
+
+  --r:    10px;
+  --r-sm: 6px;
+  --r-lg: 14px;
+  --shadow: 0 2px 16px rgba(30,60,100,0.10);
+  --shadow2: 0 4px 28px rgba(30,60,100,0.16);
+}
+
+/* MODO OSCURO — deep clinical */
+body.dark {
+  --bg:       #070d18;
+  --surface:  #0c1525;
+  --surface2: #111e30;
+  --surface3: #172540;
+  --border:   rgba(80,150,220,0.10);
+  --border2:  rgba(80,150,220,0.22);
+  --tx:  #c8dff2;
+  --tx2: #7aaccf;
+  --mu:  #305070;
+  --dopa:   #3aa8d8;
+  --dopa2:  rgba(58,168,216,0.10);
+  --nor:    #d88030;
+  --nor2:   rgba(216,128,48,0.10);
+  --sero:   #30b890;
+  --sero2:  rgba(48,184,144,0.10);
+  --alert:  #e05050;
+  --alert2: rgba(224,80,80,0.10);
+  --u1:  #4a90d8; --u1b: rgba(74,144,216,0.12);
+  --u2:  #30b890; --u2b: rgba(48,184,144,0.12);
+  --u3:  #a070e0; --u3b: rgba(160,112,224,0.12);
+  --lago:#3aa8d8;
+  --shadow: 0 2px 20px rgba(0,0,0,0.5);
+  --shadow2: 0 4px 36px rgba(0,0,0,0.6);
+}
+
+/* RESET */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--fb);
+  background: var(--bg);
+  color: var(--tx);
+  font-size: 14px;
+  line-height: 1.6;
+  transition: background .3s, color .3s;
+}
+
+/* ── LAYOUT ── */
+.app { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 226px; min-width: 226px;
+  background: var(--dopa);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transition: width .28s cubic-bezier(.4,0,.2,1), min-width .28s;
+  position: relative; z-index: 10;
+}
+body.dark .sidebar { background: #0a1828; border-right: 1px solid var(--border2); }
+.sidebar.collapsed { width: 0 !important; min-width: 0 !important; }
+
+.sb-logo {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  flex-shrink: 0;
+}
+.sb-logo-name {
+  font-family: var(--fd); font-size: 14px;
+  line-height: 1.25; letter-spacing: -.2px;
+  background: linear-gradient(90deg,#fff 0%,#7ad4ff 20%,#a8f0c0 40%,#ffd080 60%,#ff90c0 80%,#90c0ff 100%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: logo-freq 6s linear infinite;
+}
+@keyframes logo-freq {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+.sb-logo-sub { font-size: 10px; color: rgba(255,255,255,.45); margin-top: 2px; letter-spacing: .06em; }
+
+/* TIMER en sidebar */
+.sb-timer {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+.timer-display {
+  font-family: var(--fm); font-size: 26px; font-weight: 500;
+  color: #fff; text-align: center; letter-spacing: 2px;
+  transition: color .5s;
+  cursor: pointer;
+}
+.timer-display.warn   { color: #ffb040; }
+.timer-display.danger { color: #ff5040; }
+.timer-display.panic  { color: #ff40c0; animation: panic-pulse 0.5s infinite alternate; }
+@keyframes panic-pulse { from { opacity:1; } to { opacity:.5; } }
+
+.timer-controls {
+  display: flex; gap: 5px; margin-top: 6px; align-items: center;
+}
+.timer-set {
+  font-size: 10px; color: rgba(255,255,255,.5);
+  flex-shrink: 0; white-space: nowrap;
+}
+.timer-input {
+  width: 48px; background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 5px; padding: 3px 6px;
+  font-family: var(--fm); font-size: 12px; color: #fff;
+  text-align: center; outline: none;
+}
+.tbtn {
+  padding: 4px 9px; border-radius: 5px; border: 1px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.1); color: #fff; font-size: 11px;
+  cursor: pointer; font-family: var(--fb); transition: background .15s;
+}
+.tbtn:hover { background: rgba(255,255,255,.2); }
+.tbtn.pip-btn { padding: 4px 7px; margin-left: auto; }
+
+/* PACIENTE ACTIVO */
+.sb-patient {
+  padding: 8px 14px 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+.sb-patient-label {
+  font-size: 9px; color: rgba(255,255,255,.4);
+  text-transform: uppercase; letter-spacing: .1em; margin-bottom: 5px;
+}
+.sb-patient-name {
+  font-size: 13px; font-weight: 500; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sb-patient-dx { font-size: 10px; color: rgba(255,255,255,.45); margin-top: 1px; }
+.sb-patient-btn {
+  margin-top: 6px; width: 100%; padding: 5px 8px;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+  border-radius: 6px; color: rgba(255,255,255,.7); font-size: 10px;
+  cursor: pointer; font-family: var(--fb); text-align: left;
+  transition: background .15s;
+}
+.sb-patient-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
+
+/* NAV */
+.sb-nav { flex: 1; overflow-y: auto; padding: 6px 0; }
+.sb-nav::-webkit-scrollbar { width: 0; }
+.sb-section {
+  font-size: 9px; color: rgba(255,255,255,.35);
+  text-transform: uppercase; letter-spacing: .1em;
+  padding: 8px 16px 3px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 16px; cursor: pointer;
+  color: rgba(255,255,255,.65); font-size: 12px;
+  border-left: 2px solid transparent;
+  transition: all .15s;
+}
+.nav-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+.nav-item.active {
+  background: rgba(255,255,255,.12); color: #fff;
+  border-left-color: rgba(255,255,255,.7);
+}
+.nav-item.done .nav-dot { background: var(--sero); }
+.nav-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255,255,255,.2); flex-shrink: 0;
+  transition: background .3s;
+}
+.nav-item.active .nav-dot { background: #fff; }
+
+/* FOOTER */
+.sb-footer {
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255,255,255,.1);
+  display: flex; gap: 5px; flex-shrink: 0;
+}
+.sb-toggle-btn {
+  flex: 1; padding: 5px 8px; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.07); color: rgba(255,255,255,.6);
+  font-size: 10px; cursor: pointer; font-family: var(--fb);
+  transition: all .15s;
+}
+.sb-toggle-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
+.sb-toggle-btn.mode-active {
+  background: rgba(255,255,255,.18); color: #fff;
+  border-color: rgba(255,255,255,.4);
+}
+
+/* SIDEBAR COLLAPSE BUTTON */
+.sb-collapse {
+  position: fixed; left: 226px; top: 50%;
+  transform: translateY(-50%);
+  width: 14px; height: 40px;
+  background: var(--dopa); border: 1px solid rgba(255,255,255,.2);
+  border-left: none; border-radius: 0 6px 6px 0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 20; font-size: 8px; color: rgba(255,255,255,.6);
+  transition: left .28s cubic-bezier(.4,0,.2,1);
+}
+body.dark .sb-collapse { background: #0a1828; }
+.sb-collapse:hover { color: #fff; }
+.sidebar.collapsed ~ .sb-collapse { left: 0; }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+/* TOPBAR */
+.topbar {
+  height: 48px; background: var(--surface);
+  border-bottom: 1px solid var(--border2);
+  display: flex; align-items: center;
+  padding: 0 20px; gap: 10px; flex-shrink: 0;
+}
+.tb-title {
+  font-family: var(--fd); font-size: 16px; color: var(--tx);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tb-meta { font-size: 11px; color: var(--mu); margin-left: 2px; }
+.tb-spacer { flex: 1; }
+.tb-btn {
+  padding: 5px 12px; border-radius: 7px;
+  border: 1px solid var(--border2);
+  background: none; color: var(--tx2);
+  font-size: 11px; font-family: var(--fb);
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.tb-btn:hover { background: var(--surface2); color: var(--tx); }
+.tb-btn.primary {
+  background: var(--dopa); color: #fff; border-color: var(--dopa);
+}
+.tb-btn.primary:hover { opacity: .88; }
+.tb-btn.save {
+  background: var(--sero); color: #fff; border-color: var(--sero);
+}
+
+/* CONTENT */
+.content { flex: 1; overflow-y: auto; padding: 22px 24px; }
+.content::-webkit-scrollbar { width: 5px; }
+.content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* PANELS */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.card-head {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; padding-bottom: 11px;
+  border-bottom: 1px solid var(--border);
+}
+.card-title { font-family: var(--fd); font-size: 15px; color: var(--tx); }
+.card-tag {
+  font-size: 9px; padding: 2px 8px; border-radius: 10px;
+  font-weight: 500; letter-spacing: .05em; text-transform: uppercase;
+}
+.tag-d { background: var(--dopa2); color: var(--dopa); }
+.tag-s { background: var(--sero2); color: var(--sero); }
+.tag-n { background: var(--nor2); color: var(--nor); }
+
+/* GRIDS */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.gf { grid-column: 1 / -1; }
+
+/* FIELDS */
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.field label {
+  font-size: 11px; font-weight: 500; color: var(--tx2);
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.field input, .field select, .field textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  font-size: 13px; font-family: var(--fb);
+  color: var(--tx);
+  outline: none; resize: vertical;
+  transition: border-color .2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--dopa);
+  background: var(--surface);
+}
+.field textarea { min-height: 72px; line-height: 1.6; }
+.sdiv {
+  font-size: 9px; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--mu); font-weight: 500;
+  margin: 16px 0 8px; padding-bottom: 5px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── SÍNTOMAS ── */
+.sint-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+  margin-bottom: 12px;
+}
+.sint-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  transition: border-color .15s;
+}
+.sint-row:hover { border-color: var(--border2); }
+.sint-label { flex: 1; font-size: 11px; color: var(--tx2); }
+.sint-sel {
+  font-size: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px; padding: 3px 5px;
+  color: var(--tx); font-family: var(--fm);
+  outline: none; width: 68px;
+}
+.sint-badge {
+  font-size: 9px; padding: 1px 6px; border-radius: 10px;
+  font-family: var(--fm); font-weight: 500; min-width: 28px;
+  text-align: center;
+}
+.sint-btn {
+  width: 22px; height: 22px; border-radius: 6px;
+  border: 1px solid var(--border2); background: var(--surface);
+  color: var(--tx2); font-size: 13px; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all .12s; line-height: 1; padding: 0;
+}
+.sint-btn-minus:hover { background: var(--sero2); color: var(--sero); border-color: rgba(26,122,98,.35); }
+.sint-btn-plus:hover  { background: var(--alert2); color: var(--alert); border-color: rgba(192,57,43,.35); }
+.sb-neg { background: var(--sero2); color: var(--sero); }
+.sb-pos1 { background: var(--nor2); color: var(--nor); }
+.sb-pos2 { background: rgba(200,100,0,.12); color: #b06000; }
+.sb-pos3 { background: var(--alert2); color: var(--alert); }
+
+/* SINT CHART */
+.sint-chart-wrap {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.sint-chart-title {
+  font-size: 10px; color: var(--mu);
+  text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: 10px;
+}
+.sint-chart-canvas { width: 100%; height: 160px; display: block; }
+
+/* EXAMEN MENTAL */
+.em-presets {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin-bottom: 8px;
+}
+.em-chip {
+  padding: 3px 10px; border-radius: 12px;
+  border: 1px solid var(--border);
+  background: none; color: var(--tx2); font-size: 10px;
+  cursor: pointer; font-family: var(--fb);
+  transition: all .15s;
+}
+.em-chip:hover { background: var(--surface2); border-color: var(--border2); }
+.em-chip.selected {
+  background: var(--dopa2); color: var(--dopa);
+  border-color: rgba(30,111,168,.3);
+}
+.em-preset-full {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--sero); color: #fff; border: none;
+  font-size: 11px; font-family: var(--fb); font-weight: 500;
+  cursor: pointer; margin-bottom: 8px;
+}
+
+/* ── TRES UNIVERSOS ── */
+.u-trio { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.u-card {
+  border-radius: var(--r); padding: 14px;
+  border: 1px solid; display: flex; flex-direction: column; gap: 8px;
+}
+.u-card-1 { background: var(--u1b); border-color: rgba(32,96,160,.2); }
+.u-card-2 { background: var(--u2b); border-color: rgba(26,122,98,.2); }
+.u-card-3 { background: var(--u3b); border-color: rgba(112,64,176,.2); }
+.u-card h3 { font-family: var(--fb); font-size: 12px; font-weight: 500; }
+.u-card-1 h3 { color: var(--u1); }
+.u-card-2 h3 { color: var(--u2); }
+.u-card-3 h3 { color: var(--u3); }
+.u-card p { font-size: 11px; color: var(--tx2); line-height: 1.5; }
+.u-card textarea {
+  width: 100%; min-height: 80px; resize: vertical;
+  background: rgba(255,255,255,.5); border: 1px solid rgba(0,0,0,.08);
+  border-radius: var(--r-sm); padding: 7px 9px;
+  font-size: 12px; font-family: var(--fb); color: var(--tx);
+  outline: none; line-height: 1.55;
+}
+body.dark .u-card textarea { background: rgba(0,0,0,.2); border-color: rgba(255,255,255,.08); }
+
+/* LAGO */
+.lake-wrap {
+  background: var(--dopa2); border: 1px solid rgba(30,111,168,.2);
+  border-radius: var(--r); padding: 13px; margin-bottom: 14px;
+}
+.lake-title { font-size: 11px; font-weight: 500; color: var(--dopa); margin-bottom: 9px; }
+.lake-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+.lake-row label { font-size: 11px; color: var(--tx2); width: 130px; flex-shrink: 0; }
+.lake-row input[type=range] { flex: 1; accent-color: var(--lago); }
+.lake-val { font-size: 11px; font-weight: 500; color: var(--lago); width: 20px; text-align: right; font-family: var(--fm); }
+.lake-interp { font-size: 11px; color: var(--lago); font-style: italic; margin-top: 4px; }
+
+/* ── BISTURÍ SOCRÁTICO ── */
+.soc-step {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.soc-step-head {
+  display: flex; align-items: center;
+  padding: 6px 12px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+.soc-step-num { font-size: 10px; color: var(--dopa); font-family: var(--fm); font-weight: 500; }
+.soc-arrow {
+  font-size: 11px; color: var(--mu); margin-left: 8px; margin-right: 4px;
+}
+.soc-row { display: grid; grid-template-columns: 64px 1fr; }
+.soc-sp {
+  padding: 8px; font-size: 10px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .05em;
+  display: flex; align-items: flex-start;
+  border-right: 1px solid var(--border);
+}
+.soc-sp-c { background: var(--dopa2); color: var(--dopa); }
+.soc-sp-p { background: var(--sero2); color: var(--sero); }
+.soc-txt textarea {
+  width: 100%; border: none; background: transparent;
+  font-size: 12px; font-family: var(--fb); color: var(--tx);
+  resize: vertical; min-height: 48px; outline: none;
+  padding: 8px 10px; line-height: 1.6;
+}
+.soc-foot {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; background: var(--surface2);
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.soc-tec-lbl { font-size: 10px; color: var(--mu); flex-shrink: 0; }
+.soc-tec-in {
+  flex: 1; min-width: 120px; border: none; background: transparent;
+  font-size: 11px; color: var(--mu); outline: none; font-family: var(--fb);
+}
+.soc-tec-sel {
+  font-size: 10px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 5px;
+  padding: 3px 5px; color: var(--tx); font-family: var(--fb);
+  outline: none;
+}
+.soc-dis {
+  width: 100%; background: rgba(255,255,255,.04);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 8px; font-size: 11px; color: var(--tx2);
+  resize: vertical; outline: none; min-height: 44px;
+  font-family: var(--fb); line-height: 1.55; font-style: italic;
+}
+.soc-chain-box {
+  background: var(--dopa2); border: 1px solid rgba(30,111,168,.2);
+  border-radius: var(--r); padding: 12px 14px; margin-bottom: 12px;
+}
+.soc-chain-title { font-size: 10px; color: var(--dopa); font-weight: 500; margin-bottom: 6px; }
+
+/* ── BECK SECUENCIAL ── */
+.beck-progress {
+  height: 4px; background: var(--border);
+  border-radius: 2px; overflow: hidden; margin-bottom: 14px;
+}
+.beck-prog-fill { height: 100%; border-radius: 2px; transition: width .3s; }
+.beck-score-bar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px; border-radius: var(--r);
+  border: 1px solid var(--border); margin-bottom: 12px;
+}
+.beck-score-n { font-family: var(--fd); font-size: 32px; line-height: 1; }
+.beck-opt {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer; margin-bottom: 6px;
+  font-size: 13px; color: var(--tx2);
+  transition: all .15s;
+}
+.beck-opt:hover { background: var(--surface2); border-color: var(--border2); }
+.beck-opt.selected {
+  background: var(--dopa2); color: var(--dopa);
+  border-color: rgba(30,111,168,.35);
+}
+.beck-opt-num {
+  font-family: var(--fm); font-size: 11px; color: var(--mu);
+  width: 14px; flex-shrink: 0;
+}
+.beck-opt.selected .beck-opt-num { color: var(--dopa); }
+.beck-nav { display: flex; gap: 8px; margin-top: 12px; }
+.beck-nav-prev {
+  padding: 8px 18px; border-radius: 8px;
+  border: 1px solid var(--border2); background: none;
+  color: var(--tx2); font-family: var(--fb); font-size: 12px;
+  cursor: pointer;
+}
+.beck-nav-next {
+  flex: 1; padding: 8px; border-radius: 8px;
+  background: var(--dopa); color: #fff; border: none;
+  font-family: var(--fb); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: opacity .2s;
+}
+.beck-nav-next:hover { opacity: .88; }
+.beck-mini-grid {
+  display: grid; grid-template-columns: repeat(7,1fr); gap: 3px;
+  margin-top: 12px;
+}
+.beck-mini-cell {
+  padding: 4px 2px; text-align: center; border-radius: 5px;
+  background: var(--surface2); border: 1px solid var(--border);
+  cursor: pointer; font-size: 9px; color: var(--tx2);
+  transition: background .15s;
+}
+.beck-mini-cell:hover { background: var(--dopa2); }
+.beck-mini-val {
+  font-family: var(--fm); font-size: 11px;
+  display: block; font-weight: 500; margin-bottom: 1px;
+}
+
+/* ── EEAG ── */
+.eeag-num {
+  font-family: var(--fd); font-size: 42px;
+  color: var(--lago); line-height: 1;
+}
+.eeag-desc-box {
+  background: var(--dopa2); border: 1px solid rgba(30,111,168,.2);
+  border-radius: var(--r-sm); padding: 11px 13px;
+  font-size: 12px; color: var(--dopa); line-height: 1.6;
+  margin-top: 8px;
+}
+
+/* ── DIALOG ROWS ── */
+.dial-block { margin-bottom: 10px; }
+.dial-row {
+  display: grid; grid-template-columns: 70px 1fr;
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.dial-sp {
+  padding: 9px 7px; font-size: 10px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .05em;
+  display: flex; align-items: flex-start;
+}
+.dial-sp-c { background: var(--dopa2); color: var(--dopa); }
+.dial-sp-p { background: var(--sero2); color: var(--sero); }
+.dial-sp-n { background: var(--nor2); color: var(--nor); }
+.dial-sp-cl { background: var(--dopa2); color: var(--mu); }
+.dial-txt { border-left: 1px solid var(--border); }
+.dial-txt textarea {
+  width: 100%; border: none; background: transparent;
+  font-size: 12px; font-family: var(--fb); color: var(--tx);
+  resize: vertical; min-height: 50px; outline: none; padding: 8px 10px;
+  line-height: 1.6;
+}
+.dial-tech {
+  font-size: 10px; color: var(--mu); font-style: italic;
+  background: var(--surface2); padding: 4px 10px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── CON LO QUE ME QUEDO ── */
+.quedo-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px;
+}
+.quedo-box textarea {
+  width: 100%; border: none; background: transparent;
+  font-family: var(--fd); font-size: 14px; color: var(--tx);
+  line-height: 1.85; resize: vertical; min-height: 140px; outline: none;
+}
+
+/* ── COGNITIVA 5C ── */
+.cog5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 10px; }
+.cog5-head {
+  font-size: 10px; font-weight: 500; color: var(--tx2);
+  text-align: center; background: var(--surface2);
+  padding: 6px; border-radius: 7px 7px 0 0;
+  border: 1px solid var(--border); border-bottom: none;
+}
+.cog5-body {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 0 0 7px 7px; padding: 6px;
+}
+.cog5-body textarea {
+  width: 100%; border: none; background: transparent;
+  font-size: 11px; font-family: var(--fb); color: var(--tx);
+  resize: vertical; min-height: 70px; outline: none;
+}
+
+/* ── PLAN ── */
+.u-entry {
+  display: flex; align-items: flex-start; gap: 5px;
+  padding: 5px 7px; border-radius: 6px;
+  background: rgba(255,255,255,.45);
+  border: 1px solid rgba(0,0,0,.08);
+  border-left: 3px solid;
+  font-size: 11px; line-height: 1.45;
+}
+body.dark .u-entry { background: rgba(0,0,0,.25); border-color: rgba(255,255,255,.08); }
+.u-entry-txt { flex: 1; color: var(--tx); }
+.u-entry-status {
+  font-size: 9px; padding: 1px 5px; border-radius: 8px;
+  cursor: pointer; flex-shrink: 0; font-family: var(--fm);
+  border: 1px solid; white-space: nowrap;
+}
+.ust-conflict { background: rgba(192,57,43,.1); color: var(--alert); border-color: rgba(192,57,43,.3); }
+.ust-resol    { background: rgba(196,120,32,.1); color: var(--nor); border-color: rgba(196,120,32,.3); }
+.ust-done     { background: rgba(26,122,98,.1);  color: var(--sero); border-color: rgba(26,122,98,.3); }
+.u-entry-del  { background: none; border: none; color: var(--mu); cursor: pointer; font-size: 11px; padding: 0 2px; }
+.plan-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.plan-col { border-radius: var(--r); padding: 12px; border: 1px solid; }
+.plan-1 { background: var(--u1b); border-color: rgba(32,96,160,.2); }
+.plan-2 { background: var(--u2b); border-color: rgba(26,122,98,.2); }
+.plan-3 { background: var(--u3b); border-color: rgba(112,64,176,.2); }
+.plan-col h4 { font-size: 11px; font-weight: 500; margin-bottom: 7px; }
+.plan-1 h4 { color: var(--u1); }
+.plan-2 h4 { color: var(--u2); }
+.plan-3 h4 { color: var(--u3); }
+.plan-col textarea {
+  width: 100%; min-height: 90px; resize: vertical;
+  background: rgba(255,255,255,.45); border: 1px solid rgba(0,0,0,.08);
+  border-radius: 6px; padding: 7px; font-size: 11px;
+  font-family: var(--fb); color: var(--tx); outline: none;
+}
+body.dark .plan-col textarea { background: rgba(0,0,0,.2); border-color: rgba(255,255,255,.08); }
+
+/* ── PHARMA ── */
+.pharma-t { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+.pharma-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 12px 14px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px; position: relative;
+}
+.pharma-card-del {
+  position: absolute; top: 8px; right: 8px;
+  background: none; border: none; color: var(--mu);
+  cursor: pointer; font-size: 14px; padding: 2px 5px;
+  border-radius: 4px; transition: color .15s;
+}
+.pharma-card-del:hover { color: var(--alert); }
+.pharma-field label { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: var(--mu); display: block; margin-bottom: 3px; }
+.pharma-field input, .pharma-field select {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 5px; padding: 5px 8px; font-size: 12px;
+  font-family: var(--fb); color: var(--tx); outline: none;
+}
+.pharma-field input:focus { border-color: var(--dopa); }
+.pharma-t th {
+  background: var(--surface2); padding: 7px 9px;
+  text-align: left; font-size: 10px; font-weight: 500;
+  color: var(--tx2); border-bottom: 2px solid var(--border);
+}
+.pharma-t td { padding: 6px 9px; border-bottom: 1px solid var(--border); }
+.pharma-t td input, .pharma-t td select {
+  border: none; background: transparent; width: 100%;
+  font-size: 12px; font-family: var(--fb); color: var(--tx); outline: none;
+}
+
+/* ── HISTORIAL ── */
+.ses-item {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 10px 13px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; margin-bottom: 6px; transition: border-color .15s;
+}
+.ses-item:hover { border-color: var(--border2); }
+.ses-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--dopa2); color: var(--dopa);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 500; flex-shrink: 0;
+}
+
+/* ── PATIENT OVERLAY ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.65); z-index: 200;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.overlay.open { display: flex; }
+.ovl-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--r-lg); width: 560px; max-height: 80vh;
+  display: flex; flex-direction: column; box-shadow: var(--shadow2);
+}
+.ovl-head {
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.ovl-title { font-family: var(--fd); font-size: 17px; flex: 1; }
+.ovl-close {
+  background: none; border: none; color: var(--mu);
+  font-size: 17px; cursor: pointer; padding: 3px 6px;
+  border-radius: 5px; transition: background .15s;
+}
+.ovl-close:hover { background: var(--surface2); color: var(--tx); }
+.ovl-search {
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.ovl-search input {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border2); border-radius: 8px;
+  padding: 8px 12px 8px 30px; font-family: var(--fb);
+  font-size: 13px; color: var(--tx); outline: none;
+}
+.ovl-search input:focus { border-color: var(--dopa); }
+.ovl-search-ic {
+  position: absolute; left: 25px; top: 50%;
+  transform: translateY(-50%); color: var(--mu); font-size: 13px;
+}
+.ovl-list { flex: 1; overflow-y: auto; padding: 8px 12px; }
+.ovl-list::-webkit-scrollbar { width: 4px; }
+.ovl-list::-webkit-scrollbar-thumb { background: var(--border2); }
+.pt-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 8px;
+  cursor: pointer; transition: background .15s;
+}
+.pt-row:hover { background: var(--surface2); }
+.pt-av {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 500; flex-shrink: 0;
+}
+.pt-name { font-size: 13px; font-weight: 500; color: var(--tx); }
+.pt-dx { font-size: 11px; color: var(--mu); }
+.ovl-new {
+  padding: 10px 16px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.ovl-exp {
+  padding: 6px 14px; border-radius: 7px;
+  border: 1px solid var(--border2); background: none;
+  color: var(--tx2); font-size: 11px; font-family: var(--fb);
+  cursor: pointer; transition: all .15s;
+}
+.ovl-exp:hover { background: var(--surface2); }
+
+/* ── PIP TIMER ── */
+.pip-timer {
+  display: none;
+  position: fixed; bottom: 80px; right: 24px;
+  background: var(--surface); border: 2px solid var(--timer-ok);
+  border-radius: 12px; padding: 10px 18px;
+  font-family: var(--fm); font-size: 22px; font-weight: 500;
+  color: var(--timer-ok); z-index: 500;
+  box-shadow: var(--shadow2); cursor: move;
+  transition: border-color .5s, color .5s;
+  user-select: none;
+}
+.pip-timer.pip-open { display: block; }
+.pip-timer.warn { border-color: var(--timer-warn); color: var(--timer-warn); }
+.pip-timer.danger { border-color: var(--timer-danger); color: var(--timer-danger); }
+.pip-timer.panic { border-color: var(--timer-panic); color: var(--timer-panic); animation: panic-pulse .5s infinite alternate; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 22px; right: 22px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 10px 16px;
+  font-size: 12px; color: var(--tx); z-index: 999;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity .22s, transform .22s; pointer-events: none;
+  display: flex; align-items: center; gap: 8px;
+  box-shadow: var(--shadow);
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── IA FAB ── */
+.ia-fab {
+  position: fixed; bottom: 24px; right: 24px;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--dopa); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; z-index: 300;
+  box-shadow: 0 4px 20px rgba(30,111,168,.4);
+  transition: transform .2s, box-shadow .2s;
+}
+.ia-fab:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(30,111,168,.6); }
+.ia-fab.open { transform: rotate(45deg); }
+.ia-chat {
+  position: fixed; bottom: 82px; right: 24px;
+  width: 340px; height: 480px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 14px; display: flex; flex-direction: column;
+  z-index: 299; box-shadow: var(--shadow2);
+  transform: scale(.9) translateY(20px); opacity: 0;
+  pointer-events: none;
+  transition: transform .25s cubic-bezier(.4,0,.2,1), opacity .25s;
+}
+.ia-chat.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
+.ia-chat-head {
+  padding: 11px 13px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 9px;
+  border-radius: 14px 14px 0 0;
+}
+.ia-chat-av {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--dopa2); display: flex; align-items: center;
+  justify-content: center; font-size: 13px; flex-shrink: 0;
+}
+.ia-chat-title { font-size: 12px; font-weight: 500; flex: 1; }
+.ia-chat-sub { font-size: 9px; color: var(--mu); }
+.ia-close { background: none; border: none; color: var(--mu); cursor: pointer; font-size: 15px; }
+.ia-msgs {
+  flex: 1; overflow-y: auto; padding: 10px;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.ia-msgs::-webkit-scrollbar { width: 3px; }
+.ia-msgs::-webkit-scrollbar-thumb { background: var(--border2); }
+.ia-bubble {
+  max-width: 88%; padding: 8px 11px;
+  border-radius: 10px; font-size: 12px; line-height: 1.6;
+}
+.ia-bubble.user {
+  background: var(--dopa2); color: var(--tx);
+  border-radius: 10px 10px 3px 10px; align-self: flex-end;
+  border: 1px solid rgba(30,111,168,.2);
+}
+.ia-bubble.ai {
+  background: var(--surface2); color: var(--tx2);
+  border-radius: 10px 10px 10px 3px; align-self: flex-start;
+  border: 1px solid var(--border);
+}
+.ia-bubble.ai.loading { color: var(--mu); font-style: italic; }
+.ia-ins-btn {
+  display: block; margin-top: 6px; padding: 4px 10px;
+  background: var(--dopa2); border: 1px solid rgba(30,111,168,.3);
+  border-radius: 6px; color: var(--dopa); font-size: 10px;
+  cursor: pointer; font-family: var(--fb); text-align: center;
+}
+.ia-quick { padding: 6px 10px; display: flex; gap: 4px; flex-wrap: wrap; border-top: 1px solid var(--border); }
+.ia-qb {
+  padding: 3px 8px; border-radius: 12px;
+  border: 1px solid var(--border); background: none;
+  color: var(--tx2); font-size: 10px; cursor: pointer;
+  font-family: var(--fb); transition: all .15s;
+}
+.ia-qb:hover { border-color: var(--dopa); color: var(--dopa); }
+.ia-chat-in {
+  padding: 8px 10px; border-top: 1px solid var(--border);
+  display: flex; gap: 6px; align-items: flex-end;
+  border-radius: 0 0 14px 14px;
+}
+.ia-chat-in textarea {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 9px; color: var(--tx);
+  font-size: 12px; font-family: var(--fb); resize: none;
+  outline: none; min-height: 34px; max-height: 90px;
+}
+.ia-chat-in textarea:focus { border-color: var(--dopa); }
+.ia-send {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--dopa); border: none; color: #fff;
+  cursor: pointer; font-size: 13px; flex-shrink: 0;
+}
+
+/* MISC */
+.add-btn {
+  padding: 5px 12px; border-radius: 7px;
+  background: var(--dopa2); border: 1px solid rgba(30,111,168,.3);
+  color: var(--dopa); font-size: 11px; font-family: var(--fb);
+  cursor: pointer; transition: all .15s;
+}
+.add-btn:hover { background: rgba(30,111,168,.15); }
+
+.mode-only-completo { display: none; }
+.mode-completo .mode-only-completo { display: block; }
+.mode-completo .nav-item.mode-only-completo { display: flex; }
+input, select, textarea { color-scheme: light; }
+body.dark input, body.dark select, body.dark textarea { color-scheme: dark; }
+</style>
+</head>
+<body>
+
+<!-- PIP TIMER -->
+<div class="pip-timer" id="pip-timer">00:00</div>
+
+<!-- IA FAB -->
+<button class="ia-fab" id="ia-fab">🤖</button>
+<div class="ia-chat" id="ia-chat">
+  <div class="ia-chat-head">
+    <div class="ia-chat-av">🤖</div>
+    <div><div class="ia-chat-title">IA Clínica</div><div class="ia-chat-sub">claude-sonnet-4</div></div>
+    <button class="ia-close" id="ia-close">✕</button>
+  </div>
+  <div class="ia-msgs" id="ia-msgs">
+    <div class="ia-bubble ai">Hola. Soy tu asistente clínico. ¿En qué te ayudo esta sesión?</div>
+  </div>
+  <div class="ia-quick">
+    <button class="ia-qb" data-quick="evolucion">📋 Evolución</button>
+    <button class="ia-qb" data-quick="analisis">🔍 Análisis</button>
+    <button class="ia-qb" data-quick="plan">📐 Plan</button>
+    <button class="ia-qb" data-quick="riesgo">⚠️ Riesgo</button>
+    <button class="ia-qb" data-quick="examen">👁 Examen</button>
+  </div>
+  <div class="ia-chat-in">
+    <textarea id="ia-txt" placeholder="Consulta libre..." rows="1"></textarea>
+    <button class="ia-send" id="ia-send">↑</button>
+  </div>
+</div>
+
+<!-- MODAL BECK PACIENTE -->
+<div id="modal-beck-patient" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border-radius:14px;border:1px solid var(--border2);width:600px;max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow2)">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+      <div style="font-family:var(--fd);font-size:17px;flex:1">BDI-II · Modo Paciente</div>
+      <button onclick="document.getElementById('modal-beck-patient').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:17px;cursor:pointer">✕</button>
+    </div>
+    <div style="padding:14px 18px;background:var(--dopa2);border-bottom:1px solid var(--border)">
+      <div style="font-size:12px;color:var(--dopa);font-weight:500;margin-bottom:4px">📲 Enviar al paciente</div>
+      <div style="font-size:11px;color:var(--tx2);margin-bottom:8px">El paciente puede responder el BDI-II en su propio dispositivo. Los resultados se guardan en su navegador y puedes pedirle que comparta la puntuación final antes de la sesión.</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="openBeckPatientMode()" style="padding:7px 16px;background:var(--dopa);color:#fff;border:none;border-radius:8px;font-family:var(--fb);font-size:12px;font-weight:500;cursor:pointer">Abrir en esta pantalla (para mostrar al paciente)</button>
+        <button onclick="copyBeckLink()" style="padding:7px 14px;background:none;border:1px solid var(--border2);border-radius:8px;color:var(--tx2);font-size:12px;font-family:var(--fb);cursor:pointer">📋 Copiar enlace BDI-II autónomo</button>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:var(--mu)">💡 Cuando el paciente termina, el puntaje aparece en pantalla. El clínico lo anota manualmente o lo copia al campo BDI-II de la plataforma.</div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:18px" id="beck-patient-wrap"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span>✓</span><span id="toast-msg">Guardado</span></div>
+
+<!-- PATIENT OVERLAY -->
+<div class="overlay" id="ovl-patient">
+  <div class="ovl-card">
+    <div class="ovl-head">
+      <div class="ovl-title">Pacientes</div>
+      <button class="ovl-close" id="ovl-close">✕</button>
+    </div>
+    <div class="ovl-search">
+      <span class="ovl-search-ic">⌕</span>
+      <input type="text" id="pt-search" placeholder="Buscar paciente..." autocomplete="off">
+    </div>
+    <div class="ovl-list" id="pt-list"></div>
+    <div class="ovl-new">
+      <button class="tb-btn primary" id="btn-new-pt">+ Nuevo paciente</button>
+      <button class="ovl-exp" id="btn-export-all">↓ Exportar todos (JSON)</button>
+      <button class="ovl-exp" id="btn-import-pt">↑ Importar JSON</button>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-name">Chamalnquimyst<br>Labs</div>
+      <div class="sb-logo-sub">Plataforma Clínica · A. Prado C.</div>
+    </div>
+
+    <!-- TIMER -->
+    <div class="sb-timer">
+      <div class="timer-display" id="timer-disp" title="Clic para PiP">00:00</div>
+      <div class="timer-controls">
+        <span class="timer-set">min:</span>
+        <input type="number" class="timer-input" id="timer-mins" value="30" min="1" max="120">
+        <button class="tbtn" id="btn-timer-start">▶</button>
+        <button class="tbtn" id="btn-timer-reset">↺</button>
+        <button class="tbtn pip-btn" id="btn-pip" title="Picture-in-Picture">⧉</button>
+      </div>
+    </div>
+
+    <!-- PACIENTE ACTIVO -->
+    <div class="sb-patient">
+      <div class="sb-patient-label">Paciente activo</div>
+      <div class="sb-patient-name" id="sb-pt-name">— sin seleccionar —</div>
+      <div class="sb-patient-dx" id="sb-pt-dx"></div>
+      <button class="sb-patient-btn" id="btn-open-patients">⊕ Cambiar / buscar paciente</button>
+    </div>
+
+    <!-- NAV -->
+    <nav class="sb-nav" id="sb-nav">
+      <div class="sb-section">Ingreso</div>
+      <div class="nav-item active" data-panel="datos"><div class="nav-dot"></div>Datos generales</div>
+      <div class="nav-item" data-panel="anamnesis"><div class="nav-dot"></div>Anamnesis · Síntomas</div>
+      <div class="nav-item" data-panel="universos"><div class="nav-dot"></div>Tres universos</div>
+      <div class="sb-section">Sesión</div>
+      <div class="nav-item" data-panel="sesion"><div class="nav-dot"></div>Sesión actual</div>
+      <div class="nav-item" data-panel="bisturi"><div class="nav-dot"></div>Bisturí socrático</div>
+      <div class="nav-item" data-panel="quedo"><div class="nav-dot"></div>Con lo que me quedo</div>
+      <div class="nav-item" data-panel="historia"><div class="nav-dot"></div>Historial</div>
+      <div class="sb-section">Escalas</div>
+      <div class="nav-item" data-panel="beck"><div class="nav-dot"></div>BDI-II (Beck)</div>
+      <div class="nav-item" data-panel="eeag"><div class="nav-dot"></div>EEAG / GAF</div>
+      <div class="sb-section">Plan</div>
+      <div class="nav-item mode-only-completo" data-panel="cognitiva"><div class="nav-dot"></div>Conceptualización</div>
+      <div class="nav-item" data-panel="plan"><div class="nav-dot"></div>Plan triaxial</div>
+      <div class="nav-item" data-panel="pharma"><div class="nav-dot"></div>Farmacoterapia</div>
+    </nav>
+
+    <div class="sb-footer">
+      <button class="sb-toggle-btn mode-active" id="btn-mode-r" onclick="setMode('rapido')">⚡ Rápido</button>
+      <button class="sb-toggle-btn" id="btn-mode-c" onclick="setMode('completo')">◎ Completo</button>
+      <button class="sb-toggle-btn" id="btn-skin" style="padding:5px 7px" title="Cambiar tema">◑</button>
+    </div>
+  </div>
+
+  <!-- SIDEBAR TOGGLE -->
+  <button class="sb-collapse" id="sb-toggle">‹</button>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="min-width:0">
+        <div class="tb-title" id="tb-title">Datos generales</div>
+        <div class="tb-meta" id="tb-meta"></div>
+      </div>
+      <div class="tb-spacer"></div>
+      <button class="tb-btn" id="btn-ia-evolucion" style="background:var(--nor2);border-color:rgba(196,120,32,.4);color:var(--nor);font-weight:500">🤖 Evolución IA</button>
+      <button class="tb-btn" id="btn-export-ficha">📋 Ver ficha</button>
+      <button class="tb-btn save" id="btn-save-ses">💾 Guardar sesión</button>
+    </div>
+
+    <div class="content" id="content">
+
+      <!-- ══ PANEL: DATOS GENERALES ══ -->
+      <div class="panel active" id="panel-datos">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Identificación y contexto vital</div><div class="card-tag tag-d">Meersohn — contexto amplio</div></div>
+          <div class="g3" style="margin-bottom:12px">
+            <div class="field"><label>Nombre completo</label><input type="text" id="d-nombre" placeholder="Apellido, Nombre"></div>
+            <div class="field"><label>Edad</label><input type="number" id="d-edad" placeholder="00"></div>
+            <div class="field"><label>Fecha ingreso</label><input type="date" id="d-fecha"></div>
+          </div>
+          <div class="g3" style="margin-bottom:12px">
+            <div class="field"><label>Ocupación</label><input type="text" id="d-ocup" placeholder="Profesión u ocupación"></div>
+            <div class="field"><label>Estado civil</label>
+              <select id="d-ec"><option value="">—</option><option>Soltero/a</option><option>Casado/a</option><option>Conviviente</option><option>Separado/a</option><option>Divorciado/a</option><option>Viudo/a</option></select>
+            </div>
+            <div class="field"><label>Vive con</label><input type="text" id="d-vive" placeholder="Solo, pareja, familia..."></div>
+          </div>
+          <div class="g2">
+            <div class="field"><label>Motivo de consulta (en palabras del paciente)</label><input type="text" id="d-motivo" placeholder="¿Qué lo trajo aquí?"></div>
+            <div class="field"><label>Red de apoyo real</label><input type="text" id="d-red" placeholder="Tribu real vs. red formal"></div>
+          </div>
+          <div class="g2" style="margin-top:4px">
+            <div class="field"><label>Hobbies / intereses (ventana al nicho)</label><input type="text" id="d-hobbies" placeholder="¿Qué hace cuando nadie lo evalúa?"></div>
+            <div class="field"><label>Ideas religiosas / políticas (identidad)</label><input type="text" id="d-relig" placeholder="Dato de identidad, no irrelevante"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Escucha libre — apertura</div><div class="card-tag tag-s">3–5 min sin interrumpir</div></div>
+          <div style="background:var(--dopa2);border:1px solid rgba(30,111,168,.2);border-radius:var(--r-sm);padding:11px 13px;margin-bottom:12px">
+            <div style="font-size:11px;color:var(--dopa);font-weight:500;margin-bottom:4px">Pregunta de apertura estándar</div>
+            <div style="font-family:var(--fd);font-size:15px;color:var(--tx);font-style:italic">"¿Qué lo trajo hasta aquí, en sus propias palabras?"</div>
+          </div>
+          <div class="field"><label>Relato libre del paciente</label><textarea id="d-relato" placeholder="Transcribir o sintetizar sin interpretar todavía..." style="min-height:100px"></textarea></div>
+          <div class="g3" style="margin-top:4px">
+            <div class="field"><label>¿Ubica malestar en…?</label>
+              <select id="d-ubica"><option value="">—</option><option>Sí mismo</option><option>El entorno / sistema</option><option>Ambos</option><option>No lo identifica</option></select>
+            </div>
+            <div class="field"><label>¿Primera persona vulnerable?</label>
+              <select id="d-primera"><option value="">—</option><option>Sí, usa primera persona</option><option>Elude, habla en tercera</option><option>Oscila</option></select>
+            </div>
+            <div class="field"><label>¿Aparece el cuerpo?</label>
+              <select id="d-cuerpo"><option value="">—</option><option>Sí, desde el inicio</option><option>Solo síntomas</option><option>No aparece</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Antecedentes clínicos</div></div>
+          <div class="g2">
+            <div class="field"><label>Ant. Mórbidos</label><textarea id="d-amorbidos" style="min-height:60px" placeholder="Enfermedades crónicas..."></textarea></div>
+            <div class="field"><label>Ant. Quirúrgicos</label><textarea id="d-aquirurg" style="min-height:60px" placeholder="Cirugías previas..."></textarea></div>
+            <div class="field"><label>Ant. Psiquiátricos</label><textarea id="d-apsiq" style="min-height:60px" placeholder="Episodios previos, hospitalizaciones..."></textarea></div>
+            <div class="field"><label>Ant. Familiares psiquiátricos</label><textarea id="d-afam" style="min-height:60px" placeholder="Diagnóstico y relación de parentesco..."></textarea></div>
+          </div>
+          <div class="g3" style="margin-top:4px">
+            <div class="field"><label>Medicamentos actuales</label><input type="text" id="d-meds" placeholder="Fármacos y dosis"></div>
+            <div class="field"><label>Alergias</label><input type="text" id="d-alerg" placeholder="Alergia conocida o ninguna"></div>
+            <div class="field"><label>Hábitos (Tab · OH · Drogas)</label><input type="text" id="d-habitos" placeholder="Tab: — OH: Social Drogas: —"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PANEL: ANAMNESIS / SÍNTOMAS ══ -->
+      <div class="panel" id="panel-anamnesis">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Estado sintomático actual</div><div class="card-tag tag-n">Registro rápido</div></div>
+          <div class="sint-grid" id="sint-grid"></div>
+          <div class="field"><label>Observaciones sintomáticas adicionales</label><textarea id="sint-obs" style="min-height:60px" placeholder="Detalles del cuadro clínico..."></textarea></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Evolución de síntomas</div><div class="card-tag tag-d">Gráfico temporal</div></div>
+          <canvas id="sint-chart" class="sint-chart-canvas" height="160"></canvas>
+          <div style="font-size:10px;color:var(--mu);margin-top:6px;text-align:center">Sesión más reciente a la derecha · Intensidad: −−−=0, −=1, —=2, +=3, ++=4, +++=5</div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Examen mental</div><div class="card-tag tag-s">Exam. Mental</div></div>
+          <button class="em-preset-full" id="btn-em-normal">✓ Insertar examen mental normal completo</button>
+          <div class="em-presets" id="em-chips"></div>
+          <div class="field"><textarea id="em-text" style="min-height:100px" placeholder="Examen mental de la sesión..."></textarea></div>
+        </div>
+      </div>
+
+      <!-- ══ PANEL: TRES UNIVERSOS ══ -->
+      <div class="panel" id="panel-universos">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Tres universos vitales</div><div class="card-tag tag-d">Metodología A. Prado C.</div></div>
+          <div class="lake-wrap">
+            <div class="lake-title">Lago de integración — nivel de claridad percibido</div>
+            <div class="lake-row"><label>Universo laboral</label><input type="range" min="1" max="10" value="5" id="lake1" oninput="updateLake()"><span class="lake-val" id="l1v">5</span></div>
+            <div class="lake-row"><label>Universo relacional</label><input type="range" min="1" max="10" value="5" id="lake2" oninput="updateLake()"><span class="lake-val" id="l2v">5</span></div>
+            <div class="lake-row"><label>Mundo interior</label><input type="range" min="1" max="10" value="5" id="lake3" oninput="updateLake()"><span class="lake-val" id="l3v">5</span></div>
+            <div class="lake-interp" id="lake-interp">Lago en equilibrio provisional</div>
+          </div>
+          <div class="u-trio">
+            <div class="u-card u-card-1">
+              <h3>Universo Laboral</h3>
+              <p>¿Tiene agencia real o identidad de función? ¿Nicho que energiza o mismatch crónico?</p>
+              <div id="u1-entries" style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px"></div>
+              <div style="display:flex;gap:4px">
+                <input id="u1-new" placeholder="Nueva entrada..." style="flex:1;font-size:11px;background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.1);border-radius:5px;padding:5px 7px;outline:none;font-family:var(--fb);color:var(--tx)" onkeydown="if(event.key==='Enter')addUEntry(1,this)">
+                <button onclick="addUEntry(1,document.getElementById('u1-new'))" style="padding:4px 9px;background:var(--u1);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:11px">+</button>
+              </div>
+              <div class="field" style="margin-top:6px"><label style="color:var(--u1);font-size:10px">Lectura evolutiva</label><input id="u1-evol" placeholder="Mismatch / nicho / agencia" style="font-size:11px"></div>
+            </div>
+            <div class="u-card u-card-2">
+              <h3>Universo Relacional</h3>
+              <p>¿A quién acude primero? Figuras de autoridad. ¿Tribu real o red formal?</p>
+              <div id="u2-entries" style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px"></div>
+              <div style="display:flex;gap:4px">
+                <input id="u2-new" placeholder="Nueva entrada..." style="flex:1;font-size:11px;background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.1);border-radius:5px;padding:5px 7px;outline:none;font-family:var(--fb);color:var(--tx)" onkeydown="if(event.key==='Enter')addUEntry(2,this)">
+                <button onclick="addUEntry(2,document.getElementById('u2-new'))" style="padding:4px 9px;background:var(--u2);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:11px">+</button>
+              </div>
+              <div class="field" style="margin-top:6px"><label style="color:var(--u2);font-size:10px">Lectura evolutiva</label><input id="u2-evol" placeholder="Sistema vagal / tribu / seguridad" style="font-size:11px"></div>
+            </div>
+            <div class="u-card u-card-3">
+              <h3>Mundo Interior</h3>
+              <p>¿Pierde la noción del tiempo con algo? ¿Tiene espacio que el sistema no administre?</p>
+              <div id="u3-entries" style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px"></div>
+              <div style="display:flex;gap:4px">
+                <input id="u3-new" placeholder="Nueva entrada..." style="flex:1;font-size:11px;background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.1);border-radius:5px;padding:5px 7px;outline:none;font-family:var(--fb);color:var(--tx)" onkeydown="if(event.key==='Enter')addUEntry(3,this)">
+                <button onclick="addUEntry(3,document.getElementById('u3-new'))" style="padding:4px 9px;background:var(--u3);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:11px">+</button>
+              </div>
+              <div class="field" style="margin-top:6px"><label style="color:var(--u3);font-size:10px">Lectura evolutiva</label><input id="u3-evol" placeholder="Nicho ecológico / biofilia / agencia" style="font-size:11px"></div>
+            </div>
+          </div>
+          <div class="field"><label>Hipótesis de universo dominante del malestar</label><textarea id="u-hip" style="min-height:70px" placeholder="¿Por dónde entra el trabajo clínico?"></textarea></div>
+        </div>
+      </div>
+
+      <!-- ══ PANEL: SESIÓN ACTUAL ══ -->
+      <div class="panel" id="panel-sesion">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Sesión actual</div><div class="card-tag tag-s" id="ses-num-tag">Sesión 1</div></div>
+          <div class="g3" style="margin-bottom:12px">
+            <div class="field"><label>Fecha</label><input type="date" id="ses-fecha"></div>
+            <div class="field"><label>N° sesión</label><input type="number" id="ses-num" value="1" min="1"></div>
+            <div class="field"><label>Modalidad</label>
+              <select id="ses-modal"><option>Presencial</option><option>Online</option></select>
+            </div>
+          </div>
+          <div class="field"><label>Motivo / continuación</label><textarea id="ses-motivo" style="min-height:60px" placeholder="¿Qué trae hoy el paciente?"></textarea></div>
+          <div class="sdiv">Diálogo clínico — secuencia metodológica</div>
+          <div class="dial-block">
+            <div class="dial-row"><div class="dial-sp dial-sp-c">Apertura</div><div class="dial-txt"><textarea id="d-apertura" placeholder='Sin agenda: "¿Qué lo trae hoy?"'></textarea></div></div>
+            <div class="dial-tech">Fase 1 — escucha libre · sin hipótesis previa</div>
+          </div>
+          <div class="dial-block">
+            <div class="dial-row"><div class="dial-sp dial-sp-p">Paciente</div><div class="dial-txt"><textarea id="d-respuesta" placeholder="Relato del paciente — transcribir o sintetizar" style="min-height:70px"></textarea></div></div>
+          </div>
+          <div class="dial-block">
+            <div class="dial-row"><div class="dial-sp dial-sp-n">Nota</div><div class="dial-txt"><textarea id="d-nota" placeholder="Hipótesis clínica interna — solo para el clínico"></textarea></div></div>
+            <div class="dial-tech">Nota interna · lectura evolutiva · hipótesis diagnóstica</div>
+          </div>
+          <div class="dial-block">
+            <div class="dial-row"><div class="dial-sp dial-sp-cl">Cierre</div><div class="dial-txt"><textarea id="d-cierre" placeholder="Reencuadre o psicoeducación ofrecida al cierre"></textarea></div></div>
+            <div class="dial-tech">Fase 3 — validación + confrontación empática</div>
+          </div>
+          <div class="field" style="margin-top:10px"><label>Tarea / compromiso inter-sesión</label><input type="text" id="ses-tarea" placeholder="Una acción pequeña, concreta, elegida sin audiencia..."></div>
+          <div style="margin-top:10px">
+            <button class="tb-btn save" id="btn-save-session">Guardar esta sesión</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PANEL: BISTURÍ SOCRÁTICO ══ -->
+      <div class="panel" id="panel-bisturi">
+        <div style="display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:start">
+          <div>
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title">Bisturí Socrático</div>
+                <div class="card-tag tag-d">Flecha descendente</div>
+                <button class="add-btn" id="btn-add-soc" style="margin-left:auto">＋ Eslabón</button>
+              </div>
+              <div class="soc-chain-box" id="soc-chain-box">
+                <div class="soc-chain-title">↓ Cadena descendente</div>
+                <div id="soc-chain" style="font-size:11px;color:var(--tx2)"></div>
+              </div>
+              <!-- Pregunta disparadora -->
+              <div style="background:var(--nor2);border:1px solid rgba(196,120,32,.25);border-radius:var(--r);padding:12px 14px;margin-bottom:10px">
+                <div style="font-size:10px;color:var(--nor);font-weight:500;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Pregunta disparadora inicial</div>
+                <div style="font-size:11px;color:var(--tx2);margin-bottom:8px;font-style:italic">El punto de entrada al proceso socrático. ¿Qué trajo el paciente que abre la cadena?</div>
+                <textarea id="soc-pregunta-init" rows="2" style="width:100%;background:rgba(255,255,255,.5);border:1px solid rgba(196,120,32,.2);border-radius:6px;padding:7px 9px;font-size:12px;font-family:var(--fb);color:var(--tx);resize:vertical;outline:none;line-height:1.55" placeholder="ej: El paciente dice 'Siento que nunca es suficiente lo que hago...'"></textarea>
+              </div>
+              <div id="soc-steps"></div>
+              <button class="add-btn" id="btn-add-soc2" style="width:100%;margin-top:6px;text-align:center">＋ Agregar siguiente eslabón</button>
+            </div>
+            <div class="card">
+              <div class="card-head"><div class="card-title">Nota interna del terapeuta</div><div class="card-tag" style="background:var(--nor2);color:var(--nor)">Privada</div></div>
+              <div class="field"><textarea id="soc-nota" style="min-height:80px" placeholder="Material interno no dicho. Contratransferencia, hipótesis emergentes..."></textarea></div>
+            </div>
+          </div>
+          <div style="position:sticky;top:0">
+            <div class="card" style="margin-bottom:10px">
+              <div class="card-head"><div class="card-title" style="font-size:13px">Hipótesis socrática</div></div>
+              <div class="field"><textarea id="soc-hip" style="min-height:80px" placeholder="Creencia nuclear que emerge..."></textarea></div>
+            </div>
+            <div class="card" style="margin-bottom:10px">
+              <div style="font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Preguntas sugeridas</div>
+              <div style="display:flex;flex-direction:column;gap:4px" id="soc-sugg"></div>
+            </div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              <button class="tb-btn save" id="btn-soc-save" style="flex:1">💾 Guardar</button>
+              <button class="tb-btn" id="btn-soc-export" style="flex:1">📋 Ver texto</button>
+            </div>
+            <button class="tb-btn" id="btn-soc-reset" style="width:100%;margin-top:6px">+ Nueva cadena</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PANEL: CON LO QUE ME QUEDO ══ -->
+      <div class="panel" id="panel-quedo">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Con lo que me quedo de esta sesión</div><div class="card-tag tag-n">Espacio del clínico</div></div>
+          <div style="font-size:12px;color:var(--mu);font-style:italic;margin-bottom:12px;line-height:1.6">Reflexión post-sesión. ¿Qué resonó? ¿Qué quedó sin nombrar? ¿Qué hipótesis emergió? — A. Prado C.</div>
+          <div class="quedo-box"><textarea id="quedo" placeholder="Escribir libremente lo que queda después de la sesión...&#10;&#10;¿Qué me movió de este encuentro?&#10;¿Qué no pudo decirse todavía?&#10;¿Qué hipótesis debo llevar a la próxima sesión?"></textarea></div>
+          <div class="g2" style="margin-top:12px">
+            <div class="field"><label>Hipótesis para próxima sesión</label><input type="text" id="quedo-hip" placeholder="¿Qué quiero explorar la próxima vez?"></div>
+            <div class="field"><label>Fecha de próxima sesión</label><input type="date" id="quedo-prox"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PANEL: HISTORIAL ══ -->
+      <div class="panel" id="panel-historia">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Historial de sesiones</div><div class="card-tag tag-d" id="hist-count">0 sesiones</div></div>
+          <div id="hist-list"><div style="font-size:12px;color:var(--mu);padding:20px 0;text-align:center">Sin sesiones registradas aún.</div></div>
+        </div>
+      </div>
+
+      <!-- ══ PANEL: BECK ══ -->
+      <div class="panel" id="panel-beck">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Inventario de Depresión de Beck II (BDI-II)</div><div class="card-tag tag-d">Escala validada · 21 ítems</div></div>
+          <div class="beck-progress"><div class="beck-prog-fill" id="beck-prog" style="width:0%;background:var(--sero)"></div></div>
+          <div class="beck-score-bar" id="beck-score-bar">
+            <div class="beck-score-n" id="beck-n" style="color:var(--sero)">0</div>
+            <div><div style="font-size:11px;color:var(--mu)">BDI-II · puntaje total</div><div style="font-size:13px;font-weight:500" id="beck-lv">Depresión mínima</div></div>
+            <div style="flex:1"></div>
+            <div style="font-size:10px;color:var(--mu);font-family:var(--fm)" id="beck-date"></div>
+          </div>
+          <div id="beck-item-wrap"></div>
+          <div style="margin-top:10px">
+            <div style="font-size:10px;color:var(--mu);margin-bottom:6px">Vista rápida:</div>
+            <div class="beck-mini-grid" id="beck-mini"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="tb-btn save" id="btn-beck-save">💾 Guardar BDI-II</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PANEL: EEAG ══ -->
+      <div class="panel" id="panel-eeag">
+        <div class="card">
+          <div class="card-head"><div class="card-title">EEAG / GAF</div><div class="card-tag tag-s">Evaluación global de funcionamiento</div></div>
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px">
+            <div class="eeag-num" id="eeag-num">65</div>
+            <div style="flex:1"><input type="range" min="1" max="100" value="65" id="eeag-slider" oninput="updateEeag(this.value)" style="width:100%;accent-color:var(--lago)"></div>
+          </div>
+          <div class="eeag-desc-box" id="eeag-desc"></div>
+          <div class="field" style="margin-top:12px"><label>Observación clínica</label><textarea id="eeag-obs" style="min-height:70px" placeholder="Descripción del nivel de funcionamiento actual..."></textarea></div>
+        </div>
+      </div>
+
+      <!-- ══ PANEL: CONCEPTUALIZACIÓN ══ -->
+      <div class="panel" id="panel-cognitiva">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Conceptualización cognitiva</div><div class="card-tag tag-d">5 columnas · Meersohn</div></div>
+          <div class="cog5" id="cog5-main">
+            <div><div class="cog5-head">Situación activante</div><div class="cog5-body"><textarea id="cog-sit" placeholder="¿Qué pasó?"></textarea></div></div>
+            <div><div class="cog5-head">Pensamiento automático</div><div class="cog5-body"><textarea id="cog-pa" placeholder="¿Qué pensó?"></textarea></div></div>
+            <div><div class="cog5-head">Emoción</div><div class="cog5-body"><textarea id="cog-em" placeholder="¿Qué sintió? (0–10)"></textarea></div></div>
+            <div><div class="cog5-head">Conducta</div><div class="cog5-body"><textarea id="cog-co" placeholder="¿Qué hizo?"></textarea></div></div>
+            <div><div class="cog5-head">Creencia subyacente</div><div class="cog5-body"><textarea id="cog-cr" placeholder="¿Qué dice de sí mismo?"></textarea></div></div>
+          </div>
+          <button class="add-btn" id="btn-add-cog" style="margin-top:8px">+ Agregar situación</button>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Patrón central</div></div>
+          <div class="g2">
+            <div class="field"><label>Diagnóstico</label><input type="text" id="dx" placeholder="CIE-10 · descripción clínica"></div>
+            <div class="field"><label>Lectura evolutiva del patrón central</label><textarea id="dx-evol" style="min-height:70px" placeholder="Mismatch ecológico · sistema de valor · patrón de rango..."></textarea></div>
+          </div>
+          <div class="field" style="margin-top:4px"><label>Creencia nuclear identificada</label><textarea id="cog-hip" style="min-height:60px" placeholder="Creencia raíz que organiza el cuadro..."></textarea></div>
+        </div>
+      </div>
+
+      <!-- ══ PANEL: PLAN ══ -->
+      <div class="panel" id="panel-plan">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Plan terapéutico triaxial</div><div class="card-tag tag-s">Tres ejes integrados</div></div>
+          <div class="plan-grid">
+            <div class="plan-col plan-1"><h4>Eje Laboral · Cognitivo (Meersohn)</h4><textarea id="plan1" placeholder="Cuestionamiento socrático · sistema de valor&#10;Doble estándar · creencia raíz&#10;Bibliografía asignada:"></textarea></div>
+            <div class="plan-col plan-2"><h4>Eje Relacional</h4><textarea id="plan2" placeholder="Figura de autoridad activa en síntoma&#10;Red de apoyo real vs. formal&#10;Patrón de rango activo:"></textarea></div>
+            <div class="plan-col plan-3"><h4>Eje Interior · Evolutivo</h4><textarea id="plan3" placeholder="Nicho ecológico natural&#10;Acción pequeña semanal sin audiencia&#10;Regulación circadiana · ¿Farmacoterapia?"></textarea></div>
+          </div>
+          <div class="g2" style="margin-top:12px">
+            <div class="field"><label>Objetivo terapéutico principal</label><input type="text" id="plan-obj" placeholder="En una frase — ¿qué cambia si el proceso va bien?"></div>
+            <div class="field"><label>Frecuencia propuesta</label>
+              <select id="plan-frec"><option>Semanal</option><option>Quincenal</option><option>Mensual</option><option>A demanda</option></select>
+            </div>
+          </div>
+          <div class="field" style="margin-top:4px"><label>Tarea inter-sesión</label><input type="text" id="plan-tarea" placeholder="Una acción concreta, elegida sin audiencia..."></div>
+        </div>
+      </div>
+
+      <!-- ══ PANEL: PHARMA ══ -->
+      <div class="panel" id="panel-pharma">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Farmacoterapia</div><div class="card-tag tag-d">Registro estructurado</div></div>
+          <div id="pharma-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+          <button class="add-btn" id="btn-add-pharma" style="margin-top:4px">+ Agregar fármaco</button>
+          <div class="field" style="margin-top:12px"><label>Exámenes solicitados / resultados de laboratorio</label><textarea id="pharma-lab" style="min-height:70px" placeholder="Hemograma, TSH, perfil tiroideo, niveles plasmáticos..."></textarea></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+/* ══════════════════════════════════════════
+   CHAMALNQUIMYST LABS v3 — JAVASCRIPT
+   ══════════════════════════════════════════ */
+
+/* ── ESTADO GLOBAL ── */
+const S = {
+  patients: [],
+  current: null,
+  skin: 'light',
+  mode: 'rapido',
+  beckScores: new Array(21).fill(0),
+  beckIdx: 0,
+  sintHistory: [], // [{date, values:{key:numVal}}]
+};
+
+/* ── PERSISTENCIA ── */
+function save(){
+  if(!S.current) return;
+  readAllFields();
+  localStorage.setItem('chml_v3', JSON.stringify({patients:S.patients, skin:S.skin, mode:S.mode}));
+}
+function loadStorage(){
+  const d = JSON.parse(localStorage.getItem('chml_v3')||'{}');
+  S.patients = (d.patients||[]).map(p=>{
+    p.ficha = p.ficha||{}; p.sessions = p.sessions||[];
+    p.beckHistory = p.beckHistory||[]; p.sintHistory = p.sintHistory||[];
+    return p;
+  });
+  S.skin = d.skin||'light';
+  S.mode = d.mode||'rapido';
+}
+
+function readAllFields(){
+  if(!S.current) return;
+  const f = S.current.ficha;
+  const G = id => {const el=document.getElementById(id); return el?el.value:undefined;};
+  // datos
+  ['d-nombre','d-edad','d-fecha','d-ocup','d-ec','d-vive','d-motivo','d-red','d-hobbies','d-relig','d-relato','d-ubica','d-primera','d-cuerpo','d-amorbidos','d-aquirurg','d-apsiq','d-afam','d-meds','d-alerg','d-habitos'].forEach(k=>{if(G(k)!==undefined)f[k]=G(k);});
+  // síntomas
+  SINT_ITEMS.forEach(({key})=>{const s=document.getElementById('sint-'+key);if(s)f['sint_'+key]=s.value;});
+  if(G('sint-obs')!==undefined) f.sintObs=G('sint-obs');
+  if(G('em-text')!==undefined) f.examen=G('em-text');
+  // universos
+  ['u1','u2','u3','u-hip','u1-evol','u2-evol','u3-evol'].forEach(k=>{if(G(k)!==undefined)f[k]=G(k);});
+  ['lake1','lake2','lake3'].forEach(k=>{if(G(k)!==undefined)f[k]=G(k);});
+  // sesion
+  ['ses-fecha','ses-num','ses-modal','ses-motivo','d-apertura','d-respuesta','d-nota','d-cierre','ses-tarea'].forEach(k=>{if(G(k)!==undefined)f[k]=G(k);});
+  // bisturí
+  if(G('soc-hip')!==undefined) f.socHip=G('soc-hip');
+  if(G('soc-nota')!==undefined) f.socNota=G('soc-nota');
+  // quedo
+  if(G('quedo')!==undefined) f.quedo=G('quedo');
+  if(G('quedo-hip')!==undefined) f.quedoHip=G('quedo-hip');
+  if(G('quedo-prox')!==undefined) f.quedoProx=G('quedo-prox');
+  // eeag
+  if(G('eeag-slider')!==undefined) f.eeag=G('eeag-slider');
+  if(G('eeag-obs')!==undefined) f.eeagObs=G('eeag-obs');
+  // cognitiva
+  ['cog-sit','cog-pa','cog-em','cog-co','cog-cr','cog-hip','dx','dx-evol'].forEach(k=>{if(G(k)!==undefined)f[k]=G(k);});
+  // plan
+  ['plan1','plan2','plan3','plan-obj','plan-tarea'].forEach(k=>{if(G(k)!==undefined)f[k]=G(k);});
+  if(G('plan-frec')!==undefined) f.planFrec=G('plan-frec');
+  if(G('pharma-lab')!==undefined) f.pharmaLab=G('pharma-lab');
+  // eeag slider
+  const es=document.getElementById('eeag-slider');if(es)f.eeag=es.value;
+}
+
+function fillFields(){
+  if(!S.current) return;
+  const f = S.current.ficha||{};
+  const S2 = (id,val) => {const el=document.getElementById(id);if(el&&val!==undefined)el.value=val;};
+  ['d-nombre','d-edad','d-fecha','d-ocup','d-ec','d-vive','d-motivo','d-red','d-hobbies','d-relig','d-relato','d-ubica','d-primera','d-cuerpo','d-amorbidos','d-aquirurg','d-apsiq','d-afam','d-meds','d-alerg','d-habitos'].forEach(k=>S2(k,f[k]));
+  loadSintFromFicha();
+  S2('sint-obs',f.sintObs); S2('em-text',f.examen);
+  ['u1','u2','u3','u-hip','u1-evol','u2-evol','u3-evol'].forEach(k=>S2(k,f[k]));
+  S2('lake1',f.lake1||5); S2('lake2',f.lake2||5); S2('lake3',f.lake3||5);
+  updateLake();
+  ['ses-fecha','ses-num','ses-modal','ses-motivo','d-apertura','d-respuesta','d-nota','d-cierre','ses-tarea'].forEach(k=>S2(k,f[k]));
+  S2('soc-hip',f.socHip); S2('soc-nota',f.socNota);
+  S2('quedo',f.quedo); S2('quedo-hip',f.quedoHip); S2('quedo-prox',f.quedoProx);
+  S2('eeag-slider',f.eeag||65); updateEeag(f.eeag||65);
+  ['cog-sit','cog-pa','cog-em','cog-co','cog-cr','cog-hip','dx','dx-evol'].forEach(k=>S2(k,f[k]));
+  ['plan1','plan2','plan3','plan-obj','plan-tarea'].forEach(k=>S2(k,f[k]));
+  S2('plan-frec',f.planFrec); S2('pharma-lab',f.pharmaLab);
+  // Bisturí socrático
+  renderSocSteps();
+  updateSintBadges();
+  drawSintChart();
+  renderHistoria();
+  renderBeckMini();
+}
+
+/* ── SÍNTOMAS ── */
+const SINT_ITEMS = [
+  {key:'anhedonia', label:'Anhedonia'},
+  {key:'abulia', label:'Abulia'},
+  {key:'proposito', label:'Despropósito vital'},
+  {key:'culpa', label:'Culpa desproporcionada'},
+  {key:'somatizaciones', label:'Somatizaciones'},
+  {key:'sueno', label:'Sueño'},
+  {key:'memoria', label:'Memoria operativa'},
+  {key:'atencion', label:'Inatención'},
+  {key:'retraimiento', label:'Retraimiento social'},
+  {key:'deseo', label:'Deseo sexual'},
+  {key:'apetito', label:'Apetito / Peso'},
+  {key:'bienestar', label:'Bienestar global'},
+  {key:'is', label:'Ideación suicida'},
+  {key:'mania', label:'Manía / Hipomanía'},
+  {key:'psicotico', label:'Síntomas psicóticos'},
+  {key:'animo', label:'Cambios bruscos de ánimo'},
+];
+const SINT_VALS = ['—','−−−','−−','−','+','++','+++'];
+const SINT_NUM_MAP = {'—':0,'−−−':1,'−−':2,'−':3,'+':3,'++':4,'+++':5};
+
+// Escala: -3=−−−, -2=−−, -1=−, 0=—, 1=+, 2=++, 3=+++
+const SINT_STATE = {}; // key → int (-3 a 3)
+
+const SINT_DISPLAY = {'-3':'−−−','-2':'−−','-1':'−','0':'—','1':'+','2':'++','3':'+++'};
+const SINT_CLASS = {'-3':'sb-neg','-2':'sb-neg','-1':'sb-neg','0':'','1':'sb-pos1','2':'sb-pos2','3':'sb-pos3'};
+const SINT_NUM_FROM_INT = {'-3':1,'-2':2,'-1':3,'0':0,'1':3,'2':4,'3':5};
+
+function buildSintGrid(){
+  const grid = document.getElementById('sint-grid');
+  if(!grid) return;
+  SINT_ITEMS.forEach(({key})=>{ SINT_STATE[key]=0; });
+  grid.innerHTML = SINT_ITEMS.map(({key,label})=>`
+  <div class="sint-row" id="sint-row-${key}">
+    <div class="sint-label">${label}</div>
+    <div style="display:flex;align-items:center;gap:4px">
+      <button class="sint-btn sint-btn-minus" onclick="stepSint('${key}',-1)" title="Negativo">−</button>
+      <div class="sint-badge" id="sb-${key}" style="min-width:32px;text-align:center">—</div>
+      <button class="sint-btn sint-btn-plus" onclick="stepSint('${key}',+1)" title="Positivo">+</button>
+    </div>
+  </div>`).join('');
+}
+
+function stepSint(key, dir){
+  const cur = SINT_STATE[key]||0;
+  const next = Math.max(-3, Math.min(3, cur+dir));
+  SINT_STATE[key] = next;
+  const badge = document.getElementById('sb-'+key);
+  if(badge){
+    const k = String(next);
+    badge.textContent = SINT_DISPLAY[k]||'—';
+    badge.className = 'sint-badge ' + (SINT_CLASS[k]||'');
+  }
+  if(S.current) S.current.ficha['sint_'+key] = SINT_DISPLAY[String(next)]||'—';
+  drawSintChart();
+}
+
+function loadSintFromFicha(){
+  const f = S.current?.ficha||{};
+  const reverseMap = {'−−−':'-3','−−':'-2','−':'-1','—':'0','+':'1','++':'2','+++':'3'};
+  SINT_ITEMS.forEach(({key})=>{
+    const val = f['sint_'+key]||'—';
+    const intVal = parseInt(reverseMap[val]||'0');
+    SINT_STATE[key] = intVal;
+    const badge = document.getElementById('sb-'+key);
+    if(badge){
+      badge.textContent = val;
+      const k = String(intVal);
+      badge.className = 'sint-badge '+(SINT_CLASS[k]||'');
+    }
+  });
+}
+
+function updateSintBadge(sel, key){
+  const v = sel.value;
+  const badge = document.getElementById('sb-'+key);
+  if(!badge) return;
+  badge.textContent = v;
+  const cls = v==='—'?'':v.startsWith('+')?v.length===1?'sb-pos1':v.length===2?'sb-pos2':'sb-pos3':'sb-neg';
+  badge.className = 'sint-badge ' + cls;
+  if(S.current) S.current.ficha['sint_'+key] = v;
+  drawSintChart();
+}
+
+function updateSintBadges(){ loadSintFromFicha(); }
+
+/* SINT CHART */
+function drawSintChart(){
+  const canvas = document.getElementById('sint-chart');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth; const H = 160;
+  canvas.width = W; canvas.height = H;
+  const isDark = document.body.classList.contains('dark');
+  
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = isDark ? '#111e30' : '#f4f2ed';
+  ctx.fillRect(0,0,W,H);
+
+  // Recopilar historial + sesión actual
+  const hist = S.current?.sintHistory || [];
+  const currentVals = {};
+  SINT_ITEMS.forEach(({key})=>{
+    const el = document.getElementById('sint-'+key);
+    currentVals[key] = el ? (SINT_NUM_MAP[el.value]||0) : 0;
+  });
+  const allData = [...hist, {date:'Actual', values:currentVals}];
+  if(allData.length < 1) return;
+
+  const maxY = 5; const pad = {t:15,r:10,b:20,l:30};
+  const gW = W-pad.l-pad.r; const gH = H-pad.t-pad.b;
+  const cols = ['#2060a0','#1a7a62','#7040b0','#c47820','#c0392b','#308090'];
+  const showKeys = SINT_ITEMS.filter(({key})=>{
+    return allData.some(d=>(d.values[key]||0)>0);
+  }).slice(0,6);
+
+  // Ejes
+  ctx.strokeStyle = isDark?'rgba(80,150,220,0.15)':'rgba(30,60,100,0.1)';
+  ctx.lineWidth=1;
+  for(let i=0;i<=maxY;i++){
+    const y=pad.t+gH-(i/maxY)*gH;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+    ctx.fillStyle=isDark?'rgba(80,150,220,0.5)':'rgba(30,60,100,0.5)';
+    ctx.font='9px "JetBrains Mono",monospace';ctx.textAlign='right';
+    ctx.fillText(i,pad.l-3,y+3);
+  }
+
+  // Líneas por síntoma
+  const xStep = allData.length > 1 ? gW/(allData.length-1) : gW;
+  showKeys.forEach(({key},ki)=>{
+    const col=cols[ki%cols.length];
+    ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=2;ctx.setLineDash([]);
+    allData.forEach((d,xi)=>{
+      const v=d.values[key]||0;
+      const x=pad.l+xi*xStep;
+      const y=pad.t+gH-(v/maxY)*gH;
+      xi===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    // Puntos
+    allData.forEach((d,xi)=>{
+      const v=d.values[key]||0;if(v===0)return;
+      const x=pad.l+xi*xStep;const y=pad.t+gH-(v/maxY)*gH;
+      ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);
+      ctx.fillStyle=col;ctx.fill();
+    });
+    // Label
+    if(allData.length>0){
+      const last=allData[allData.length-1];
+      const v=last.values[key]||0;
+      const x=W-pad.r+2;const y=pad.t+gH-(v/maxY)*gH;
+      ctx.fillStyle=col;ctx.font='9px "DM Sans",sans-serif';
+      ctx.textAlign='left';ctx.fillText(key.slice(0,5),x,y+3);
+    }
+  });
+  // Fechas
+  ctx.fillStyle=isDark?'rgba(80,150,220,0.5)':'rgba(30,60,100,0.4)';
+  ctx.font='9px "DM Sans",sans-serif';ctx.textAlign='center';
+  allData.forEach((d,xi)=>{
+    const x=pad.l+xi*xStep;
+    ctx.fillText((d.date||'').slice(5),x,H-4);
+  });
+}
+
+/* ── EXAMEN MENTAL ── */
+const EM_NORMAL = 'Paciente consciente, lúcido/a y orientado/a en tiempo, espacio y persona. Prosodia adecuada. Mímica accesible y acorde al discurso. Psicomotricidad conservada. Lenguaje fluido, coherente y de volumen normal. Pensamiento aritmético y abstracto conservado. Pensamiento sin contenido psicótico, sin ideas delirantes ni alucinaciones. Correcta resonancia afectiva. Afecto acorde al discurso. Juicio de realidad conservado. Insight presente. Propositividad vital conservada. Sin ideación suicida activa ni pasiva. Sin signos de manía, hipomanía ni síndrome depresivo grave. Regular aspecto general, cooperador/a y con adecuada higiene personal.';
+
+const EM_CHIPS = [
+  'Consciente y lúcido/a','Orientado/a TE y personalmente','Prosodia adecuada','Mímica accesible',
+  'Lenguaje fluido y coherente','Pensamiento abstracto conservado','Correcta resonancia afectiva',
+  'Juicio de realidad conservado','Sin ideación suicida','Sin síntomas psicóticos',
+  'Sin signos de manía/hipomanía','Propositividad vital conservada','Afecto acorde al discurso',
+  'Memoria y atención conservadas','Cooperador/a','Vigil y alerta','Lábil emocionalmente',
+  'Incontinencia emocional','Insight presente','Funciones cognitivas conservadas'
+];
+
+function buildEmChips(){
+  const wrap = document.getElementById('em-chips');
+  if(!wrap) return;
+  wrap.innerHTML = EM_CHIPS.map(c=>`<button class="em-chip" onclick="toggleEmChip(this,'${c}')">${c}</button>`).join('');
+}
+
+function toggleEmChip(btn, text){
+  btn.classList.toggle('selected');
+  const ta = document.getElementById('em-text');
+  if(!ta) return;
+  if(btn.classList.contains('selected')){
+    ta.value = (ta.value ? ta.value.trimEnd()+'. ' : '') + text + '.';
+  } else {
+    ta.value = ta.value.replace(text+'.','').replace(/\s{2,}/g,' ').trim();
+  }
+  if(S.current) S.current.ficha.examen = ta.value;
+}
+
+/* ── NAV ── */
+const PANEL_TITLES = {
+  datos:'Datos generales', anamnesis:'Anamnesis · Síntomas', universos:'Tres universos vitales',
+  sesion:'Sesión actual', bisturi:'Bisturí socrático', quedo:'Con lo que me quedo',
+  historia:'Historial de sesiones', beck:'BDI-II (Beck)', eeag:'EEAG / GAF',
+  cognitiva:'Conceptualización cognitiva', plan:'Plan triaxial', pharma:'Farmacoterapia'
+};
+
+function goTo(panelId){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const panel = document.getElementById('panel-'+panelId);
+  if(panel) panel.classList.add('active');
+  const navItem = document.querySelector(`.nav-item[data-panel="${panelId}"]`);
+  if(navItem) navItem.classList.add('active');
+  document.getElementById('tb-title').textContent = PANEL_TITLES[panelId]||panelId;
+  if(panelId==='anamnesis') setTimeout(drawSintChart,50);
+  if(panelId==='beck') renderBeckItem(S.beckIdx);
+  if(panelId==='historia') renderHistoria();
+}
+
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click',()=>{ save(); goTo(item.dataset.panel); });
+});
+
+/* ── LAGO ── */
+function updateLake(){
+  const v1=+document.getElementById('lake1')?.value||5;
+  const v2=+document.getElementById('lake2')?.value||5;
+  const v3=+document.getElementById('lake3')?.value||5;
+  const set = (id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('l1v',v1);set('l2v',v2);set('l3v',v3);
+  const avg=(v1+v2+v3)/3;const mn=Math.min(v1,v2,v3);
+  let txt='';
+  if(avg>=7&&mn>=5) txt='Lago con buena claridad general — explorar tensiones entre universos';
+  else if(avg>=5&&mn>=3) txt='Lago parcialmente turbio — identificar universo dominante del malestar';
+  else if(mn<=2) txt='Contaminación severa en al menos un universo — atención prioritaria';
+  else txt='Lago en tensión — explorar conexión entre esferas comprometidas';
+  const el=document.getElementById('lake-interp');if(el)el.textContent=txt;
+}
+
+/* ── EEAG ── */
+const EEAG_DESC = {
+  100:'Sin síntomas. Actividad satisfactoria en todas las áreas.',
+  90:'Síntomas mínimos. Buena actividad, generalmente satisfecho.',
+  80:'Síntomas transitorios ante estresores. Ligera dificultad.',
+  70:'Síntomas leves o dificultad leve. Funciona bastante bien.',
+  60:'Síntomas moderados o dificultades moderadas en actividad.',
+  50:'Síntomas graves o alteración grave en actividad social.',
+  40:'Alteración de la realidad o deterioro importante en varias áreas.',
+  30:'Conducta influida por delirios o grave alteración del juicio.',
+  20:'Algún peligro de causarse daño a sí mismo o a otros.',
+  10:'Peligro persistente de daño grave o incapacidad mínima.',
+  1:'Peligro inminente de daño grave o incapacidad total.'
+};
+
+function updateEeag(v){
+  v = parseInt(v);
+  const en=document.getElementById('eeag-num');if(en)en.textContent=v;
+  const keys=Object.keys(EEAG_DESC).map(Number).sort((a,b)=>b-a);
+  const k=keys.find(k=>v>=k)||1;
+  const ed=document.getElementById('eeag-desc');
+  if(ed)ed.textContent=`${k}–${Math.min(k+9,100)}: ${EEAG_DESC[k]}`;
+  if(S.current) S.current.ficha.eeag=v;
+}
+
+/* ── BECK ── */
+const BECK = [
+  {l:'Tristeza',o:['No me siento triste','Triste gran parte del tiempo','Triste todo el tiempo','Tan triste que no puedo soportarlo']},
+  {l:'Pesimismo',o:['No estoy desanimado','Más desanimado que antes','No espero que las cosas funcionen','Sin esperanza']},
+  {l:'Fracaso',o:['No me siento fracasado','Más fracasos de los que debería','Veo muchos fracasos al mirar atrás','Soy un fracaso total']},
+  {l:'Pérdida de placer',o:['Tanto placer como siempre','No disfruto tanto','Muy poco placer','Ningún placer']},
+  {l:'Culpa',o:['No me siento culpable','Culpable de varias cosas','Bastante culpable la mayoría del tiempo','Culpable continuamente']},
+  {l:'Castigo',o:['Sin sentido de castigo','Puedo ser castigado','Espero ser castigado','Estoy siendo castigado']},
+  {l:'Autoconcepto',o:['Lo mismo de siempre sobre mí','Perdí confianza en mí mismo','Decepcionado conmigo mismo','No me gusto a mí mismo']},
+  {l:'Autocrítica',o:['No me critico más que antes','Más crítico que antes','Me critico por todos mis errores','Me culpo por todo lo malo']},
+  {l:'Ideación suicida',o:['Sin pensamientos de hacerme daño','He tenido pensamientos pero no lo haría','Querría hacerme daño','Me haría daño si pudiera']},
+  {l:'Llanto',o:['No lloro más que antes','Lloro más que antes','Lloro por cualquier pequeñez','Quiero llorar pero no puedo']},
+  {l:'Agitación',o:['No más inquieto que antes','Más inquieto que antes','Muy inquieto','Tan agitado que debo moverme']},
+  {l:'Pérdida de interés',o:['No perdí interés en otros','Menos interesado que antes','Perdí casi todo interés','Difícil interesarme por algo']},
+  {l:'Indecisión',o:['Decido tan bien como siempre','Más difícil decidir','Mucha más dificultad','No puedo tomar decisiones']},
+  {l:'Desvalorización',o:['No me siento sin valor','No tan valioso como antes','Menos valioso que otros','No valgo nada']},
+  {l:'Pérdida de energía',o:['Tanta energía como siempre','Menos energía','No suficiente para hacer mucho','No suficiente para nada']},
+  {l:'Alteración del sueño',o:['Sin cambio en sueño','Duermo algo más o menos','Duermo mucho más o menos','Casi todo el día o muy pocas horas']},
+  {l:'Irritabilidad',o:['No más irritable','Más irritable','Mucho más irritable','Irritable todo el tiempo']},
+  {l:'Cambio de apetito',o:['Sin cambio en apetito','Algo menor o mayor','Mucho menor o mayor','Sin apetito o quiero comer constantemente']},
+  {l:'Concentración',o:['Me concentro bien','No tan bien como antes','Difícil mantener la mente','No puedo concentrarme']},
+  {l:'Cansancio',o:['No más cansado','Me fatigo más fácil','Demasiado fatigado para mucho','Demasiado fatigado para casi todo']},
+  {l:'Interés sexual',o:['Sin cambio','Menos interesado','Mucho menos interesado','Perdí completamente el interés']},
+];
+
+function beckLevel(t){
+  if(t<=13)return{lv:'Depresión mínima',col:'#1a7a62'};
+  if(t<=19)return{lv:'Depresión leve',col:'#c47820'};
+  if(t<=28)return{lv:'Depresión moderada',col:'#b06000'};
+  return{lv:'Depresión grave',col:'#c0392b'};
+}
+
+function renderBeckItem(idx){
+  S.beckIdx=idx;
+  const wrap=document.getElementById('beck-item-wrap');if(!wrap)return;
+  const item=BECK[idx];const score=S.beckScores[idx];
+  const total=S.beckScores.reduce((a,b)=>a+b,0);
+  const {lv,col}=beckLevel(total);
+
+  const pn=document.getElementById('beck-n');if(pn){pn.textContent=total;pn.style.color=col;}
+  const pl=document.getElementById('beck-lv');if(pl){pl.textContent=lv;pl.style.color=col;}
+  const pp=document.getElementById('beck-prog');if(pp){pp.style.width=Math.round(total/63*100)+'%';pp.style.background=col;}
+
+  wrap.innerHTML=`
+  <div style="background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);padding:18px 20px;margin-bottom:4px">
+    <div style="font-size:10px;color:var(--mu);font-family:var(--fm);margin-bottom:6px">Ítem ${idx+1} de 21</div>
+    <div style="font-family:var(--fd);font-size:16px;color:var(--tx);margin-bottom:14px">${item.l}</div>
+    ${item.o.map((opt,j)=>`
+    <div class="beck-opt${score===j?' selected':''}" onclick="selectBeck(${j})">
+      <span class="beck-opt-num">${j}</span>${opt}
+    </div>`).join('')}
+  </div>
+  <div class="beck-nav">
+    <button class="beck-nav-prev" onclick="renderBeckItem(${Math.max(0,idx-1)})">← Anterior</button>
+    <button class="beck-nav-next" onclick="selectAndNext()">Siguiente →</button>
+  </div>`;
+  renderBeckMini();
+}
+
+function selectBeck(j){
+  S.beckScores[S.beckIdx]=j;
+  renderBeckItem(S.beckIdx);
+}
+function selectAndNext(){
+  if(S.beckIdx<20) renderBeckItem(S.beckIdx+1);
+  else showToast('BDI-II completo');
+}
+function renderBeckMini(){
+  const wrap=document.getElementById('beck-mini');if(!wrap)return;
+  wrap.innerHTML=BECK.map((item,i)=>`
+  <div class="beck-mini-cell${i===S.beckIdx?' selected':''}" onclick="renderBeckItem(${i})" style="${i===S.beckIdx?'background:var(--dopa2);border-color:rgba(30,111,168,.35)':''}">
+    <span class="beck-mini-val" style="color:${S.beckScores[i]>0?'var(--dopa)':'var(--mu)'}">${S.beckScores[i]}</span>
+    ${item.l.slice(0,5)}
+  </div>`).join('');
+}
+
+document.getElementById('btn-beck-save')?.addEventListener('click',()=>{
+  if(!S.current)return;
+  const total=S.beckScores.reduce((a,b)=>a+b,0);
+  S.current.beckHistory.push({date:new Date().toISOString().split('T')[0],scores:[...S.beckScores],total});
+  save(); showToast('BDI-II guardado');
+});
+
+/* ── BISTURÍ SOCRÁTICO ── */
+const SOC_TECNICAS=['Flecha descendente','Cuestionamiento socrático','Disonancia cognitiva','Escrutinio de evidencia','Reencuadre cognitivo','Decatastrofización','Continuum cognitivo','Experimento conductual','Rol fijo','Técnica del doble estándar'];
+const SOC_PREGUNTAS=['¿Qué significaría eso para ti?','¿Y si eso fuera cierto, qué pasaría?','¿Qué dice eso de ti como persona?','¿Cuál es la peor parte de eso?','¿De dónde viene esa idea?','¿Qué necesitarías creer para sentirte así?','¿Hay evidencia de lo contrario?','¿Cómo lo vería alguien que te quiere?','¿Qué le dirías a un amigo en tu lugar?','¿Qué te impediría si eso fuera verdad?'];
+
+function renderSocSteps(){
+  const f=S.current?.ficha||{};
+  const steps=f.socratico||[{c:'',p:'',tec:'',dis:''}];
+  const wrap=document.getElementById('soc-steps');if(!wrap)return;
+  wrap.innerHTML=steps.map((s,i)=>`
+  <div class="soc-step" id="soc-step-${i}">
+    <div class="soc-step-head">
+      <span class="soc-step-num">Eslabón ${i+1}</span>
+      ${i>0?`<span class="soc-arrow">↓</span><span style="font-size:10px;color:var(--mu)">¿Y si eso es cierto…?</span>`:''}
+      <span style="flex:1"></span>
+      ${i>0?`<button onclick="removeSocStep(${i})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:12px">✕</button>`:''}
+    </div>
+    <div class="soc-row" style="border-bottom:1px solid var(--border)">
+      <div class="soc-sp soc-sp-c">Clínico</div>
+      <div class="soc-txt"><textarea id="soc-c-${i}" placeholder="Pregunta socrática..." oninput="saveSocStep(${i},'c',this.value)">${s.c||''}</textarea></div>
+    </div>
+    <div class="soc-row">
+      <div class="soc-sp soc-sp-p">Paciente</div>
+      <div class="soc-txt"><textarea id="soc-p-${i}" placeholder="Respuesta del paciente..." oninput="saveSocStep(${i},'p',this.value);updateSocChain()">${s.p||''}</textarea></div>
+    </div>
+    <div class="soc-foot">
+      <span class="soc-tec-lbl">Técnica:</span>
+      <input class="soc-tec-in" id="soc-t-${i}" value="${s.tec||''}" placeholder="Técnica utilizada..." oninput="saveSocStep(${i},'tec',this.value)">
+      <select class="soc-tec-sel" onchange="setSocTec(${i},this.value)">
+        <option value="">Técnica rápida…</option>
+        ${SOC_TECNICAS.map(t=>`<option>${t}</option>`).join('')}
+      </select>
+      ${i>0?`<div style="width:100%;margin-top:6px"><textarea class="soc-dis" id="soc-dis-${i}" placeholder="Disonancia capturada en este eslabón..." oninput="saveSocStep(${i},'dis',this.value)">${s.dis||''}</textarea></div>`:''}
+    </div>
+  </div>`).join('');
+  updateSocChain();
+  buildSocSugg();
+}
+
+function saveSocStep(idx,field,val){
+  const f=S.current?.ficha;if(!f)return;
+  if(!f.socratico)f.socratico=[{c:'',p:'',tec:'',dis:''}];
+  while(f.socratico.length<=idx)f.socratico.push({c:'',p:'',tec:'',dis:''});
+  f.socratico[idx][field]=val;
+}
+
+function setSocTec(idx,val){
+  if(!val)return;
+  const el=document.getElementById('soc-t-'+idx);
+  if(el){el.value=val;saveSocStep(idx,'tec',val);}
+}
+
+function addSocStep(){
+  const f=S.current?.ficha;if(!f)return;
+  if(!f.socratico)f.socratico=[];
+  f.socratico.push({c:'',p:'',tec:'',dis:''});
+  renderSocSteps();
+  setTimeout(()=>{
+    const steps=document.querySelectorAll('.soc-step');
+    if(steps.length)steps[steps.length-1].scrollIntoView({behavior:'smooth',block:'nearest'});
+  },100);
+}
+
+function removeSocStep(idx){
+  const f=S.current?.ficha;if(!f||!f.socratico)return;
+  if(f.socratico.length<=1){showToast('Debe quedar al menos un eslabón');return;}
+  f.socratico.splice(idx,1);
+  renderSocSteps();
+}
+
+function updateSocChain(){
+  const f=S.current?.ficha||{};
+  const steps=f.socratico||[];
+  const chain=document.getElementById('soc-chain');if(!chain)return;
+  const parts=steps.map((s,i)=>s.p?`<span style="color:var(--dopa)">[${i+1}]</span> ${s.p.length>70?s.p.slice(0,70)+'…':s.p}`:null).filter(Boolean);
+  chain.innerHTML=parts.length?parts.join('<br><span style="color:var(--mu);margin-left:10px">↓</span><br>'):'<span style="color:var(--mu);font-style:italic">Los eslabones aparecerán aquí al completar las respuestas del paciente</span>';
+}
+
+function buildSocSugg(){
+  const wrap=document.getElementById('soc-sugg');if(!wrap)return;
+  wrap.innerHTML=SOC_PREGUNTAS.map(q=>`
+  <div onclick="insertSocQ(this)" style="padding:5px 8px;border-radius:6px;border:1px solid var(--border);font-size:10px;color:var(--tx2);cursor:pointer;line-height:1.5;transition:all .15s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">${q}</div>`).join('');
+}
+
+function insertSocQ(el){
+  const q=el.textContent;
+  const f=S.current?.ficha;if(!f)return;
+  const steps=f.socratico||[];
+  let target=steps.length-1;
+  for(let i=0;i<steps.length;i++){if(!steps[i].c){target=i;break;}}
+  const ta=document.getElementById('soc-c-'+target);
+  if(ta){ta.value=(ta.value?ta.value+' ':'')+q;saveSocStep(target,'c',ta.value);ta.focus();}
+}
+
+document.getElementById('btn-add-soc')?.addEventListener('click',addSocStep);
+document.getElementById('btn-add-soc2')?.addEventListener('click',addSocStep);
+
+document.getElementById('btn-soc-save')?.addEventListener('click',()=>{
+  save();showToast('Bisturí guardado');
+});
+
+document.getElementById('btn-soc-reset')?.addEventListener('click',()=>{
+  if(!confirm('¿Iniciar nueva cadena socrática?'))return;
+  const f=S.current?.ficha;if(!f)return;
+  if(!f.socraticHistory)f.socraticHistory=[];
+  if(f.socratico?.some(s=>s.c||s.p)) f.socraticHistory.push({date:new Date().toISOString().split('T')[0],steps:[...f.socratico]});
+  f.socratico=[{c:'',p:'',tec:'',dis:''}];
+  renderSocSteps();
+});
+
+document.getElementById('btn-soc-export')?.addEventListener('click',()=>{
+  const f=S.current?.ficha||{};
+  const steps=f.socratico||[];
+  let txt='BISTURÍ SOCRÁTICO\n════════════════════\n';
+  steps.forEach((s,i)=>{
+    txt+=`\nEslabón ${i+1}:\n`;
+    if(s.c)txt+=`  Clínico: ${s.c}\n`;
+    if(s.p)txt+=`  Paciente: ${s.p}\n`;
+    if(s.tec)txt+=`  Técnica: ${s.tec}\n`;
+    if(s.dis)txt+=`  Disonancia: ${s.dis}\n`;
+  });
+  if(f.socHip)txt+=`\nHipótesis socrática: ${f.socHip}\n`;
+  txt+=`\n— ${S.current?.nombre||'—'} · ${new Date().toLocaleDateString('es-CL')}`;
+  showFichaModal(txt,'Bisturí Socrático');
+});
+
+/* ── HISTORIAL ── */
+function renderHistoria(){
+  const wrap=document.getElementById('hist-list');if(!wrap)return;
+  const cnt=document.getElementById('hist-count');
+  const sessions=S.current?.sessions||[];
+  if(cnt)cnt.textContent=sessions.length+' sesiones';
+  wrap.innerHTML=sessions.length?sessions.slice().reverse().map(s=>`
+  <div class="ses-item">
+    <div class="ses-num">${s.num||'—'}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--tx)">Sesión ${s.num} — ${s.fecha||'—'}</div><div style="font-size:11px;color:var(--mu)">${s.modal||''} · ${(s.motivo||'Sin motivo').slice(0,60)}</div></div>
+    <div style="font-size:10px;padding:2px 8px;border-radius:8px;background:var(--sero2);color:var(--sero)">Completada</div>
+  </div>`).join(''):'<div style="font-size:12px;color:var(--mu);padding:20px 0;text-align:center">Sin sesiones registradas aún.</div>';
+}
+
+document.getElementById('btn-save-session')?.addEventListener('click',()=>{
+  if(!S.current){showToast('Selecciona un paciente primero');return;}
+  readAllFields();
+  const f=S.current.ficha;
+  // Guardar síntomas en el historial
+  const sintVals={};
+  SINT_ITEMS.forEach(({key})=>{sintVals[key]=SINT_NUM_MAP[f['sint_'+key]||'—']||0;});
+  S.current.sintHistory.push({date:f['ses-fecha']||new Date().toISOString().split('T')[0],values:sintVals});
+  // Guardar sesión
+  S.current.sessions.push({
+    num:f['ses-num']||S.current.sessions.length+1,
+    fecha:f['ses-fecha'],modal:f['ses-modal'],motivo:f['ses-motivo'],
+    apertura:f['d-apertura'],respuesta:f['d-respuesta'],nota:f['d-nota'],cierre:f['d-cierre'],
+    tarea:f['ses-tarea'],eeag:f.eeag,
+    beckTotal:S.beckScores.reduce((a,b)=>a+b,0),
+  });
+  // Incrementar número
+  const numEl=document.getElementById('ses-num');
+  if(numEl)numEl.value=parseInt(numEl.value||1)+1;
+  save();renderHistoria();showToast('Sesión guardada');
+  drawSintChart();
+});
+
+document.getElementById('btn-save-ses')?.addEventListener('click',()=>{
+  save();showToast('Datos guardados');
+});
+
+/* ── PACIENTES ── */
+const PT_COLORS=['#2060a0','#1a7a62','#7040b0','#c47820','#1a5a80'];
+
+function selectPatient(id){
+  save();
+  S.current=S.patients.find(p=>p.id===id);
+  if(!S.current)return;
+  S.beckScores=S.current.beckHistory?.slice(-1)[0]?.scores||new Array(21).fill(0);
+  document.getElementById('sb-pt-name').textContent=S.current.nombre||'—';
+  document.getElementById('sb-pt-dx').textContent=S.current.diagnostico||'';
+  document.getElementById('tb-meta').textContent=S.current.nombre||'';
+  fillFields();
+  closeOverlay();
+  goTo('datos');
+  showToast('Paciente: '+S.current.nombre);
+}
+
+function newPatient(){
+  const nombre=prompt('Nombre del paciente:');if(!nombre)return;
+  const p={
+    id:'p'+Date.now(),
+    nombre:nombre.trim(),
+    diagnostico:'',
+    color:PT_COLORS[S.patients.length%PT_COLORS.length],
+    ficha:{},sessions:[],beckHistory:[],sintHistory:[]
+  };
+  S.patients.unshift(p);
+  selectPatient(p.id);
+  setTimeout(()=>{const el=document.getElementById('d-nombre');if(el){el.value=nombre.trim();el.focus();}},200);
+}
+
+function renderPatientList(q=''){
+  const list=document.getElementById('pt-list');if(!list)return;
+  const fl=S.patients.filter(p=>!q||p.nombre.toLowerCase().includes(q.toLowerCase()));
+  list.innerHTML=fl.length?fl.map(p=>{
+    const init=p.nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+    return`<div class="pt-row" onclick="selectPatient('${p.id}')">
+      <div class="pt-av" style="background:${p.color||'#2060a0'}22;color:${p.color||'#2060a0'}">${init}</div>
+      <div><div class="pt-name">${p.nombre}</div><div class="pt-dx">${p.diagnostico||'Sin diagnóstico'}</div></div>
+    </div>`;
+  }).join(''):'<div style="padding:20px;text-align:center;font-size:12px;color:var(--mu)">Sin resultados</div>';
+}
+
+function openOverlay(){renderPatientList();document.getElementById('ovl-patient').classList.add('open');}
+function closeOverlay(){document.getElementById('ovl-patient').classList.remove('open');}
+
+document.getElementById('btn-open-patients')?.addEventListener('click',openOverlay);
+document.getElementById('ovl-close')?.addEventListener('click',closeOverlay);
+document.getElementById('btn-new-pt')?.addEventListener('click',newPatient);
+document.getElementById('pt-search')?.addEventListener('input',e=>renderPatientList(e.target.value));
+
+/* EXPORT/IMPORT */
+document.getElementById('btn-export-all')?.addEventListener('click',()=>{
+  const d=JSON.stringify({exportedAt:new Date().toISOString(),version:'3.0',patients:S.patients},null,2);
+  const b=new Blob([d],{type:'application/json'});
+  const u=URL.createObjectURL(b);
+  const a=document.createElement('a');a.href=u;
+  a.download='chamalnquimyst_pacientes_'+new Date().toISOString().split('T')[0]+'.json';
+  a.click();URL.revokeObjectURL(u);
+  showToast(`${S.patients.length} pacientes exportados`);
+});
+
+document.getElementById('btn-import-pt')?.addEventListener('click',()=>document.getElementById('import-file').click());
+document.getElementById('import-file')?.addEventListener('change',e=>{
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      const pts=Array.isArray(d)?d:(d.patients||[]);
+      const ids=new Set(S.patients.map(p=>p.id));
+      let added=0;
+      pts.forEach(p=>{
+        if(!p.sessions)p.sessions=[];if(!p.beckHistory)p.beckHistory=[];
+        if(!p.ficha)p.ficha={};if(!p.sintHistory)p.sintHistory=[];
+        if(!ids.has(p.id)){S.patients.push(p);added++;}
+      });
+      save();renderPatientList();showToast(`${added} paciente(s) importado(s)`);
+    }catch{showToast('Error al leer el archivo');}
+  };r.readAsText(file);
+  e.target.value='';
+});
+
+/* ── FICHA MODAL ── */
+function showFichaModal(txt,titulo){
+  window._fTxt=txt;
+  let mo=document.getElementById('ficha-modal');
+  if(!mo){
+    mo=document.createElement('div');mo.id='ficha-modal';
+    mo.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px';
+    document.body.appendChild(mo);
+  }
+  mo.innerHTML=`
+  <div style="background:var(--surface);border-radius:14px;border:1px solid var(--border2);width:720px;max-height:86vh;display:flex;flex-direction:column;box-shadow:var(--shadow2)">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+      <div style="font-family:var(--fd);font-size:17px;flex:1">${titulo||'Ficha Clínica'}</div>
+      <button onclick="navigator.clipboard.writeText(window._fTxt).then(()=>showToast('Copiado'))" class="tb-btn">Copiar</button>
+      <button onclick="exportFichaTxt()" class="tb-btn save">Descargar .txt</button>
+      <button onclick="document.getElementById('ficha-modal').style.display='none'" class="tb-btn">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:18px;font-size:12px;line-height:1.8;white-space:pre-wrap;font-family:var(--fm);color:var(--tx2)">${txt}</div>
+  </div>`;
+  mo.style.display='flex';
+}
+
+function exportFichaTxt(){
+  if(!window._fTxt)return;
+  const b=new Blob([window._fTxt],{type:'text/plain'});
+  const u=URL.createObjectURL(b);const a=document.createElement('a');
+  a.href=u;a.download='ficha_clinica_'+new Date().toISOString().split('T')[0]+'.txt';
+  a.click();URL.revokeObjectURL(u);
+}
+
+document.getElementById('btn-export-ficha')?.addEventListener('click',()=>{
+  if(!S.current){showToast('Selecciona un paciente primero');return;}
+  readAllFields();
+  const f=S.current.ficha;
+  const cl=S.current;
+  const dt=new Date().toLocaleDateString('es-CL',{year:'numeric',month:'long',day:'numeric'});
+  const sintLines=SINT_ITEMS.map(({key,label})=>`${label}: ${f['sint_'+key]||'—'}`).join(' | ');
+  const txt=`FICHA CLÍNICA · CHAMALNQUIMYST LABS
+═══════════════════════════════════════
+Paciente: ${cl.nombre} · Diagnóstico: ${cl.diagnostico||'—'}
+Fecha: ${dt}
+
+I. ANTECEDENTES
+Ant. Mórbidos: ${f['d-amorbidos']||'—'}
+Ant. Psiquiátricos: ${f['d-apsiq']||'—'}
+Medicamentos: ${f['d-meds']||'—'} | Alergias: ${f['d-alerg']||'—'}
+Hábitos: ${f['d-habitos']||'—'}
+
+II. ESTADO SINTOMÁTICO
+${sintLines}
+
+III. EXAMEN MENTAL
+${f.examen||'—'}
+
+IV. APERTURA
+${f['d-relato']||f['d-apertura']||'—'}
+
+V. TRES UNIVERSOS
+Lago — Laboral:${f.lake1||5} Relacional:${f.lake2||5} Interior:${f.lake3||5}
+Laboral: ${f.u1||'—'}
+Relacional: ${f.u2||'—'}
+Interior: ${f.u3||'—'}
+Articulación: ${f['u-hip']||'—'}
+
+VI. SESIÓN
+Clínico: ${f['d-apertura']||'—'}
+Paciente: ${f['d-respuesta']||'—'}
+Nota interna: ${f['d-nota']||'—'}
+Cierre: ${f['d-cierre']||'—'}
+
+VII. EVALUACIONES
+BDI-II: ${S.beckScores.reduce((a,b)=>a+b,0)}/63 — ${beckLevel(S.beckScores.reduce((a,b)=>a+b,0)).lv}
+EEAG: ${f.eeag||'—'}/100
+
+VIII. PLAN TRIAXIAL
+Eje Laboral: ${f.plan1||'—'}
+Eje Relacional: ${f.plan2||'—'}
+Eje Interior: ${f.plan3||'—'}
+Tarea inter-sesión: ${f['plan-tarea']||f['ses-tarea']||'—'}
+
+IX. CON LO QUE ME QUEDO
+${f.quedo||'—'}
+
+═══════════════════════════════════════
+Chamalnquimyst Labs · A. Prado C. · ${dt}`;
+  showFichaModal(txt,'Ficha Clínica');
+});
+
+/* ── TIMER ── */
+let timerInterval=null,timerSec=0,timerTotal=1800,timerRunning=false;
+
+function timerFormat(s){return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+function updateTimerDisplay(s){
+  const rem=timerTotal-s;
+  const pct=s/timerTotal;
+  const disp=document.getElementById('timer-disp');
+  const pip=document.getElementById('pip-timer');
+  const txt=timerFormat(rem>0?rem:0);
+  const cls=pct>=.95?'panic':pct>=.80?'danger':pct>=.50?'warn':'';
+  if(disp){disp.textContent=txt;disp.className='timer-display'+' '+(cls);}
+  if(pip){pip.textContent=txt;pip.className='pip-timer pip-open'+(cls?' '+cls:'');}
+}
+
+document.getElementById('btn-timer-start')?.addEventListener('click',()=>{
+  if(timerRunning){
+    clearInterval(timerInterval);timerRunning=false;
+    document.getElementById('btn-timer-start').textContent='▶';
+  } else {
+    if(timerSec===0){
+      const mins=parseInt(document.getElementById('timer-mins').value)||30;
+      timerTotal=mins*60;timerSec=0;
+    }
+    timerRunning=true;
+    document.getElementById('btn-timer-start').textContent='⏸';
+    timerInterval=setInterval(()=>{
+      timerSec++;updateTimerDisplay(timerSec);
+      if(timerSec>=timerTotal){clearInterval(timerInterval);timerRunning=false;document.getElementById('btn-timer-start').textContent='▶';}
+    },1000);
+  }
+});
+
+document.getElementById('btn-timer-reset')?.addEventListener('click',()=>{
+  clearInterval(timerInterval);timerRunning=false;timerSec=0;timerTotal=1800;
+  document.getElementById('btn-timer-start').textContent='▶';
+  document.getElementById('timer-mins').value=30;
+  updateTimerDisplay(0);
+  const pip=document.getElementById('pip-timer');if(pip)pip.className='pip-timer pip-open';
+});
+
+let pipOpen=false;
+document.getElementById('btn-pip')?.addEventListener('click',()=>{
+  pipOpen=!pipOpen;
+  const pip=document.getElementById('pip-timer');
+  if(pip){if(pipOpen)pip.classList.add('pip-open');else pip.classList.remove('pip-open');}
+});
+document.getElementById('timer-disp')?.addEventListener('click',()=>{
+  document.getElementById('btn-pip').click();
+});
+
+// PiP drag
+(()=>{
+  const pip=document.getElementById('pip-timer');if(!pip)return;
+  let dx=0,dy=0,dragging=false,sx=0,sy=0;
+  pip.addEventListener('mousedown',e=>{dragging=true;sx=e.clientX-pip.offsetLeft;sy=e.clientY-pip.offsetTop;e.preventDefault();});
+  document.addEventListener('mousemove',e=>{if(!dragging)return;pip.style.right='auto';pip.style.left=(e.clientX-sx)+'px';pip.style.top=(e.clientY-sy)+'px';});
+  document.addEventListener('mouseup',()=>{dragging=false;});
+})();
+
+/* ── SIDEBAR ── */
+document.getElementById('sb-toggle')?.addEventListener('click',()=>{
+  const sb=document.getElementById('sidebar');
+  const tog=document.getElementById('sb-toggle');
+  const col=sb.classList.toggle('collapsed');
+  tog.textContent=col?'›':'‹';
+  tog.style.left=col?'0':'226px';
+});
+
+/* ── SKINS ── */
+document.getElementById('btn-skin')?.addEventListener('click',()=>{
+  S.skin=S.skin==='light'?'dark':'light';
+  document.body.classList.toggle('dark',S.skin==='dark');
+  save();setTimeout(drawSintChart,50);showToast(S.skin==='dark'?'Modo oscuro':'Modo claro');
+});
+
+/* ── IA CHATBOX ── */
+let _iaChatOpen=false,_iaHistory=[];
+document.getElementById('ia-fab')?.addEventListener('click',()=>{
+  _iaChatOpen=!_iaChatOpen;
+  document.getElementById('ia-fab').classList.toggle('open',_iaChatOpen);
+  document.getElementById('ia-chat').classList.toggle('open',_iaChatOpen);
+});
+document.getElementById('ia-close')?.addEventListener('click',()=>{
+  _iaChatOpen=false;
+  document.getElementById('ia-fab').classList.remove('open');
+  document.getElementById('ia-chat').classList.remove('open');
+});
+
+function buildCtx(){
+  if(!S.current)return'No hay paciente seleccionado.';
+  const f=S.current.ficha||{};
+  const total=S.beckScores.reduce((a,b)=>a+b,0);
+  const sint=SINT_ITEMS.map(({key,label})=>`${label}:${f['sint_'+key]||'—'}`).join(' ');
+  return`Paciente: ${S.current.nombre} · Dx: ${S.current.diagnostico||'—'}
+Síntomas: ${sint}
+EEAG: ${f.eeag||'—'} · BDI-II: ${total}/63 — ${beckLevel(total).lv}
+Lago: L${f.lake1||5} R${f.lake2||5} I${f.lake3||5}
+Examen mental: ${f.examen||'—'}
+Motivo: ${f['d-motivo']||'—'}
+Universo laboral: ${f.u1||'—'}
+Universo relacional: ${f.u2||'—'}
+Mundo interior: ${f.u3||'—'}
+Plan laboral: ${f.plan1||'—'}
+Plan relacional: ${f.plan2||'—'}
+Plan interior: ${f.plan3||'—'}`;
+}
+
+const IA_QUICK_PROMPTS={
+  evolucion:'Genera la evolución clínica completa de esta sesión en formato registro médico chileno formal. Incluye examen mental, estado clínico, evaluaciones psicométricas, impresión diagnóstica y plan. Máximo 200 palabras, párrafo continuo.',
+  analisis:'Analiza el cuadro clínico: diagnóstico diferencial, dinámica central y factores de riesgo/protectores.',
+  plan:'Sugiere el plan terapéutico triaxial con objetivos, técnicas y tareas inter-sesión por eje.',
+  riesgo:'Evalúa el nivel de riesgo suicida y de autolesión con factores protectores y recomendaciones.',
+  examen:'Redacta el examen mental en formato técnico médico chileno, párrafo continuo, máximo 80 palabras.',
+};
+
+document.querySelectorAll('.ia-qb').forEach(btn=>{
+  btn.addEventListener('click',()=>sendIA(IA_QUICK_PROMPTS[btn.dataset.quick]||btn.textContent));
+});
+document.getElementById('ia-send')?.addEventListener('click',()=>{
+  const t=document.getElementById('ia-txt');
+  if(t&&t.value.trim())sendIA(t.value.trim());
+  t.value='';
+});
+document.getElementById('ia-txt')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.getElementById('ia-send').click();}
+});
+
+async function sendIA(msg){
+  appendBubble('user',msg);
+  const id='ial'+Date.now();
+  appendBubble('ai','⏳ Pensando...',id,true);
+  _iaHistory.push({role:'user',content:msg});
+  if(_iaHistory.length>10)_iaHistory=_iaHistory.slice(-10);
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:800,
+        system:`Eres un psiquiatra psicoterapeuta experto. Asistes al clínico en tiempo real. Responde en español, de forma técnica y clínica.\n\nCONTEXTO:\n${buildCtx()}`,
+        messages:_iaHistory
+      })
+    });
+    const d=await res.json();
+    const reply=d.content?.find(b=>b.type==='text')?.text||'Sin respuesta.';
+    _iaHistory.push({role:'assistant',content:reply});
+    const el=document.getElementById(id);
+    if(el){el.classList.remove('loading');el.innerHTML=reply.replace(/\n/g,'<br>');}
+    scrollMsgs();
+  }catch(err){
+    const el=document.getElementById(id);
+    if(el){el.classList.remove('loading');el.textContent='Error de conexión.';}
+  }
+}
+
+function appendBubble(role,txt,id,loading){
+  const msgs=document.getElementById('ia-msgs');if(!msgs)return;
+  const div=document.createElement('div');
+  div.className='ia-bubble '+role+(loading?' loading':'');
+  if(id)div.id=id;
+  div.innerHTML=txt.replace(/\n/g,'<br>');
+  msgs.appendChild(div);scrollMsgs();
+}
+function scrollMsgs(){const m=document.getElementById('ia-msgs');if(m)m.scrollTop=m.scrollHeight;}
+
+/* ── PHARMA ── */
+document.getElementById('btn-add-pharma')?.addEventListener('click',()=>{
+  const tb=document.getElementById('pharma-body');if(!tb)return;
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input placeholder="Fármaco"></td><td><input placeholder="mg" style="width:60px"></td><td><input placeholder="1x/día"></td><td><input placeholder="DD/MM/AA" style="width:80px"></td><td><select><option>Buena</option><option>Regular</option><option>Mala</option></select></td><td><input placeholder="Notas..."></td><td><button onclick="this.closest('tr').remove()" style="background:none;border:none;color:var(--mu);cursor:pointer">✕</button></td>`;
+  tb.appendChild(tr);
+});
+
+document.getElementById('btn-add-cog')?.addEventListener('click',()=>{
+  const grid=document.createElement('div');
+  grid.className='cog5';grid.style.marginTop='10px';
+  grid.innerHTML=['Situación','Pensamiento','Emoción','Conducta','Creencia'].map(h=>`<div><div class="cog5-head">${h}</div><div class="cog5-body"><textarea placeholder="..."></textarea></div></div>`).join('');
+  document.getElementById('cog5-main').insertAdjacentElement('afterend',grid);
+});
+
+/* ── EXAMEN MENTAL PRESET ── */
+document.getElementById('btn-em-normal')?.addEventListener('click',()=>{
+  const ta=document.getElementById('em-text');
+  if(ta){ta.value=EM_NORMAL;if(S.current)S.current.ficha.examen=EM_NORMAL;}
+  showToast('Examen mental normal insertado');
+});
+
+/* ── TOAST ── */
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg||'Guardado';
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+/* ── INIT ── */
+loadStorage();
+if(S.skin==='dark')document.body.classList.add('dark');
+buildSintGrid();
+buildEmChips();
+updateEeag(65);
+updateTimerDisplay(0);
+document.getElementById('tb-meta').textContent=new Date().toLocaleDateString('es-CL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// Inicializar con un paciente de demo si no hay ninguno
+if(!S.patients.length){
+  S.patients.push({
+    id:'demo',nombre:'M. Fernández (demo)',diagnostico:'T. Ansioso-Depresivo',
+    color:'#2060a0',ficha:{},sessions:[],beckHistory:[],sintHistory:[]
+  });
+}
+// Seleccionar el primero automáticamente
+if(S.patients.length){selectPatient(S.patients[0].id);}
+
+document.getElementById('ses-fecha').value=new Date().toISOString().split('T')[0];
+document.getElementById('d-fecha').value=new Date().toISOString().split('T')[0];
+
+// Keyboard ESC para cerrar overlay
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    const mo=document.getElementById('ficha-modal');if(mo)mo.style.display='none';
+    closeOverlay();
+    if(_iaChatOpen){_iaChatOpen=false;document.getElementById('ia-fab').classList.remove('open');document.getElementById('ia-chat').classList.remove('open');}
+  }
+});
+
+// Auto-save cada 30 segundos
+setInterval(()=>{if(S.current){readAllFields();save();}},30000);
+
+/* ══ SETMODE: Rápido / Completo ══ */
+function setMode(mode){
+  S.mode = mode;
+  document.getElementById('app').classList.toggle('mode-completo', mode==='completo');
+  document.getElementById('btn-mode-r').classList.toggle('mode-active', mode==='rapido');
+  document.getElementById('btn-mode-c').classList.toggle('mode-active', mode==='completo');
+  save();
+  showToast(mode==='completo'?'Modo Completo activado':'Modo Rápido activado');
+}
+
+/* ══ UNIVERSOS: entradas dinámicas ══ */
+const U_COLS = {1:'var(--u1)',2:'var(--u2)',3:'var(--u3)'};
+const U_STATUS_CYCLE = {conflicto:'resolucion', resolucion:'resuelto', resuelto:'conflicto'};
+const U_STATUS_LABEL = {conflicto:'Conflicto', resolucion:'En resolución', resuelto:'Resuelto'};
+const U_STATUS_CLS   = {conflicto:'ust-conflict', resolucion:'ust-resol', resuelto:'ust-done'};
+
+function addUEntry(uNum, input){
+  const txt = input.value.trim();
+  if(!txt) return;
+  const f = S.current?.ficha;
+  if(!f) return;
+  const key = 'u'+uNum+'entries';
+  if(!f[key]) f[key] = [];
+  f[key].push({id:'ue'+Date.now(), txt, status:'conflicto'});
+  input.value='';
+  save();
+  renderUEntries(uNum);
+}
+
+function cycleUStatus(uNum, id){
+  const f = S.current?.ficha; if(!f) return;
+  const key='u'+uNum+'entries';
+  const entry = (f[key]||[]).find(e=>e.id===id);
+  if(!entry) return;
+  entry.status = U_STATUS_CYCLE[entry.status]||'conflicto';
+  save(); renderUEntries(uNum);
+}
+
+function deleteUEntry(uNum, id){
+  const f = S.current?.ficha; if(!f) return;
+  const key='u'+uNum+'entries';
+  f[key]=(f[key]||[]).filter(e=>e.id!==id);
+  save(); renderUEntries(uNum);
+}
+
+function renderUEntries(uNum){
+  const wrap=document.getElementById('u'+uNum+'-entries'); if(!wrap) return;
+  const f=S.current?.ficha||{};
+  const entries=f['u'+uNum+'entries']||[];
+  const col=U_COLS[uNum];
+  wrap.innerHTML=entries.map(e=>`
+  <div class="u-entry" style="border-left-color:${col}">
+    <div class="u-entry-txt">${e.txt}</div>
+    <div class="u-entry-status ${U_STATUS_CLS[e.status]||'ust-conflict'}" onclick="cycleUStatus(${uNum},'${e.id}')" title="Clic para cambiar estado">${U_STATUS_LABEL[e.status]||'Conflicto'}</div>
+    <button class="u-entry-del" onclick="deleteUEntry(${uNum},'${e.id}')" title="Eliminar">✕</button>
+  </div>`).join('');
+}
+
+function renderAllUEntries(){
+  [1,2,3].forEach(renderUEntries);
+}
+
+/* ══ FARMACOTERAPIA: cards ══ */
+function addPharmaCard(){
+  const list=document.getElementById('pharma-list'); if(!list) return;
+  const id='ph'+Date.now();
+  const card=document.createElement('div');
+  card.className='pharma-card'; card.id=id;
+  card.innerHTML=`
+  <button class="pharma-card-del" onclick="document.getElementById('${id}').remove()" title="Eliminar">✕</button>
+  <div class="pharma-field" style="grid-column:1/-1">
+    <label>Nombre del fármaco</label>
+    <input type="text" placeholder="Nombre genérico o comercial" style="font-size:13px;font-weight:500">
+  </div>
+  <div class="pharma-field">
+    <label>Dosis</label>
+    <input type="text" placeholder="ej: 20mg, 0.5mg">
+  </div>
+  <div class="pharma-field">
+    <label>Frecuencia</label>
+    <select>
+      <option value="">—</option>
+      <option>Cada 8h</option><option>Cada 12h</option><option>Cada 24h (1x/día)</option>
+      <option>2 veces/día</option><option>3 veces/día</option>
+      <option>Al dormir</option><option>En la mañana</option><option>Con comidas</option>
+      <option>Según necesidad</option><option>Condicional</option>
+    </select>
+  </div>
+  <div class="pharma-field">
+    <label>Vía</label>
+    <select>
+      <option>Oral</option><option>Sublingual</option><option>IM</option><option>EV</option><option>Tópico</option>
+    </select>
+  </div>
+  <div class="pharma-field">
+    <label>Fecha inicio</label>
+    <input type="date">
+  </div>
+  <div class="pharma-field">
+    <label>Tolerancia</label>
+    <select>
+      <option>Buena</option><option>Regular</option><option>Mala</option><option>Sin datos</option>
+    </select>
+  </div>
+  <div class="pharma-field" style="grid-column:1/-1">
+    <label>Indicación / Observaciones</label>
+    <input type="text" placeholder="Diagnóstico que indica, notas clínicas...">
+  </div>`;
+  list.appendChild(card);
+}
+
+// Reconectar btn-add-pharma
+document.getElementById('btn-add-pharma')?.addEventListener('click', addPharmaCard);
+// Añadir una fila inicial vacía
+addPharmaCard();
+
+/* ══ IA EVOLUCIÓN CLÍNICA LEGAL ══ */
+document.getElementById('btn-ia-evolucion')?.addEventListener('click', async ()=>{
+  if(!S.current){showToast('Selecciona un paciente primero');return;}
+  readAllFields();
+  const f=S.current.ficha||{};
+  const total=S.beckScores.reduce((a,b)=>a+b,0);
+  const {lv:beckLv,col:bCol}=beckLevel(total);
+  const sint=SINT_ITEMS.map(({key,label})=>`${label}:${f['sint_'+key]||'—'}`).join(' · ');
+  const ctx=`DATOS CLÍNICOS:
+Paciente: ${S.current.nombre} · Dx: ${S.current.diagnostico||'—'}
+Antecedentes psiquiátricos: ${f['d-apsiq']||'—'}
+Medicamentos actuales: ${f['d-meds']||'—'}
+Hábitos: ${f['d-habitos']||'—'}
+ESTADO SINTOMÁTICO: ${sint}
+EXAMEN MENTAL: ${f.examen||'—'}
+EEAG: ${f.eeag||'—'}/100
+BDI-II: ${total}/63 — ${beckLv}
+Lago: Laboral ${f.lake1||5}/10 · Relacional ${f.lake2||5}/10 · Interior ${f.lake3||5}/10
+Bisturí socrático — Hipótesis: ${f.socHip||'—'}
+Plan laboral: ${f.plan1||'—'}
+Plan relacional: ${f.plan2||'—'}
+Plan interior: ${f.plan3||'—'}
+Tarea inter-sesión: ${f['plan-tarea']||f['ses-tarea']||'—'}
+Con lo que me quedo: ${f.quedo||'—'}`;
+
+  const prompt=`Eres un psiquiatra chileno generando una evolución clínica formal y completa con valor médico-legal para una ficha de atención ambulatoria de salud mental.
+
+Basándote ÚNICAMENTE en los datos clínicos proporcionados, genera la evolución en el siguiente formato estándar chileno:
+
+**EVOLUCIÓN PSIQUIÁTRICA**
+Fecha: ${new Date().toLocaleDateString('es-CL')}
+
+**Anamnesis de sesión:**
+[Motivo de consulta, continuación del proceso, lo que trae el paciente hoy]
+
+**Examen físico y mental:**
+[Examen mental completo en párrafo técnico continuo. Si hay datos, expandirlos. Incluir: consciencia, orientación, prosodia, mímica, psicomotricidad, lenguaje, pensamiento, afecto, juicio de realidad, ideación suicida, signos de manía/psicosis]
+
+**Evaluaciones psicométricas:**
+[BDI-II con puntaje e interpretación, EEAG con descripción]
+
+**Impresión diagnóstica:**
+[Diagnóstico o hipótesis diagnóstica con código CIE-10 si aplica]
+
+**Plan e indicaciones:**
+[Plan terapéutico triaxial sintetizado, indicaciones farmacológicas si corresponde, tarea inter-sesión, fecha próxima consulta]
+
+Usa lenguaje técnico médico formal chileno. Sin bullets en el examen mental (párrafo continuo). Máximo 350 palabras totales. Protege legalmente al clínico: sé preciso, incluye ausencia de ideación suicida activa si corresponde.
+
+DATOS:
+${ctx}`;
+
+  // Mostrar modal de carga
+  const btn=document.getElementById('btn-ia-evolucion');
+  btn.textContent='⏳ Generando...';btn.disabled=true;
+  
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:1200,
+        system:'Eres un psiquiatra especialista en salud mental ambulatoria en Chile. Generas documentación clínica de alta calidad con valor médico-legal. Respondes siempre en español formal técnico.',
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const d=await res.json();
+    const reply=d.content?.find(b=>b.type==='text')?.text||'Sin respuesta.';
+    showFichaModal(reply,'Evolución Clínica · '+S.current.nombre+' · '+new Date().toLocaleDateString('es-CL'));
+  }catch(e){
+    showToast('Error al conectar con IA');console.error(e);
+  }finally{
+    btn.textContent='🤖 Evolución IA';btn.disabled=false;
+  }
+});
+
+/* ══ BECK MODO PACIENTE ══ */
+function openBeckPatientMode(){
+  const wrap=document.getElementById('beck-patient-wrap');if(!wrap)return;
+  let pidx=0; const pscores=new Array(21).fill(0);
+  
+  function renderP(){
+    const item=BECK[pidx];const sc=pscores[pidx];
+    const total=pscores.reduce((a,b)=>a+b,0);
+    const {lv,col}=beckLevel(total);
+    wrap.innerHTML=`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mu);margin-bottom:5px">
+        <span>Pregunta ${pidx+1} de 21</span><span style="color:${col};font-weight:500">${total} pts — ${lv}</span>
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:${Math.round((pidx+1)/21*100)}%;background:var(--dopa);border-radius:2px;transition:width .3s"></div></div>
+    </div>
+    <div style="background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);padding:18px;margin-bottom:10px">
+      <div style="font-family:var(--fd);font-size:17px;color:var(--tx);margin-bottom:16px">${item.l}</div>
+      ${item.o.map((opt,j)=>`
+      <div onclick="pscores[${pidx}]=${j};renderP()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid ${sc===j?'rgba(30,111,168,.4)':'var(--border)'};background:${sc===j?'var(--dopa2)':'none'};cursor:pointer;margin-bottom:6px;font-size:13px;color:${sc===j?'var(--dopa)':'var(--tx2)'};transition:all .15s">
+        <span style="font-family:var(--fm);font-size:11px;min-width:14px;color:${sc===j?'var(--dopa)':'var(--mu)'}">${j}</span>${opt}
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px">
+      ${pidx>0?`<button onclick="pidx--;renderP()" style="padding:9px 20px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--tx2);font-family:var(--fb);font-size:13px;cursor:pointer">← Anterior</button>`:'<div></div>'}
+      ${pidx<20?`<button onclick="pscores[${pidx}]=${sc};pidx++;renderP()" style="flex:1;padding:9px;border-radius:8px;background:var(--dopa);color:#fff;border:none;font-family:var(--fb);font-size:13px;font-weight:500;cursor:pointer">Siguiente →</button>`:`<button onclick="finishBeckPatient(pscores)" style="flex:1;padding:9px;border-radius:8px;background:var(--sero);color:#fff;border:none;font-family:var(--fb);font-size:13px;font-weight:500;cursor:pointer">✓ Finalizar y ver resultado</button>`}
+    </div>`;
+  }
+  
+  window.pscores=pscores;
+  window.finishBeckPatient=(scores)=>{
+    const total=scores.reduce((a,b)=>a+b,0);
+    const {lv,col}=beckLevel(total);
+    wrap.innerHTML=`
+    <div style="text-align:center;padding:20px">
+      <div style="font-family:var(--fd);font-size:52px;color:${col};margin-bottom:6px">${total}</div>
+      <div style="font-size:16px;font-weight:500;color:${col};margin-bottom:8px">${lv}</div>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:20px">BDI-II · Puntaje total / 63</div>
+      <div style="background:var(--sero2);border-radius:var(--r);padding:14px;border:1px solid rgba(26,122,98,.2);margin-bottom:16px">
+        <div style="font-size:12px;color:var(--sero);font-weight:500">Muestra este puntaje a tu médico antes de la consulta</div>
+        <div style="font-family:var(--fm);font-size:24px;color:var(--sero);margin-top:4px">${total} puntos</div>
+      </div>
+      <button onclick="if(S.current){S.beckScores=[...Array(21).fill(0).map((_,i)=>scores[i])];S.current.beckHistory.push({date:new Date().toISOString().split('T')[0],scores:[...scores],total});save();renderBeckItem(0);document.getElementById('modal-beck-patient').style.display='none';showToast('BDI-II registrado en la ficha');}" style="padding:10px 24px;background:var(--dopa);color:#fff;border:none;border-radius:8px;font-family:var(--fb);font-size:13px;font-weight:500;cursor:pointer">Registrar en la ficha del paciente</button>
+    </div>`;
+  };
+  renderP();
+}
+
+function copyBeckLink(){
+  const url=window.location.href+'#beck-patient';
+  navigator.clipboard.writeText(url).then(()=>showToast('Enlace copiado (comparte con el paciente)'));
+}
+
+// Abrir modal Beck paciente desde la sección Beck
+document.addEventListener('click',e=>{
+  if(e.target.id==='btn-beck-patient'){
+    document.getElementById('modal-beck-patient').style.display='flex';
+    openBeckPatientMode();
+  }
+});
+
+// Añadir botón "Modo paciente" en la sección Beck
+const beckCard=document.querySelector('#panel-beck .card-head');
+if(beckCard&&!document.getElementById('btn-beck-patient')){
+  const b=document.createElement('button');b.id='btn-beck-patient';b.className='add-btn';b.style.marginLeft='auto';
+  b.textContent='📲 Modo paciente';
+  beckCard.appendChild(b);
+}
+
+/* ══ RECONECTAR fillFields con universos y pharma ══ */
+const origFillFields=fillFields;
+fillFields=function(){
+  origFillFields();
+  renderAllUEntries();
+  // Limpiar y recrear pharma
+  const plist=document.getElementById('pharma-list');
+  if(plist)plist.innerHTML='';
+  const pharmaData=S.current?.ficha?.pharmaCards||[];
+  if(!pharmaData.length)addPharmaCard();
+};
+
+/* ══ GUARDAR PREGUNTA DISPARADORA DEL BISTURÍ ══ */
+document.getElementById('soc-pregunta-init')?.addEventListener('input',function(){
+  const f=S.current?.ficha;if(f)f.socPreguntaInit=this.value;
+});
+
+/* ══ MODO INICIAL ══ */
+setMode(S.mode||'rapido');
+
+</script>
+</body>
+</html>
