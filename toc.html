@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Laberinto Interior - EPR Mental & Confrontación IA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'spin-slow': 'spin 12s linear infinite',
+                        'spin-reverse-slow': 'spin-reverse 15s linear infinite',
+                        'pulse-soft': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        'spin-reverse': {
+                            'from': { transform: 'rotate(360deg)' },
+                            'to': { transform: 'rotate(0deg)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #020617;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #10b981;
+        }
+        .glow-emerald {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+        }
+        .glow-rose {
+            box-shadow: 0 0 20px rgba(244, 63, 94, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-full flex flex-col justify-between overflow-x-hidden">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/30">
+                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">EL LABERINTO INTERIOR</h1>
+                    <p class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">Entrenamiento en EPR Mental para TOC Encubierto</p>
+                </div>
+            </div>
+            
+            <!-- Navigation Tabs -->
+            <nav class="hidden md:flex space-x-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                <button onclick="switchTab('mapa')" id="btn-tab-mapa" class="tab-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-emerald-400 bg-slate-950 border border-slate-800">El Mapa</button>
+                <button onclick="switchTab('engranaje')" id="btn-tab-engranaje" class="tab-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-slate-200">Simulador de Engranajes</button>
+                <button onclick="switchTab('gimnasio')" id="btn-tab-gimnasio" class="tab-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-slate-200">Gimnasio de Decisión</button>
+                <button onclick="switchTab('arena')" id="btn-tab-arena" class="tab-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1">Confrontación IA <span class="px-1.5 py-0.2 bg-emerald-500/20 text-[9px] text-emerald-300 rounded font-bold uppercase tracking-wider animate-pulse-soft">En Vivo</span></button>
+                <button onclick="switchTab('diario')" id="btn-tab-diario" class="tab-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-slate-200">Mi Registro</button>
+            </nav>
+            
+            <!-- Mobile Menu Indicator -->
+            <div class="md:hidden">
+                <span class="text-xs bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-medium">Usa el menú inferior</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- TAB 1: EL MAPA DEL LABERINTO -->
+        <section id="tab-mapa" class="tab-content space-y-8 animate-fadeIn">
+            <!-- Hero Title -->
+            <div class="text-center max-w-3xl mx-auto space-y-4">
+                <span class="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold rounded-full uppercase tracking-wider">Concepto Clínico de Avanzada</span>
+                <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">Comprende tu Laberinto Interior</h2>
+                <p class="text-slate-400 text-base md:text-lg">
+                    El TOC Egosintónico Encubierto se esconde bajo la máscara del análisis reflexivo, la ética rigurosa y la planificación impecable. Aprende a desactivar sus engranajes invisibles.
+                </p>
+            </div>
+
+            <!-- Conceptual Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Card 1 -->
+                <div class="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 transition-all rounded-2xl p-6 relative overflow-hidden group">
+                    <div class="absolute -right-8 -bottom-8 w-24 h-24 bg-rose-500/5 rounded-full group-hover:scale-125 transition-transform duration-500"></div>
+                    <div class="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mb-4 text-rose-400 font-bold">01</div>
+                    <h3 class="text-lg font-bold text-slate-200 mb-2">Lo "Encubierto" (Invisibilidad)</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        No hay lavados de manos ni ordenamientos físicos. La compulsión ocurre en el silencio absoluto de tu mente en forma de rumiación obsesiva, chequeo de recuerdos, diálogos de autodefensa y búsqueda implacable de certezas lógicas.
+                    </p>
+                </div>
+                <!-- Card 2 -->
+                <div class="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 transition-all rounded-2xl p-6 relative overflow-hidden group">
+                    <div class="absolute -right-8 -bottom-8 w-24 h-24 bg-amber-500/5 rounded-full group-hover:scale-125 transition-transform duration-500"></div>
+                    <div class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-4 text-amber-400 font-bold">02</div>
+                    <h3 class="text-lg font-bold text-slate-200 mb-2">Lo "Egosintónico" (La Alianza)</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        El TOC no contradice tus valores; se disfraza de ellos. Sientes que analizar esa duda moral, profesional o existencial es tu obligación, un rasgo de tu lucidez o tu madurez analítica. Por eso no pones resistencia cognitiva.
+                    </p>
+                </div>
+                <!-- Card 3 -->
+                <div class="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 transition-all rounded-2xl p-6 relative overflow-hidden group">
+                    <div class="absolute -right-8 -bottom-8 w-24 h-24 bg-emerald-500/5 rounded-full group-hover:scale-125 transition-transform duration-500"></div>
+                    <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mb-4 text-emerald-400 font-bold">03</div>
+                    <h3 class="text-lg font-bold text-slate-200 mb-2">La Solución: EPR Mental</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        No luches para sacar el pensamiento de la mente. Permite que la duda catastrófica esté presente en tu cabeza (Exposición) y voluntariamente niégate a rumiar, verificar o debatir con ella (Prevención de Respuesta).
+                    </p>
+                </div>
+            </div>
+
+            <!-- Deep Dive Info Box -->
+            <div class="bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-900 border border-emerald-500/20 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6 items-center">
+                <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shrink-0">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="text-xl font-bold text-white">El Mecanismo de Autocuidad de la Mente</h3>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Tu cerebro es un sistema biológico homeostático. Si dejas de responder al "fuego" con más "combustible" (rumiación), la alarma se extingue sola. Al aplicar la <strong class="text-emerald-400">Prevención de Respuesta Mental (PRM)</strong>, permites que tu sistema neurobiológico asimile la perturbación sin reaccionar de forma histérica, debilitando la ruta sináptica del TOC a largo plazo.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Quick CTA -->
+            <div class="text-center pt-4">
+                <button onclick="switchTab('engranaje')" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold text-sm transition-all shadow-lg hover:shadow-emerald-500/20 inline-flex items-center gap-2">
+                    Comenzar con el Simulador de Engranajes
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- TAB 2: SIMULADOR DE ENGRANAJES -->
+        <section id="tab-engranaje" class="tab-content hidden space-y-8 animate-fadeIn">
+            <div class="text-center max-w-2xl mx-auto space-y-3">
+                <h2 class="text-3xl font-extrabold text-white">El Engranaje del Hiperanálisis</h2>
+                <p class="text-slate-400 text-sm">
+                    Observa cómo interactúa el pensamiento intrusivo con tu voluntad. Cuanto más intentas resolverlo mediante la compulsión mental, más rápido gira la maquinaria de la ansiedad.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                <!-- Visual Animation Column -->
+                <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between min-h-[380px] relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-slate-950/40 pointer-events-none"></div>
+                    
+                    <!-- Dynamic Status Indicator -->
+                    <div class="flex justify-between items-center z-10">
+                        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Estado de la Mente</span>
+                        <span id="mind-status-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-1.5 animate-pulse-soft">
+                            <span class="w-2 h-2 rounded-full bg-rose-500"></span> Hiperactiva (Rumiación)
+                        </span>
+                    </div>
+
+                    <!-- Gears Interlocking Visual -->
+                    <div class="flex items-center justify-center py-10 relative z-10 gap-4">
+                        <!-- Left Gear: Thought (Obsession) -->
+                        <div class="relative flex flex-col items-center">
+                            <div id="gear-obsession" class="w-32 h-32 md:w-40 md:h-40 text-rose-500/20 fill-rose-500/20 stroke-rose-500 animate-spin-slow transition-all duration-500">
+                                <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-[0_0_15px_rgba(244,63,94,0.1)]">
+                                    <path d="M50 35a15 15 0 1 0 0 30 15 15 0 0 0 0-30zm0-10a5 5 0 0 1 5 5v3a2 2 0 0 0 2 2h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3a2 2 0 0 0-2 2v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5v-3a2 2 0 0 0-2-2h-3a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3a2 2 0 0 0 2-2v-3a5 5 0 0 1 5-5z" fill="none" stroke-width="2"/>
+                                    <!-- Gear Teeth -->
+                                    <path d="M50 5 L50 12 M50 88 L50 95 M5 50 L12 50 M88 50 L95 50 M18 18 L24 24 M76 76 L82 82 M18 82 L24 76 M76 18 L82 24" stroke-width="4" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <span class="mt-3 text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider">Obsesión / Duda</span>
+                        </div>
+
+                        <!-- Interlocking Icon -->
+                        <div class="text-slate-600 font-bold text-xl self-center mb-6">
+                            <svg class="w-6 h-6 animate-pulse-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                            </svg>
+                        </div>
+
+                        <!-- Right Gear: Response (Compulsion) -->
+                        <div class="relative flex flex-col items-center">
+                            <div id="gear-compulsion" class="w-32 h-32 md:w-40 md:h-40 text-rose-500/20 fill-rose-500/20 stroke-rose-500 animate-spin-reverse-slow transition-all duration-500">
+                                <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-[0_0_15px_rgba(244,63,94,0.1)]">
+                                    <path d="M50 35a15 15 0 1 0 0 30 15 15 0 0 0 0-30zm0-10a5 5 0 0 1 5 5v3a2 2 0 0 0 2 2h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3a2 2 0 0 0-2 2v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5v-3a2 2 0 0 0-2-2h-3a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3a2 2 0 0 0 2-2v-3a5 5 0 0 1 5-5z" fill="none" stroke-width="2"/>
+                                    <!-- Gear Teeth -->
+                                    <path d="M50 5 L50 12 M50 88 L50 95 M5 50 L12 50 M88 50 L95 50 M18 18 L24 24 M76 76 L82 82 M18 82 L24 76 M76 18 L82 24" stroke-width="4" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <span id="gear-compulsion-label" class="mt-3 text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider">Compulsión (Analizar)</span>
+                        </div>
+                    </div>
+
+                    <!-- Metrics -->
+                    <div class="space-y-3 z-10">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-400">Nivel de Ansiedad / Urgencia</span>
+                            <span id="anxiety-value" class="font-bold text-rose-400">85%</span>
+                        </div>
+                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                            <div id="anxiety-bar" class="bg-gradient-to-r from-rose-500 to-rose-400 h-full transition-all duration-500" style="width: 85%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulation Control Console Column -->
+                <div class="lg:col-span-5 flex flex-col justify-between bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-bold text-white">Controles de Respuesta Cognitiva</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            A continuación, simula tu reacción habitual frente a un pensamiento intrusivo del TOC de Escrupulosidad o Hiper-responsabilidad. Decide cómo quieres actuar mentalmente ahora.
+                        </p>
+
+                        <!-- Presets / Current Thought Showcase -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                            <span class="text-[10px] text-rose-400 font-bold uppercase tracking-wider">Pensamiento Activo en tu cabeza:</span>
+                            <p id="sim-thought-text" class="text-sm font-medium text-slate-200">
+                                "¿Y si cometiste una negligencia en el informe de ayer y arruinaste la confianza del cliente?"
+                            </p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="space-y-3 pt-2">
+                            <button onclick="simulateCompulsion()" class="w-full py-3 px-4 bg-slate-950 hover:bg-slate-900 border border-rose-500/30 hover:border-rose-500/50 rounded-xl text-left flex items-center gap-3 transition-all group">
+                                <span class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/20 group-hover:scale-105 transition-transform">
+                                    🔥
+                                </span>
+                                <div>
+                                    <div class="text-xs font-bold text-rose-400">Racionalizar e Hiperanalizar (Compulsión)</div>
+                                    <div class="text-[11px] text-slate-400">Repasar cada renglón del informe en tu memoria para buscar certezas.</div>
+                                </div>
+                            </button>
+
+                            <button onclick="simulatePRM()" class="w-full py-3 px-4 bg-emerald-950/20 hover:bg-emerald-950/40 border border-emerald-500/30 hover:border-emerald-500/50 rounded-xl text-left flex items-center gap-3 transition-all group">
+                                <span class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20 group-hover:scale-105 transition-transform">
+                                    🧘
+                                </span>
+                                <div>
+                                    <div class="text-xs font-bold text-emerald-400">Aplicar EPR / No Responder (PRM)</div>
+                                    <div class="text-[11px] text-slate-400">Aceptar: "Puede que haya fallado. Veré qué pasa luego" y volver al presente.</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sandbox feedback text -->
+                    <div class="mt-6 p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 leading-relaxed">
+                        <strong class="text-slate-300 block mb-1">Análisis clínico:</strong>
+                        <span id="simulation-feedback">
+                            Actualmente, estás rumiando. El sistema se encuentra sobrealimentado. La adrenalina estimula la necesidad de seguir pensando. Aplica la prevención de respuesta mental para permitir el descenso paulatino del bucle.
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: GIMNASIO DE DECISIÓN (FLASHCARDS) -->
+        <section id="tab-gimnasio" class="tab-content hidden space-y-8 animate-fadeIn">
+            <div class="text-center max-w-2xl mx-auto space-y-3">
+                <h2 class="text-3xl font-extrabold text-white">Gimnasio Mental de Autocontención</h2>
+                <p class="text-slate-400 text-sm">
+                    Entrena tu musculatura atencional. Te presentaremos un escenario de duda y tres respuestas posibles. Tu misión es identificar y seleccionar cuál es la de <strong>Prevención de Respuesta (EPR)</strong> para no alimentar el laberinto.
+                </p>
+            </div>
+
+            <!-- Quiz Layout -->
+            <div class="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6">
+                <!-- Progress & Score -->
+                <div class="flex justify-between items-center border-b border-slate-800 pb-4 text-xs">
+                    <span class="text-slate-400 font-semibold uppercase">Escenario <span id="current-scenario-idx">1</span> de 3</span>
+                    <span class="text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">Puntos: <span id="gym-points">0</span> XP</span>
+                </div>
+
+                <!-- Scenario Bubble -->
+                <div class="space-y-3">
+                    <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">El Disparador de Ansiedad:</span>
+                    <blockquote id="gym-trigger" class="text-lg md:text-xl font-medium text-white italic border-l-4 border-rose-500 pl-4 py-1 leading-relaxed">
+                        "Estás a punto de irte a dormir y de pronto recuerdas que hace 3 años hiciste un comentario sarcástico que pudo haber herido gravemente la autoestima de un examigo."
+                    </blockquote>
+                </div>
+
+                <!-- Multiple Options -->
+                <div class="space-y-3 pt-2">
+                    <button onclick="checkGymAnswer('comp-1')" id="opt-1" class="w-full text-left p-4 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-950 transition-all text-xs md:text-sm hover:translate-x-1 duration-150 flex gap-3 items-start group">
+                        <span class="w-6 h-6 rounded-full border border-slate-700 flex items-center justify-center shrink-0 group-hover:border-emerald-500 text-xs font-semibold">A</span>
+                        <span id="opt-text-1" class="text-slate-300">Empezar a repasar todas tus interacciones con ese amigo para ver si después de ese comentario se siguió llevando bien contigo, para "demostrarte" que no fue tan grave.</span>
+                    </button>
+
+                    <button onclick="checkGymAnswer('comp-2')" id="opt-2" class="w-full text-left p-4 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-950 transition-all text-xs md:text-sm hover:translate-x-1 duration-150 flex gap-3 items-start group">
+                        <span class="w-6 h-6 rounded-full border border-slate-700 flex items-center justify-center shrink-0 group-hover:border-emerald-500 text-xs font-semibold">B</span>
+                        <span id="opt-text-2" class="text-slate-300">Mandarle un mensaje a deshoras pidiéndole perdón por si acaso, para quitarte la culpa y la espina de encima.</span>
+                    </button>
+
+                    <button onclick="checkGymAnswer('epr')" id="opt-3" class="w-full text-left p-4 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-950 transition-all text-xs md:text-sm hover:translate-x-1 duration-150 flex gap-3 items-start group">
+                        <span class="w-6 h-6 rounded-full border border-slate-700 flex items-center justify-center shrink-0 group-hover:border-emerald-500 text-xs font-semibold">C</span>
+                        <span id="opt-text-3" class="text-slate-300">Decir: "Es perfectamente posible que haya sido un cretino insensible y que me recuerde con desprecio. No puedo reescribir la historia" y seguir acostándote.</span>
+                    </button>
+                </div>
+
+                <!-- Dynamic Feedback Popover -->
+                <div id="gym-feedback-container" class="hidden p-4 rounded-xl border transition-all text-xs md:text-sm">
+                    <div class="flex items-center gap-2 font-bold mb-1" id="gym-feedback-title">
+                        <!-- Icon loaded via JS -->
+                    </div>
+                    <p id="gym-feedback-desc" class="text-slate-300 leading-relaxed">
+                        Explicación dinámica aquí.
+                    </p>
+                    <div class="pt-3 flex justify-end">
+                        <button onclick="nextGymScenario()" id="btn-next-scenario" class="px-4 py-2 bg-slate-950 border border-slate-800 hover:bg-slate-900 rounded-lg text-xs font-bold transition-all text-slate-200">
+                            Siguiente Escenario
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: ÁGORA DE CONFRONTACIÓN IA -->
+        <section id="tab-arena" class="tab-content hidden space-y-6 animate-fadeIn">
+            <!-- Educational intro for the AI section -->
+            <div class="bg-gradient-to-r from-slate-900 to-slate-950 border border-rose-500/20 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-center">
+                <div class="w-14 h-14 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 border border-rose-500/20 shrink-0">
+                    <svg class="w-7 h-7 animate-pulse-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <div class="space-y-1">
+                    <h3 class="text-lg font-bold text-white">¿Qué es el Ágora de Confrontación?</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        Este es tu simulador de combate cognitivo. Un modelo de Inteligencia Artificial (Gemini 3 Flash) encarnará la **"Voz del TOC"**, enviándote ataques lógicos agudos, morales e hiper-responsabilizadores adaptados al arquetipo que elijas. Tu tarea es responder aplicando la **Prevención de Respuesta Mental (PRM)**. El robot evaluará tu tasa de éxito (tolerancia a la incertidumbre) y te enseñará a no defenderte.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Setup Setup / Config Screen if not started -->
+            <div id="arena-config" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 max-w-2xl mx-auto space-y-6">
+                <h3 class="text-xl font-bold text-center text-slate-100">Configura tu Sesión de Entrenamiento</h3>
+                
+                <!-- Select Archetype -->
+                <div class="space-y-3">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Elige el Arquetipo de tu Introyecto o TOC:</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <button onclick="selectArchetype('impostor')" id="arch-impostor" class="arch-btn p-4 rounded-xl border border-slate-800 hover:border-slate-700/80 bg-slate-950 text-left transition-all relative">
+                            <span class="block text-sm font-bold text-slate-200 mb-1">El Impostor</span>
+                            <span class="block text-[11px] text-slate-400 leading-snug">"Eres un fraude profesional y en cualquier momento se darán cuenta."</span>
+                        </button>
+                        <button onclick="selectArchetype('moral')" id="arch-moral" class="arch-btn p-4 rounded-xl border border-slate-800 hover:border-slate-700/80 bg-slate-950 text-left transition-all relative">
+                            <span class="block text-sm font-bold text-slate-200 mb-1">Escrupulosidad</span>
+                            <span class="block text-[11px] text-slate-400 leading-snug">"Tus pensamientos te definen como una persona mala, egoísta o perversa."</span>
+                        </button>
+                        <button onclick="selectArchetype('certeza')" id="arch-certeza" class="arch-btn p-4 rounded-xl border border-slate-800 hover:border-slate-700/80 bg-slate-950 text-left transition-all relative">
+                            <span class="block text-sm font-bold text-slate-200 mb-1">Certeza Absoluta</span>
+                            <span class="block text-[11px] text-slate-400 leading-snug">"Si no estás 100% seguro de algo, no deberías tomar ninguna decisión."</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Custom Introject -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">O escribe una preocupación personalizada:</label>
+                        <span class="text-[10px] text-slate-500">Opcional</span>
+                    </div>
+                    <textarea id="custom-obsession" placeholder="Ej: Que he cometido un error médico / que he ofendido a mi pareja sin darme cuenta / que mi vida no tiene un propósito y lo estoy arruinando todo..." class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl p-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition-all resize-none h-20"></textarea>
+                </div>
+
+                <!-- Action button to launch -->
+                <div class="pt-2 text-center">
+                    <button onclick="startArenaSession()" class="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg hover:shadow-emerald-500/20 inline-flex items-center gap-2">
+                        Iniciar Arena de Confrontación
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Arena Active Screen (Hidden initially) -->
+            <div id="arena-active" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                <!-- Chat Window Column -->
+                <div class="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col justify-between h-[600px] overflow-hidden">
+                    <!-- Chat Header -->
+                    <div class="bg-slate-950 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse-soft"></span>
+                            <div>
+                                <h4 id="active-archetype-title" class="text-sm font-bold text-slate-200">Enfrentando a: El Impostor</h4>
+                                <span class="text-[10px] text-slate-400 font-medium">No discutas. No te justifiques. Sostén la duda.</span>
+                            </div>
+                        </div>
+                        <button onclick="stopArenaSession()" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-rose-500/10 transition-all">
+                            Salir de la Arena
+                        </button>
+                    </div>
+
+                    <!-- Chat Body Message Bubbles -->
+                    <div id="chat-messages-container" class="flex-grow p-6 overflow-y-auto space-y-4 bg-slate-900/40">
+                        <!-- Message templates generated dynamically via JS -->
+                        <div class="flex items-start gap-3 max-w-[85%]">
+                            <div class="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center shrink-0 text-rose-400 text-xs font-bold">TOC</div>
+                            <div class="bg-slate-950 border border-rose-500/20 rounded-2xl px-4 py-3 text-sm text-slate-200 leading-relaxed">
+                                Cargando tu primer desafío cognitivo... Prepárate para no morder el anzuelo.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input / Sender Bar -->
+                    <div class="p-4 bg-slate-950 border-t border-slate-800 flex gap-2 items-center">
+                        <input id="chat-input" type="text" onkeydown="if(event.key==='Enter') sendUserMessage()" placeholder="Escribe tu Prevención de Respuesta... (Ej: Puede ser, tal vez sea verdad)" class="flex-grow bg-slate-900 border border-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none transition-all">
+                        <button onclick="sendUserMessage()" class="p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-sm transition-all shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Real-time EPR Coach Dashboard (Side Column) -->
+                <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+                    <div class="space-y-6">
+                        <div class="text-center border-b border-slate-800 pb-4">
+                            <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-1">Evaluación en Tiempo Real</span>
+                            <h4 class="text-base font-bold text-slate-200">Tu Coach EPR IA</h4>
+                        </div>
+
+                        <!-- Progress Ring & Tolerance Score -->
+                        <div class="flex flex-col items-center justify-center py-2">
+                            <div class="relative w-32 h-32 flex items-center justify-center">
+                                <!-- Circular progress SVG -->
+                                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                                    <circle cx="60" cy="60" r="50" class="stroke-slate-800 fill-none" stroke-width="8" />
+                                    <circle id="coach-score-ring" cx="60" cy="60" r="50" class="stroke-emerald-500 fill-none transition-all duration-500" stroke-width="8" stroke-dasharray="314.16" stroke-dashoffset="314.16" />
+                                </svg>
+                                <div class="absolute flex flex-col items-center">
+                                    <span id="coach-score-text" class="text-3xl font-extrabold text-white">0%</span>
+                                    <span class="text-[9px] text-slate-400 uppercase tracking-widest font-semibold">Tolerancia</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live Evaluation Commentary Bubble -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                            <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Comentario del Coach:
+                            </span>
+                            <p id="coach-commentary" class="text-xs text-slate-400 leading-relaxed italic">
+                                Esperando tu primer mensaje. Recuerda: si intentas debatir o convencer al robot de que estás a salvo, estarás cometiendo una compulsión. Acepta el peor escenario y quédate con la incertidumbre.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Training Stats summary -->
+                    <div class="bg-slate-950 border border-slate-800/60 rounded-xl p-3 text-[11px] text-slate-400 space-y-1">
+                        <div class="flex justify-between"><span class="text-slate-500">Turnos Completados:</span> <span id="stat-turns" class="font-bold text-slate-300">0</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Tasa EPR Promedio:</span> <span id="stat-avg-score" class="font-bold text-slate-300">0%</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Nivel de Maestría:</span> <span id="stat-rank" class="font-bold text-emerald-400 uppercase">Principiante</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: MI REGISTRO DIARIO (LOCAL STORAGE) -->
+        <section id="tab-diario" class="tab-content hidden space-y-8 animate-fadeIn">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="space-y-1">
+                    <h2 class="text-3xl font-extrabold text-white">Tu Bitácora de Desenganche</h2>
+                    <p class="text-slate-400 text-sm">
+                        Registra cada vez que voluntariamente te negaste a interactuar con una rumiación mental. Construye evidencias de tu fortaleza interna.
+                    </p>
+                </div>
+                <!-- Action trigger for modal -->
+                <button onclick="toggleDiaryModal(true)" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Añadir Registro Mental
+                </button>
+            </div>
+
+            <!-- Diary Entries Grid -->
+            <div id="diary-empty-state" class="bg-slate-900/50 border border-dashed border-slate-800 rounded-3xl p-12 text-center max-w-lg mx-auto space-y-4">
+                <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 mx-auto">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div class="space-y-1">
+                    <h4 class="text-base font-bold text-slate-200">Aún no hay registros de Prevención</h4>
+                    <p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                        Cada vez que apagues el motor de una rumiación intencionalmente, regístralo aquí para monitorear tu progreso semanal.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Diary Grid showing cards (Will be populated via JS) -->
+            <div id="diary-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Log Template cards injected via JS -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Diary Input Modal Overlay -->
+    <div id="diary-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div onclick="toggleDiaryModal(false)" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+        
+        <!-- Modal Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 relative z-10 space-y-5 shadow-2xl animate-scaleIn">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white">Nuevo Registro EPR</h3>
+                <button onclick="toggleDiaryModal(false)" class="text-slate-400 hover:text-slate-200 p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Input trigger -->
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">El Pensamiento Desencadenante:</label>
+                    <input id="diary-trigger-input" type="text" placeholder="Ej: Creo que ayer herí a mi colega en la llamada" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none transition-all">
+                </div>
+
+                <!-- Response applied -->
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tu Prevención de Respuesta:</label>
+                    <input id="diary-prm-input" type="text" placeholder="Ej: Le dije a mi mente 'puede ser' y seguí programando" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none transition-all">
+                </div>
+
+                <!-- Sensation of Anxiety Level before vs after -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Ansiedad Inicial:</label>
+                        <select id="diary-anxiety-initial" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 focus:outline-none">
+                            <option value="Alta">Alta (Inaguantable)</option>
+                            <option value="Media" selected>Media (Molesta)</option>
+                            <option value="Baja">Baja (Manejable)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Ansiedad Final:</label>
+                        <select id="diary-anxiety-final" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 focus:outline-none">
+                            <option value="Alta">Alta</option>
+                            <option value="Media">Media</option>
+                            <option value="Baja" selected>Baja (Disipada solo/a)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <button onclick="saveDiaryEntry()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md">
+                    Guardar Registro en tu Bitácora
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar (Responsive Helper) -->
+    <div class="md:hidden sticky bottom-0 bg-slate-950 border-t border-slate-800 px-4 py-2 z-50 flex justify-around">
+        <button onclick="switchTab('mapa')" class="mobile-tab-btn flex flex-col items-center gap-1 text-[10px] font-semibold text-emerald-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 01.553-.894L9 2m0 18l6-3m-6 3V2m6 15l5.447 2.724a1 1 0 001.447-.894V5.618a1 1 0 00-.553-.894L15 2m0 15V2m0 0L9 5"/></svg>
+            Mapa
+        </button>
+        <button onclick="switchTab('engranaje')" class="mobile-tab-btn flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
+            Engranaje
+        </button>
+        <button onclick="switchTab('gimnasio')" class="mobile-tab-btn flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Gimnasio
+        </button>
+        <button onclick="switchTab('arena')" class="mobile-tab-btn flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Confrontación
+        </button>
+        <button onclick="switchTab('diario')" class="mobile-tab-btn flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            Registro
+        </button>
+    </div>
+
+    <!-- Footer container -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-6 text-center text-[11px] text-slate-500">
+        <p>© 2026 El Laberinto Interior. Desarrollado bajo fundamentos clínicos de Terapia Cognitivo-Conductual y ACT.</p>
+    </footer>
+
+    <!-- Script Logic -->
+    <script>
+        /* State Variables */
+        let activeTab = 'mapa';
+        let currentAnxiety = 85;
+        let selectedArchetype = 'impostor';
+        let chatSessionHistory = [];
+        let scoreSum = 0;
+        let scoreCount = 0;
+        
+        // Simulating thoughts
+        const thoughtsList = [
+            '"¿Y si cometiste una negligencia en el informe de ayer y arruinaste la confianza del cliente?"',
+            '"¿Y si esa respuesta un poco seca que le diste a tu pareja fue la demostración oculta de que ya no la amas?"',
+            '"¿Y si esta sensación de fatiga no es estrés, sino una enfermedad terminal catastrófica?"',
+            '"¿Y si todo lo que has construido profesionalmente se basa en la suerte y eres un total impostor?"'
+        ];
+        let currentThoughtIdx = 0;
+
+        // Gym Scenarios Database
+        const gymScenarios = [
+            {
+                trigger: '"Estás a punto de irte a dormir y recuerdas que hace 3 años hiciste un comentario un poco sarcástico a un examigo. Tu mente te dice: tienes que repasar si le hiciste daño profundo."',
+                options: {
+                    'comp-1': 'Repasar meticulosamente la lista de interacciones de los meses posteriores en tu memoria para convencerte de que seguían siendo amigos.',
+                    'comp-2': 'Enviarle un mensaje sorpresa a esta hora preguntándole si todo está bien contigo, esperando desesperadamente su validación.',
+                    'epr': 'Aceptar el pensamiento: "Quizás fui un cretino egoísta en ese momento y me odia con razón. No tengo cómo cambiar el pasado" y disponerse a dormir sin debatir.'
+                },
+                correct: 'epr',
+                explanations: {
+                    'comp-1': 'Racionalizar en tu memoria es una COMPULSIÓN mental pura. Alimenta el laberinto haciéndote buscar certezas donde no las hay.',
+                    'comp-2': 'Buscar validación directa con un mensaje es una COMPULSIÓN conductual. Calma la ansiedad de inmediato pero refuerza que la duda mental es peligrosa.',
+                    'epr': '¡EXCELENTE! Aplicaste Prevención de Respuesta Mental (PRM). Toleras la hipótesis insoportable de ser imperfecto y no pones tu mente a defenderte.'
+                }
+            },
+            {
+                trigger: '"Mientras entregas un proyecto de trabajo, una voz fugaz en tu cabeza dice: ¿Y si te saltaste un punto clave que va a costar miles de dólares en pérdidas?"',
+                options: {
+                    'comp-1': 'Revisar mentalmente cada paso que tomaste durante la tarde para buscar el "momento exacto" de confirmación.',
+                    'comp-2': 'Abandona el entregable de inmediato y pasa 3 horas releyendo el manual para confirmar la regla específica.',
+                    'epr': 'Sostener la duda: "Existe el riesgo latente de que falle. No soy perfecto. Asumo la responsabilidad de seguir adelante con la duda abierta".'
+                },
+                correct: 'epr',
+                explanations: {
+                    'comp-1': 'Revisar mentalmente es la compulsión más común del TOC de control profesional. Consume tus recursos cognitivos en vano.',
+                    'comp-2': 'La revisión física compulsiva solo valida el pánico inicial de tu amígdala. Rompe tu productividad laboral.',
+                    'epr': '¡PERFECTO! La PRM radica en la asunción consciente del riesgo sin rumiar. La mente se calma de forma orgánica al ignorar la falsa alerta.'
+                }
+            },
+            {
+                trigger: '"Tienes la sospecha de estar sufriendo de TOC encubierto y te pasas horas leyendo foros médicos en internet buscando casos idénticos para convencerte de tu autodiagnóstico."',
+                options: {
+                    'comp-1': 'Pasarte otra hora comparando síntomas en diferentes hilos para asegurarte al 100% de que perteneces a este subtipo.',
+                    'epr': 'Cerrar el navegador y aceptar: "Puede que tenga TOC, o puede que solo sea un exagerado buscando etiquetas. Viviré con el misterio por hoy".',
+                    'comp-2': 'Escribirle a tres amigos cercanos mandándoles test de TOC y pidiéndoles que evalúen si tú encajas en el perfil.'
+                },
+                correct: 'epr',
+                explanations: {
+                    'comp-1': 'La sobre-investigación clínica es una forma sutil de compulsión. Es una búsqueda obsesiva de la certeza que jamás llegará.',
+                    'comp-2': 'La búsqueda de consuelo en terceros te vuelve dependiente y expande la compulsión a tu círculo social.',
+                    'epr': '¡BRILLANTE! Desactivas el motor inquisidor de la mente. Tolerar el no-saber es la cura definitiva para cualquier manifestación obsesiva.'
+                }
+            }
+        ];
+        let currentGymIdx = 0;
+        let gymPoints = 0;
+
+        // Initialize App on Window Load
+        window.onload = function () {
+            // Start components
+            renderDiary();
+            updateGearRotationSpeed();
+            
+            // Configure dynamic system
+            setInterval(() => {
+                if (currentAnxiety > 15) {
+                    // Slowly drift back to natural levels if no actions taken
+                    currentAnxiety = Math.max(15, currentAnxiety - 1);
+                    updateAnxietyUI();
+                }
+            }, 6000);
+        }
+
+        // Tab switching controller
+        function switchTab(tabId) {
+            activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            // Update header navigation active class
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-slate-200";
+            });
+            const activeBtn = document.getElementById(`btn-tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = "tab-btn px-4 py-2 text-xs font-semibold rounded-lg transition-all text-emerald-400 bg-slate-950 border border-slate-800";
+            }
+
+            // Update mobile navigation active class
+            document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+                btn.className = "mobile-tab-btn flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-500";
+            });
+            const mobileBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
+            if (mobileBtn) {
+                mobileBtn.className = "mobile-tab-btn flex flex-col items-center gap-1 text-[10px] font-semibold text-emerald-400";
+            }
+        }
+
+        // Gear Simulation Engine
+        function updateAnxietyUI() {
+            document.getElementById('anxiety-value').innerText = `${currentAnxiety}%`;
+            const bar = document.getElementById('anxiety-bar');
+            bar.style.width = `${currentAnxiety}%`;
+
+            const badge = document.getElementById('mind-status-badge');
+            if (currentAnxiety > 70) {
+                bar.className = "bg-gradient-to-r from-rose-600 to-rose-400 h-full transition-all duration-500";
+                badge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-1.5 animate-pulse-soft";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span> Hiperactiva (Rumiación)`;
+            } else if (currentAnxiety > 40) {
+                bar.className = "bg-gradient-to-r from-amber-500 to-amber-400 h-full transition-all duration-500";
+                badge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1.5";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Ansiedad Moderada`;
+            } else {
+                bar.className = "bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500";
+                badge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Calma Homeostática`;
+            }
+            updateGearRotationSpeed();
+        }
+
+        function updateGearRotationSpeed() {
+            const gear1 = document.getElementById('gear-obsession');
+            const gear2 = document.getElementById('gear-compulsion');
+            
+            // Map anxiety % to animation seconds duration
+            const speed = Math.max(1, (100 - currentAnxiety) / 7);
+            
+            gear1.style.animationDuration = `${speed}s`;
+            gear2.style.animationDuration = `${speed}s`;
+            
+            if (currentAnxiety <= 15) {
+                gear1.style.animationPlayState = 'paused';
+                gear2.style.animationPlayState = 'paused';
+            } else {
+                gear1.style.animationPlayState = 'running';
+                gear2.style.animationPlayState = 'running';
+            }
+        }
+
+        function simulateCompulsion() {
+            currentAnxiety = Math.min(100, currentAnxiety + 15);
+            updateAnxietyUI();
+            
+            // Update labels
+            document.getElementById('gear-compulsion-label').innerText = "Compulsión (Analizando)";
+            document.getElementById('gear-compulsion-label').className = "mt-3 text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider";
+            document.getElementById('simulation-feedback').innerText = "¡Has respondido debatiendo! Intentar resolver el dilema mental ha acelerado los engranajes sinápticos. Tu amígdala asume que la duda es un peligro biológico real.";
+            
+            // Slowly change thoughts
+            currentThoughtIdx = (currentThoughtIdx + 1) % thoughtsList.length;
+            setTimeout(() => {
+                document.getElementById('sim-thought-text').innerText = thoughtsList[currentThoughtIdx];
+            }, 800);
+        }
+
+        function simulatePRM() {
+            currentAnxiety = Math.max(0, currentAnxiety - 25);
+            updateAnxietyUI();
+
+            document.getElementById('gear-compulsion-label').innerText = "Prevención (Veto Activo)";
+            document.getElementById('gear-compulsion-label').className = "mt-3 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider";
+            document.getElementById('simulation-feedback').innerText = "¡Excelente Preventiva! Has dejado la duda abierta y te has negado a rumiar. Al no alimentar el engranaje secundario, el movimiento cognitivo pierde inercia y se detiene.";
+        }
+
+        // Gym Game Logics
+        function loadGymScenario() {
+            const sc = gymScenarios[currentGymIdx];
+            document.getElementById('current-scenario-idx').innerText = currentGymIdx + 1;
+            document.getElementById('gym-trigger').innerText = sc.trigger;
+            
+            // Set options randomly or structured
+            document.getElementById('opt-text-1').innerText = sc.options['comp-1'] || sc.options['epr'];
+            document.getElementById('opt-text-2').innerText = sc.options['comp-2'] || sc.options['epr'];
+            document.getElementById('opt-text-3').innerText = sc.options['epr'] || sc.options['comp-1'];
+            
+            // Restore buttons styles
+            resetGymButtons();
+            
+            // Hide feedback container
+            document.getElementById('gym-feedback-container').classList.add('hidden');
+        }
+
+        function resetGymButtons() {
+            ['opt-1', 'opt-2', 'opt-3'].forEach(id => {
+                const btn = document.getElementById(id);
+                btn.className = "w-full text-left p-4 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-950 transition-all text-xs md:text-sm hover:translate-x-1 duration-150 flex gap-3 items-start group";
+                btn.disabled = false;
+            });
+        }
+
+        function checkGymAnswer(selectedType) {
+            const sc = gymScenarios[currentGymIdx];
+            const isCorrect = (selectedType === 'epr');
+            
+            // Find which option was clicked and style it
+            const optKeys = Object.keys(sc.options);
+            const selectedIdx = optKeys.indexOf(selectedType) + 1;
+            
+            // Disable all options
+            ['opt-1', 'opt-2', 'opt-3'].forEach((id, index) => {
+                const btn = document.getElementById(id);
+                btn.disabled = true;
+                if (index === (selectedIdx - 1)) {
+                    if (isCorrect) {
+                        btn.className = "w-full text-left p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 flex gap-3 items-start";
+                    } else {
+                        btn.className = "w-full text-left p-4 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 flex gap-3 items-start";
+                    }
+                }
+            });
+
+            // Update points
+            if (isCorrect) {
+                gymPoints += 150;
+                document.getElementById('gym-points').innerText = gymPoints;
+            }
+
+            // Show feedback
+            const fdContainer = document.getElementById('gym-feedback-container');
+            const fdTitle = document.getElementById('gym-feedback-title');
+            const fdDesc = document.getElementById('gym-feedback-desc');
+            
+            fdContainer.classList.remove('hidden');
+            if (isCorrect) {
+                fdContainer.className = "p-4 rounded-xl border border-emerald-500/30 bg-emerald-950/20 text-xs md:text-sm";
+                fdTitle.className = "flex items-center gap-2 font-bold mb-1 text-emerald-400";
+                fdTitle.innerHTML = `<svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg> ¡Respuesta Correcta de Prevención!`;
+                fdDesc.innerText = sc.explanations['epr'];
+            } else {
+                fdContainer.className = "p-4 rounded-xl border border-rose-500/30 bg-rose-950/20 text-xs md:text-sm";
+                fdTitle.className = "flex items-center gap-2 font-bold mb-1 text-rose-400";
+                fdTitle.innerHTML = `<svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg> Caíste en el Engranaje`;
+                fdDesc.innerText = sc.explanations[selectedType] || "Someterse al debate mental de una obsesión la refuerza.";
+            }
+        }
+
+        function nextGymScenario() {
+            currentGymIdx = (currentGymIdx + 1) % gymScenarios.length;
+            loadGymScenario();
+        }
+
+        // Trigger first loading
+        loadGymScenario();
+
+
+        // Arena Setup & AI Chat Engine
+        function selectArchetype(arch) {
+            selectedArchetype = arch;
+            document.querySelectorAll('.arch-btn').forEach(btn => {
+                btn.className = "p-4 rounded-xl border border-slate-800 hover:border-slate-700/80 bg-slate-950 text-left transition-all relative";
+            });
+            document.getElementById(`arch-${arch}`).className = "p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/5 text-left transition-all relative ring-1 ring-emerald-500/30";
+        }
+
+        // Default archetype setup
+        selectArchetype('impostor');
+
+        function startArenaSession() {
+            // Setup active visual state
+            document.getElementById('arena-config').classList.add('hidden');
+            document.getElementById('arena-active').classList.remove('hidden');
+
+            const archTitleMap = {
+                'impostor': 'El Impostor Intelectual',
+                'moral': 'Escrupulosidad Moral Estricta',
+                'certeza': 'El Buscador de Certeza Absoluta'
+            };
+            document.getElementById('active-archetype-title').innerText = `Enfrentando a: ${archTitleMap[selectedArchetype] || 'Introyecto Personalizado'}`;
+
+            // Reset chat history and stats
+            chatSessionHistory = [];
+            scoreSum = 0;
+            scoreCount = 0;
+            updateCoachProgressRing(0);
+            
+            document.getElementById('stat-turns').innerText = "0";
+            document.getElementById('stat-avg-score').innerText = "0%";
+            document.getElementById('stat-rank').innerText = "Principiante";
+            document.getElementById('stat-rank').className = "font-bold text-slate-400 uppercase";
+
+            // Trigger AI initial challenge
+            triggerOcdChallenge();
+        }
+
+        function stopArenaSession() {
+            document.getElementById('arena-config').classList.remove('hidden');
+            document.getElementById('arena-active').classList.add('hidden');
+        }
+
+        // Call Gemini to get the next challenge
+        async function triggerOcdChallenge() {
+            // Render loading bubble inside chat window
+            const chatBox = document.getElementById('chat-messages-container');
+            const loadingBubble = document.createElement('div');
+            loadingBubble.id = "chat-loading-bubble";
+            loadingBubble.className = "flex items-start gap-3 max-w-[85%] animate-pulse-soft";
+            loadingBubble.innerHTML = `
+                <div class="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center shrink-0 text-rose-400 text-xs font-bold">TOC</div>
+                <div class="bg-slate-950 border border-rose-500/10 rounded-2xl px-4 py-3 text-sm text-slate-400 leading-relaxed italic">
+                    Conectando con tu laberinto interior... Generando introyecto agresivo...
+                </div>
+            `;
+            chatBox.appendChild(loadingBubble);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Generate Prompt based on active state
+            const customText = document.getElementById('custom-obsession').value.trim();
+            const archetypeInstructions = {
+                'impostor': 'El arquetipo de este TOC es "El Impostor". Persigue al usuario insistiéndole en que su éxito es casual, fraudulento y que será humillado públicamente por su incompetencia.',
+                'moral': 'El arquetipo de este TOC es la "Escrupulosidad Moral". Persigue al usuario con obsesiones de ser una persona malvada, egoísta, dañina con los demás, o hipócrita en sus intenciones éticas.',
+                'certeza': 'El arquetipo de este TOC es "El Buscador de Certeza Absoluta". Persigue al usuario recordándole riesgos existenciales o de toma de decisiones cotidianas, exigiéndole garantías perfectas.'
+            };
+
+            const userObsessionText = customText ? `Preocupación específica del usuario: "${customText}".` : archetypeInstructions[selectedArchetype];
+
+            const systemPrompt = `
+            Actúas como un sistema dual para el entrenamiento en EPR (Exposición y Prevención de Respuesta) para el TOC egosintónico encubierto.
+            Tu rol tiene dos capas psicológicas estrictas:
+            1. EL COACH EPR (Evaluador): Analiza el último mensaje del usuario. Determina si cayó en la compulsión mental (si intentó defenderse, explicarse lógicamente, racionalizar, pedir disculpas, tranquilizar su amígdala o buscar certezas) o si logró aplicar con maestría la Prevención de Respuesta (respondiendo de forma vaga, aceptando la incertidumbre radical con frases como "puede que tengas razón", "tal vez sea un fraude", "no tengo que resolver eso hoy"). Califica de 0 a 100.
+            2. LA VOZ DEL TOC (Atacante): Genera el próximo ataque cognitivo. Debe ser un argumento lógico agudo, moralmente pesado, manipulador y extremadamente persuasivo enfocado en sabotear el bienestar del usuario. Apela a su sentido de hiper-responsabilidad para tentarlo a morder el anzuelo intelectual.
+
+            ${userObsessionText}
+
+            Formato de salida requerido de manera obligatoria: Un objeto JSON estricto con esta estructura exacta:
+            {
+              "coachEvaluation": "Tu veredicto psicológico en 2 oraciones breves y directas sobre su respuesta anterior",
+              "eprScore": 85, // número entero de 0 a 100
+              "ocdChallenge": "El próximo y afilado ataque moral/intelectual de la voz de su obsesión"
+            }
+            `;
+
+            // Setup Payload
+            const apiKey = ""; // Leave blank for native automatic runtime keys injection
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            // Add standard dummy message history if completely empty to bootstrap
+            if (chatSessionHistory.length === 0) {
+                chatSessionHistory.push({
+                    role: "user",
+                    parts: [{ text: "Iniciar sesión de entrenamiento de confrontación. Dame tu peor ataque." }]
+                });
+            }
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: chatSessionHistory,
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                type: "OBJECT",
+                                properties: {
+                                    "coachEvaluation": { "type": "STRING" },
+                                    "eprScore": { "type": "NUMBER" },
+                                    "ocdChallenge": { "type": "STRING" }
+                                },
+                                "required": ["coachEvaluation", "eprScore", "ocdChallenge"]
+                            }
+                        },
+                        systemInstruction: {
+                            parts: [{ text: systemPrompt }]
+                        }
+                    })
+                });
+
+                // Remove loading bubble
+                const ld = document.getElementById('chat-loading-bubble');
+                if (ld) ld.remove();
+
+                const result = await response.json();
+                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (jsonText) {
+                    const parsed = JSON.parse(jsonText);
+                    
+                    // Render TOC Challenge in Chat UI
+                    appendChatMessage('TOC', parsed.ocdChallenge);
+                    
+                    // Update Coach evaluations
+                    if (scoreCount > 0) {
+                        document.getElementById('coach-commentary').innerText = parsed.coachEvaluation;
+                        updateCoachProgressRing(parsed.eprScore);
+                        
+                        // Accumulate stats
+                        scoreSum += parsed.eprScore;
+                        const avg = Math.round(scoreSum / scoreCount);
+                        document.getElementById('stat-turns').innerText = scoreCount;
+                        document.getElementById('stat-avg-score').innerText = `${avg}%`;
+                        
+                        // Update ranks
+                        const rankEl = document.getElementById('stat-rank');
+                        if (avg > 80) {
+                            rankEl.innerText = "Maestro Zen";
+                            rankEl.className = "font-bold text-emerald-400 uppercase";
+                        } else if (avg > 50) {
+                            rankEl.innerText = "Tolerante Intermedio";
+                            rankEl.className = "font-bold text-amber-400 uppercase";
+                        } else {
+                            rankEl.innerText = "Sometido al TOC";
+                            rankEl.className = "font-bold text-rose-400 uppercase";
+                        }
+                    } else {
+                        // First turn doesn't have score evaluation
+                        document.getElementById('coach-commentary').innerText = "El TOC ha puesto su primer dilema en la mesa. No discutas. Responde con aceptación radical e incertidumbre.";
+                    }
+
+                    // Save Assistant Turn to History
+                    chatSessionHistory.push({
+                        role: "model",
+                        parts: [{ text: JSON.stringify(parsed) }]
+                    });
+
+                } else {
+                    showSimulatedErrorFallback();
+                }
+
+            } catch (err) {
+                console.error("Gemini API error: ", err);
+                showSimulatedErrorFallback();
+            }
+        }
+
+        // Show a smart fallback block if API throttles
+        function showSimulatedErrorFallback() {
+            const ld = document.getElementById('chat-loading-bubble');
+            if (ld) ld.remove();
+
+            const fallbackChallenges = {
+                'impostor': "Si realmente supieras hacer tu trabajo, no estarías usando esta app para desviar la atención. Es un hecho obvio que eres un fraude sistemático y que en la próxima junta tu jefe notará tu incompetencia.",
+                'moral': "Piensa en esa vez que juzgaste duramente a alguien. ¿Acaso una persona verdaderamente virtuosa se permitiría sentir ese desprecio mezquino? Estás mintiéndote sobre tu propia bondad.",
+                'certeza': "No deberías comprometerte con ese nuevo proyecto ni con ninguna decisión importante si queda un mínimo resquicio de duda. ¿Cómo puedes vivir sabiendo que estás tomando decisiones a ciegas?"
+            };
+
+            const challenge = fallbackChallenges[selectedArchetype] || "Tu mente es inestable y nada garantiza que alcances la tranquilidad.";
+            appendChatMessage('TOC', challenge);
+            document.getElementById('coach-commentary').innerText = "[Modo Offline] El sistema de IA ha tenido un percance de red. Puedes seguir entrenándote usando esta réplica exacta de tu patrón obsesivo tradicional.";
+        }
+
+        // Append message node to the chat container
+        function appendChatMessage(sender, text) {
+            const chatBox = document.getElementById('chat-messages-container');
+            const node = document.createElement('div');
+            
+            if (sender === 'TOC') {
+                node.className = "flex items-start gap-3 max-w-[85%] animate-fadeIn";
+                node.innerHTML = `
+                    <div class="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center shrink-0 text-rose-400 text-xs font-bold">TOC</div>
+                    <div class="bg-slate-950 border border-rose-500/20 rounded-2xl px-4 py-3 text-sm text-slate-200 leading-relaxed shadow-lg glow-rose">
+                        ${text}
+                    </div>
+                `;
+            } else {
+                node.className = "flex items-start gap-3 max-w-[85%] ml-auto justify-end animate-fadeIn";
+                node.innerHTML = `
+                    <div class="bg-slate-900 border border-emerald-500/20 rounded-2xl px-4 py-3 text-sm text-emerald-300 leading-relaxed shadow-lg glow-emerald text-right">
+                        ${text}
+                    </div>
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-400 text-xs font-bold">PRM</div>
+                `;
+            }
+
+            chatBox.appendChild(node);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function sendUserMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Render on screen
+            appendChatMessage('USER', text);
+            input.value = '';
+
+            // Register turn
+            scoreCount++;
+
+            // Push to Gemini History
+            chatSessionHistory.push({
+                role: "user",
+                parts: [{ text: text }]
+            });
+
+            // Trigger AI response loop
+            triggerOcdChallenge();
+        }
+
+        // Circular progress indicator logic
+        function updateCoachProgressRing(score) {
+            document.getElementById('coach-score-text').innerText = `${score}%`;
+            const ring = document.getElementById('coach-score-ring');
+            const circumference = 2 * Math.PI * 50; // r=50 -> ~314.16
+            const offset = circumference - (score / 100) * circumference;
+            ring.style.strokeDashoffset = offset;
+            
+            // Alter ring colors based on metrics
+            if (score > 80) {
+                ring.className = "stroke-emerald-500 fill-none transition-all duration-500";
+            } else if (score > 40) {
+                ring.className = "stroke-amber-500 fill-none transition-all duration-500";
+            } else {
+                ring.className = "stroke-rose-500 fill-none transition-all duration-500";
+            }
+        }
+
+
+        // LocalStorage Mental Diary Logic
+        function toggleDiaryModal(show) {
+            const modal = document.getElementById('diary-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function saveDiaryEntry() {
+            const trig = document.getElementById('diary-trigger-input').value.trim();
+            const prm = document.getElementById('diary-prm-input').value.trim();
+            const initAnx = document.getElementById('diary-anxiety-initial').value;
+            const finalAnx = document.getElementById('diary-anxiety-final').value;
+
+            if (!trig || !prm) {
+                // Inline error replacement for alert()
+                const fBtn = document.querySelector('#diary-modal button[onclick="saveDiaryEntry()"]');
+                const origText = fBtn.innerText;
+                fBtn.innerText = "⚠️ Por favor, llena todos los campos.";
+                fBtn.className = "w-full py-3 bg-rose-600 text-white rounded-xl text-xs font-bold transition-all shadow-md";
+                setTimeout(() => {
+                    fBtn.innerText = origText;
+                    fBtn.className = "w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md";
+                }, 2000);
+                return;
+            }
+
+            const newEntry = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString(),
+                trigger: trig,
+                prm: prm,
+                initial: initAnx,
+                final: finalAnx
+            };
+
+            // Retrieve and store array
+            let entries = JSON.parse(localStorage.getItem('epr_diary_logs')) || [];
+            entries.unshift(newEntry);
+            localStorage.setItem('epr_diary_logs', JSON.stringify(entries));
+
+            // Reset fields & close modal
+            document.getElementById('diary-trigger-input').value = '';
+            document.getElementById('diary-prm-input').value = '';
+            toggleDiaryModal(false);
+
+            // Re-render
+            renderDiary();
+        }
+
+        function renderDiary() {
+            const entries = JSON.parse(localStorage.getItem('epr_diary_logs')) || [];
+            const emptyState = document.getElementById('diary-empty-state');
+            const grid = document.getElementById('diary-grid');
+
+            if (entries.length === 0) {
+                emptyState.classList.remove('hidden');
+                grid.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.classList.remove('hidden');
+            grid.innerHTML = '';
+
+            entries.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 relative overflow-hidden flex flex-col justify-between";
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center text-[10px]">
+                            <span class="text-slate-500 font-bold">${item.date}</span>
+                            <span class="px-2 py-0.5 rounded-full ${item.final === 'Baja' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'} font-semibold">Tolerancia Activa</span>
+                        </div>
+                        
+                        <div class="space-y-1">
+                            <span class="text-[9px] text-rose-400 font-bold uppercase tracking-wider block">Obsesión:</span>
+                            <p class="text-xs text-slate-300 font-medium italic">"${item.trigger}"</p>
+                        </div>
+
+                        <div class="space-y-1">
+                            <span class="text-[9px] text-emerald-400 font-bold uppercase tracking-wider block">No Respuesta (PRM):</span>
+                            <p class="text-xs text-slate-200 font-bold">"${item.prm}"</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-800/60 flex justify-between items-center text-[10px] text-slate-400">
+                        <span>Ansiedad: ${item.initial} ➔ ${item.final}</span>
+                        <button onclick="deleteDiaryEntry(${item.id})" class="text-rose-400 hover:text-rose-300 font-semibold">Borrar</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function deleteDiaryEntry(id) {
+            let entries = JSON.parse(localStorage.getItem('epr_diary_logs')) || [];
+            entries = entries.filter(e => e.id !== id);
+            localStorage.setItem('epr_diary_logs', JSON.stringify(entries));
+            renderDiary();
+        }
+    </script>
+</body>
+</html>
