@@ -1512,6 +1512,7 @@
         
         function onMouseDown(event) {
             if(event.target.closest('.hud-btn') || event.target.closest('.modal')) return;
+            if (window.Forja && Forja.isGrabbing()) return; // FORJA: arrastrando un texto/video de Kairós o un sol (Shift)
             const time = new Date().getTime();
             const isDoubleClick = time - lastClickTime < 300;
             lastClickTime = time;

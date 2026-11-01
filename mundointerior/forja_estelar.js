@@ -44,7 +44,7 @@
   const PREF_KEY = 'forja_prefs_v1';
   const prefs = Object.assign({
     bloom: !isTouch, radar: true, radarRange: 1, radarMini: false,
-    refDistance: 18, rolloff: 1.2, sunVolume: 1, taguaVolume: 1,
+    refDistance: 18, influence: 220, radioInfluence: 320, sunVolume: 1, taguaVolume: 1,
     pulse: 4, notif: false
   }, safeJSON(localStorage.getItem(PREF_KEY)));
   function savePrefs() { try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch (e) {} }
@@ -167,22 +167,114 @@
     return e;
   }
 
+  /* =====================================================================
+     SOLES DE AUDIO Y RADIOS — influjo por distancia
+     Dentro del "alcance pleno" suenan a todo volumen; desde ahí se apagan
+     suavemente hasta el borde de su influjo. Afuera dejan de transmitir:
+     el mp3 se pausa (recuerda dónde iba) y la radio corta el stream.
+     Al volver a entrar retoman solos.
+     ===================================================================== */
+  function influenceOf(e) { return e.kind === 'tagua' ? prefs.radioInfluence : prefs.influence; }
+  function baseVolOf(e) { return e.kind === 'tagua' ? prefs.taguaVolume : prefs.sunVolume; }
+  function cleanRec(e) {
+    const r = { id: e.id, kind: e.kind, name: e.name, createdAt: e.createdAt || Date.now(), position: e.obj.anchor.toArray() };
+    if (e.blobId) r.blobId = e.blobId;
+    if (e.url) r.url = e.url;
+    return r;
+  }
+  function persistEnt(e) {
+    if (e.kind === 'kairos') return DB.put('entities', Object.assign({ id: e.id, kind: e.kind, name: e.name, hue: e.hue, createdAt: e.createdAt }, { position: e.obj.position.toArray() })).catch(() => {});
+    return DB.put('entities', cleanRec(e)).catch(() => {});
+  }
+
   function spawnSun(rec) {
     const obj = new L.AudioSun({ scene, position: new V3().fromArray(rec.position), kind: rec.kind === 'tagua' ? 'tagua' : 'mp3',
       ctx, listener, config: sunConfig });
-    obj.setPanner(prefs);
-    obj.setVolume(rec.kind === 'tagua' ? prefs.taguaVolume : prefs.sunVolume);
-    const e = Object.assign({}, rec, { obj, radius: obj.radius });
+    const e = Object.assign({}, rec, { obj, radius: obj.radius, armed: false, inside: true, pending: false, status: 'detenido' });
+    obj.setPanner(prefs.refDistance, influenceOf(e));
+    obj.setVolume(baseVolOf(e));
+    obj.setFade(0);
     obj.hit.userData.ent = e;
-    obj.el.addEventListener('ended', () => { e.obj.playing = false; refreshUI(); });
+    obj.el.addEventListener('ended', () => { e.obj.playing = false; e.armed = false; e.status = 'detenido'; refreshUI(); });
     obj.el.addEventListener('error', () => {
+      if (!e.obj.el.getAttribute('src')) return;
       e.obj.playing = false;
-      if (e.kind === 'tagua' && e.obj.el.getAttribute('src')) { taguaStatus = 'No pude conectar con el stream. Revisá tu conexión.'; toast(taguaStatus); }
+      if (e.kind === 'tagua') { e.armed = false; e.status = 'sin conexión con el stream'; toast(e.name + ': no pude conectar con el stream'); }
       refreshUI();
     });
     entities.push(e);
     return e;
   }
+
+  /* arranca o retoma el sonido de un sol/radio (sin tocar la intención del usuario) */
+  async function startSound(e) {
+    if (e.pending) return;
+    e.pending = true;
+    try {
+      if (e.kind === 'tagua') {
+        e.status = 'conectando...'; refreshUI();
+        e.obj.setSource(e.url || L.TAGUA_URL, false);
+      } else if (!e.obj.el.getAttribute('src')) {
+        const u = await getURL(e.blobId || e.id);
+        if (!u) { toast('Este sol perdió su archivo de audio'); e.armed = false; return; }
+        e.obj.setSource(u, true);
+      }
+      await e.obj.play();
+      e.status = e.kind === 'tagua' ? 'en el aire' : 'cantando';
+    } catch (err) {
+      e.obj.playing = false;
+      if (e.armed) { e.armed = false; e.status = 'no pude reproducir (' + (err && err.name || 'error') + ')'; toast(e.name + ': no pude reproducir'); }
+    } finally { e.pending = false; refreshUI(); }
+  }
+  function suspendSound(e, why) {
+    if (e.kind === 'tagua') e.obj.stopStream(); else e.obj.pause();
+    e.status = why || 'detenido';
+    refreshUI();
+  }
+  async function toggleSun(e, forcePlay) {
+    wake();
+    if (e.armed && !forcePlay) {
+      e.armed = false; suspendSound(e, 'detenido');
+      toast(e.name + (e.kind === 'tagua' ? ' fuera del aire' : ' en silencio'));
+      return;
+    }
+    e.armed = true;
+    const d = camera.position.distanceTo(e.obj.position);
+    if (d > influenceOf(e)) {
+      e.inside = false; e.status = 'esperando: fuera de su influjo';
+      toast(e.name + ' encendido · se oirá al entrar en su influjo');
+      refreshUI(); return;
+    }
+    e.inside = true;
+    await startSound(e);
+    if (e.obj.playing) toast(e.kind === 'tagua' ? e.name + ' en el aire' : e.name + ' canta');
+  }
+
+  /* corre cada pocos cuadros: volumen por distancia y corte por influjo */
+  function updateInfluence() {
+    const cam = camera.position;
+    for (const e of entities) {
+      if (e.kind === 'kairos') continue;
+      const inf = influenceOf(e), d = cam.distanceTo(e.obj.position);
+      const ref = Math.min(prefs.refDistance, inf * 0.5);
+      // apagado suave en el último 40 % del influjo
+      const edge = inf * 0.6;
+      let fade = d <= edge ? 1 : Math.max(0, 1 - (d - edge) / (inf - edge));
+      fade = fade * fade * (3 - 2 * fade);
+      e.obj.setFade(fade);
+      e.fade = fade; e.dist = d;
+      if (!e.armed) continue;
+      if (e.inside && d > inf * 1.05) {
+        e.inside = false;
+        if (e.obj.playing) suspendSound(e, 'fuera de su influjo');
+        else e.status = 'fuera de su influjo';
+      } else if (!e.inside && d < inf) {
+        e.inside = true;
+        startSound(e);
+      }
+    }
+  }
+
   async function createSunsFromFiles(files) {
     const list = Array.from(files || []).filter(f => f.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(f.name));
     if (!list.length) { toast('No encontré archivos de audio'); return; }
@@ -202,65 +294,33 @@
     toast(list.length > 1 ? list.length + ' soles encendidos' : 'Un sol nuevo canta frente a vos');
     refreshUI();
   }
-  async function toggleSun(e, forcePlay) {
-    wake();
-    if (e.kind === 'tagua') return toggleTagua(forcePlay);
-    if (!e.obj.el.getAttribute('src')) {
-      const u = await getURL(e.blobId || e.id);
-      if (!u) { toast('Este sol perdió su archivo de audio'); return; }
-      e.obj.setSource(u, true);
-    }
-    try {
-      if (e.obj.playing && !forcePlay) { e.obj.pause(); toast(e.name + ' en silencio'); }
-      else { await e.obj.play(); toast(e.name + ' canta'); }
-    } catch (err) { toast('No pude reproducir ' + e.name); }
-    refreshUI();
-  }
 
-  /* ---------------- Radio Tagua Tagua ---------------- */
-  const TAGUA_KEY = 'forja_tagua_v1';
-  let taguaStatus = 'Stream detenido';
-  function taguaEnt() { return entities.find(e => e.kind === 'tagua'); }
-  function saveTagua() {
-    const e = taguaEnt();
-    try { localStorage.setItem(TAGUA_KEY, JSON.stringify(e ? { position: e.obj.anchor.toArray() } : null)); } catch (err) {}
-  }
-  function ensureTagua(pos) {
-    let e = taguaEnt();
-    if (e) return e;
-    e = spawnSun({ id: 'tagua', kind: 'tagua', name: 'Radio Tagua Tagua', position: (pos || spotAhead(120)).toArray() });
-    saveTagua();
+  /* ---------------- radios (se pueden forjar varias) ---------------- */
+  function radios() { return entities.filter(e => e.kind === 'tagua'); }
+  async function createRadio(name, url, play) {
+    url = (url || '').trim() || L.TAGUA_URL;
+    if (!/^https?:\/\//i.test(url)) { toast('La dirección del stream debe empezar con http(s)://'); return null; }
+    const n = radios().length;
+    const rec = { id: uid('r'), kind: 'tagua', name: (name || '').trim() || (n ? 'Radio Tagua Tagua ' + roman(n + 1) : 'Radio Tagua Tagua'),
+      url, createdAt: Date.now(), position: freeSpot(120, 40).toArray() };
+    await DB.put('entities', rec);
+    const e = spawnSun(rec);
+    toast(e.name + ' forjada frente a vos');
+    if (play) await toggleSun(e, true);
+    refreshUI();
     return e;
   }
-  async function toggleTagua(forcePlay) {
-    wake();
-    const e = ensureTagua();
-    if (e.obj.playing && !forcePlay) {
-      e.obj.stopStream(); taguaStatus = 'Stream detenido'; refreshUI(); return;
-    }
-    taguaStatus = 'Conectando con Tagua Tagua...'; refreshUI();
-    e.obj.setSource(L.TAGUA_URL, false);
-    try { await e.obj.play(); taguaStatus = 'En el aire'; toast('Radio Tagua Tagua en el aire'); }
-    catch (err) { taguaStatus = 'No pude reproducir el stream (' + (err && err.name || 'error') + ')'; e.obj.playing = false; }
-    refreshUI();
-  }
-  function bringTagua() {
-    const e = ensureTagua();
-    e.obj.anchor.copy(spotAhead(110));
-    saveTagua(); toast('Tagua Tagua ahora orbita frente a vos'); refreshUI();
-  }
-  function dissolveTagua() {
-    const e = taguaEnt(); if (!e) return;
-    if (orbit && orbit.ent === e) exitOrbit();
-    e.obj.dispose(); entities.splice(entities.indexOf(e), 1);
-    taguaStatus = 'Stream detenido';
-    saveTagua(); refreshUI();
+  function bringHere(e) {
+    e.obj.anchor.copy(freeSpot(110, 40));
+    persistEnt(e);
+    toast(e.name + ' ahora brilla frente a vos'); refreshUI();
   }
 
   /* ---------------- mensajes de Kairós ---------------- */
   function attachSat(k, m) {
     const s = k.obj.addSatellite(m);
     s.pick.userData.ent = k;
+    if (m.orbit) { s.radius = m.orbit.r; s.height = m.orbit.h; s.angle = m.orbit.a; k.obj._placeSat(s); }
     if (m.type === 'video') queueFrames(k, s);
     if (m.bounces && m.bounces.some(b => b.arrived && !b.opened)) k.obj.markArrived(m.id, true);
     return s;
@@ -687,6 +747,78 @@
     if (cv.style.cursor !== cur) { cv.style.cursor = cur; cd.style.cursor = cur; }
   }
 
+  /* =====================================================================
+     ARRASTRE
+     · textos y videos de un Kairós: mouse o dedo → cambian su órbita
+     · soles y radios: Shift + arrastrar con el mouse → se mueven
+     ===================================================================== */
+  let grab = null;
+  const _plane = new THREE.Plane(), _hp = new V3(), _tmp = new V3();
+  function rayAt(x, y) { ndc.set(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera); }
+  function planeHit(x, y) { rayAt(x, y); return ray.ray.intersectPlane(_plane, _hp) ? _hp : null; }
+  function tryGrab(ev) {
+    if (zoom || ev.button > 0) return false;
+    const h = pick(ev.clientX, ev.clientY);
+    if (!h) return false;
+    let anchor;
+    if (h.type === 'sat' && (h.sat.type === 'text' || h.sat.type === 'video')) anchor = satWorld(h.sat).clone();
+    else if (h.type === 'ent' && h.ent.kind !== 'kairos' && ev.shiftKey) anchor = h.ent.obj.position.clone();
+    else return false;
+    _plane.setFromNormalAndCoplanarPoint(camForward(), anchor);
+    const p = planeHit(ev.clientX, ev.clientY);
+    if (!p) return false;
+    grab = { h, id: ev.pointerId, x0: ev.clientX, y0: ev.clientY, offset: p.clone().sub(anchor), started: false };
+    return true;
+  }
+  function moveGrab(ev) {
+    if (!grab || ev.pointerId !== grab.id) return;
+    if (!grab.started) {
+      if (Math.hypot(ev.clientX - grab.x0, ev.clientY - grab.y0) <= 8) return;
+      grab.started = true;
+      if (grab.h.type === 'sat') grab.h.sat.frozen = true;
+      document.body.style.cursor = 'grabbing';
+      if (ringEnt) closeRing();
+    }
+    const p = planeHit(ev.clientX, ev.clientY);
+    if (!p) return;
+    const target = _tmp.copy(p).sub(grab.offset);
+    if (grab.h.type === 'sat') {
+      const k = grab.h.ent, s = grab.h.sat;
+      const lx = target.x - k.obj.position.x, ly = target.y - k.obj.position.y, lz = target.z - k.obj.position.z;
+      const a = Math.atan2(lz, lx);
+      s.angle = a;
+      s.radius = Math.max(6, Math.min(160, Math.hypot(lx, lz)));
+      s.height = Math.max(-80, Math.min(80, ly - Math.sin(a * 2.3) * 2));
+      k.obj._placeSat(s);
+    } else {
+      const o = grab.h.ent.obj;
+      o.anchor.add(target.sub(o.position)); // la deriva lenta sigue, el ancla viaja con la mano
+      o.position.add(_tmp);
+    }
+  }
+  function endGrab(ev) {
+    if (!grab || (ev && ev.pointerId !== undefined && ev.pointerId !== grab.id)) return;
+    const g = grab; grab = null;
+    document.body.style.cursor = '';
+    if (!g.started) return;
+    if (g.h.type === 'sat') {
+      const s = g.h.sat; s.frozen = false;
+      const m = msgs.get(s.msgId);
+      if (m) { m.orbit = { r: s.radius, h: s.height, a: s.angle }; DB.put('messages', m).catch(() => {}); }
+    } else {
+      persistEnt(g.h.ent);
+      toast(g.h.ent.name + ' encontró su nuevo lugar', 1600);
+    }
+  }
+  window.addEventListener('pointerdown', ev => {
+    if (ev.target.closest && ev.target.closest(UI_SEL)) return;
+    tryGrab(ev);
+  }, true);
+  window.addEventListener('pointermove', moveGrab, true);
+  window.addEventListener('pointerup', endGrab, true);
+  window.addEventListener('pointercancel', endGrab, true);
+  window.addEventListener('blur', () => endGrab());
+
   const UI_SEL = '.forja-ui, .hud-btn, .modal, .ui-button, input, textarea, select, button, iframe, video';
   let pDown = null;
   window.addEventListener('pointerdown', e => {
@@ -698,9 +830,11 @@
     const d = Math.hypot(e.clientX - pDown.x, e.clientY - pDown.y), dt = performance.now() - pDown.t;
     pDown = null;
     if (d > 8 || dt > 550) return;
+    shiftTap = e.shiftKey;
     onTap(e.clientX, e.clientY);
   }, true);
 
+  let shiftTap = false;
   function onTap(x, y) {
     if (zoom) {
       if (zoom.phase !== 'hold') return;
@@ -718,7 +852,7 @@
       return;
     }
     if (h.ent.kind === 'kairos') toggleRing(h.ent);
-    else toggleSun(h.ent);
+    else if (!shiftTap) toggleSun(h.ent);
   }
 
   /* ---------------- gestos táctiles: mirar, pellizcar ---------------- */
@@ -742,7 +876,7 @@
       pinchD = d; return;
     }
     const dx = cur.x - prev.x, dy = cur.y - prev.y;
-    if (zoom) return;
+    if (zoom || grab) return;
     if (orbit) { orbitDrag(dx, dy, 0.006); return; }
     if (isFocused) return;
     yawAngle -= dx * 0.004; pitchAngle -= dy * 0.004;
@@ -1112,6 +1246,10 @@
   }
 
   function updateDistances() {
+    body.querySelectorAll('[data-fade]').forEach(el => {
+      const e = entities.find(x => x.id === el.dataset.fade);
+      el.textContent = e && e.obj.playing && e.fade != null ? ' · ' + Math.round(e.fade * 100) + '%' : '';
+    });
     body.querySelectorAll('[data-dist]').forEach(el => {
       const e = entities.find(x => x.id === el.dataset.dist);
       if (e) el.textContent = Math.round(camera.position.distanceTo(e.obj.position));
@@ -1175,41 +1313,47 @@
       ${sel}${custom}<button class="fx-ico" data-a="m-open" data-id="${m.id}" title="ver">${T('◉')}</button>
       <button class="fx-ico danger" data-a="m-del" data-id="${m.id}" title="borrar">×</button></div>`;
   }
+  function soundRow(e, color) {
+    const live = e.obj.playing, out = e.armed && !e.inside;
+    const fade = e.fade != null && live ? ' · ' + Math.round(e.fade * 100) + '%' : '';
+    return `<div class="fx-item"><span class="fx-dot" style="color:${color};opacity:${out ? .45 : 1}"></span><div class="fx-main"><div class="fx-title">${esc(e.name)}</div>
+      <div class="fx-meta">${esc(e.status)}<span data-fade="${e.id}">${fade}</span> · <span data-dist="${e.id}">${Math.round(camera.position.distanceTo(e.obj.position))}</span> u</div></div>
+      <div class="fx-acts"><button class="fx-ico ${e.armed ? 'on' : ''}" data-a="s-play" data-id="${e.id}" title="${e.armed ? 'apagar' : 'encender'}">${T(e.armed ? '❚❚' : '▶')}</button>
+      ${entButtons(e)}${e.kind === 'tagua' ? `<button class="fx-ico" data-a="bring" data-id="${e.id}" title="traer frente a mí">${T('⊕')}</button>` : ''}
+      <button class="fx-ico danger" data-a="del" data-id="${e.id}" title="apagar para siempre">×</button></div></div>`;
+  }
   function viewSoles() {
     const ss = entities.filter(e => e.kind === 'sun');
     let html = `<div class="fx-card acc-s"><h4>Encender soles de audio</h4>
-      <p class="fx-note">Cada archivo se vuelve una nebulosa que canta desde su lugar en el espacio. Su voz se oye más fuerte mientras más cerca estés.</p>
+      <p class="fx-note">Cada archivo se vuelve una nebulosa que canta desde su lugar en el espacio. Más fuerte cerca de su núcleo; fuera de su influjo deja de sonar y retoma cuando volvés.</p>
       <label class="fx-file">${T('✦')} elegir audio(s)<input type="file" accept="audio/*" multiple data-a="s-file"></label></div>
       <div class="fx-card"><h4>Soles<span class="n">${ss.length}</span></h4>`;
-    html += ss.length ? ss.map(e => {
-      const d = Math.round(camera.position.distanceTo(e.obj.position));
-      return `<div class="fx-item"><span class="fx-dot" style="color:${COLORS.sun}"></span><div class="fx-main"><div class="fx-title">${esc(e.name)}</div>
-        <div class="fx-meta">${e.obj.playing ? 'cantando' : 'en silencio'} · <span data-dist="${e.id}">${d}</span> u</div></div>
-        <div class="fx-acts"><button class="fx-ico ${e.obj.playing ? 'on' : ''}" data-a="s-play" data-id="${e.id}">${T(e.obj.playing ? '❚❚' : '▶')}</button>
-        ${entButtons(e)}<button class="fx-ico danger" data-a="del" data-id="${e.id}" title="apagar">×</button></div></div>`;
-    }).join('') : `<div class="fx-empty">Ningún sol todavía.</div>`;
+    html += ss.length ? ss.map(e => soundRow(e, COLORS.sun)).join('') : `<div class="fx-empty">Ningún sol todavía.</div>`;
     html += `</div><div class="fx-card"><h4>Respiración y espacio</h4>
       ${slider('pulse', 'pulso', 1, 8, 0.1, prefs.pulse)}
-      ${slider('refDistance', 'alcance', 4, 60, 1, prefs.refDistance)}
-      ${slider('rolloff', 'atenuación', 0.2, 4, 0.1, prefs.rolloff)}
-      ${slider('sunVolume', 'volumen', 0, 1.5, 0.05, prefs.sunVolume)}</div>`;
+      ${slider('refDistance', 'alcance pleno', 4, 80, 1, prefs.refDistance)}
+      ${slider('influence', 'influjo', 60, 800, 10, prefs.influence)}
+      ${slider('sunVolume', 'volumen', 0, 1.5, 0.05, prefs.sunVolume)}
+      <p class="fx-note" style="margin:6px 0 0">Shift + arrastrar sobre un sol lo mueve por el espacio.</p></div>`;
     return html;
   }
   function slider(key, label, min, max, step, val) {
     return `<div class="fx-slider"><label>${label}</label><input type="range" data-a="pref" data-k="${key}" min="${min}" max="${max}" step="${step}" value="${val}"><span class="v">${val}</span></div>`;
   }
   function viewRadio() {
-    const e = taguaEnt(), live = e && e.obj.playing;
-    const d = e ? Math.round(camera.position.distanceTo(e.obj.position)) + ' u' : 'sin invocar';
-    return `<div class="fx-card acc-r"><h4>Radio Tagua Tagua</h4>
-      <p class="fx-note">Una nebulosa majestuosa con corona solar que transmite la radio en vivo desde su lugar en el cosmos.</p>
-      <div class="fx-status ${live ? 'live' : ''}"><i></i>${esc(taguaStatus)} · ${d}</div>
-      <div class="fx-row"><button class="fx-btn r" data-a="t-toggle">${live ? T('■') + ' apagar stream' : T('▶') + ' encender stream'}</button>
-      <button class="fx-btn ghost" data-a="t-bring">traer frente a mí</button></div>
-      ${e ? `<div class="fx-row" style="margin-top:8px;"><button class="fx-btn ghost" data-a="go" data-id="${e.id}">${T('↗')} ir</button>
-      <button class="fx-btn ghost" data-a="orbit" data-id="${e.id}">${T('◎')} orbitar</button>
-      <button class="fx-btn ghost danger" data-a="t-dissolve">disolver</button></div>` : ''}
-      ${slider('taguaVolume', 'volumen', 0, 1.5, 0.05, prefs.taguaVolume)}</div>`;
+    const rs = radios();
+    let html = `<div class="fx-card acc-r"><h4>Forjar una radio</h4>
+      <p class="fx-note">Una nebulosa majestuosa con corona solar que transmite en vivo desde su lugar en el cosmos. Podés forjar tantas como quieras; cada una corta su stream cuando salís de su influjo.</p>
+      <input class="fx-in" id="fx-rname" placeholder="nombre (opcional)" maxlength="40">
+      <input class="fx-in" id="fx-rurl" placeholder="stream (vacío = Radio Tagua Tagua)" style="margin-top:8px">
+      <div class="fx-row" style="margin-top:10px"><button class="fx-btn r wide" data-a="r-create">Forjar frente a mí</button></div></div>
+      <div class="fx-card"><h4>Radios<span class="n">${rs.length}</span></h4>`;
+    html += rs.length ? rs.map(e => soundRow(e, COLORS.tagua)).join('') : `<div class="fx-empty">Ninguna radio forjada todavía.</div>`;
+    html += `</div><div class="fx-card"><h4>Influjo de las radios</h4>
+      ${slider('radioInfluence', 'influjo', 80, 1000, 10, prefs.radioInfluence)}
+      ${slider('taguaVolume', 'volumen', 0, 1.5, 0.05, prefs.taguaVolume)}
+      <p class="fx-note" style="margin:6px 0 0">Shift + arrastrar sobre una radio la mueve por el espacio.</p></div>`;
+    return html;
   }
   function viewMapa() {
     const list = entities.map(e => ({ e, d: camera.position.distanceTo(e.obj.position) })).sort((a, b) => a.d - b.d);
@@ -1225,7 +1369,8 @@
       <div><b>W S</b>acercarse / alejarse en órbita</div><div><b>A D Q E</b>girar alrededor · <b>Z X</b>subir / bajar</div>
       <div><b>click</b>en un video o texto: zoom</div><div><b>Enter</b>zoom al video más cercano</div>
       <div><b>Espacio</b>pausa el video en zoom</div><div><b>Esc</b>volver</div>
-      <div><b>click</b>en un Kairós: grabar, escribir, subir video</div><div><b>click</b>en un sol: cantar / silenciar</div>
+      <div><b>click</b>en un Kairós: grabar, escribir, subir video</div><div><b>click</b>en un sol o radio: encender / apagar</div>
+      <div><b>arrastrar</b>un texto o video: cambiar su órbita</div><div><b>Shift+arrastrar</b>un sol o radio: moverlo</div>
       <div><b>radar</b>click cambia el alcance</div></div></div>`;
     return html;
   }
@@ -1243,9 +1388,8 @@
     if (a === 'm-open') { openArrived(id); return; }
     if (a === 'm-del') { if (confirm('¿Borrar este mensaje para siempre?')) await deleteMessage(id); return; }
     if (a === 's-play' && e) { await toggleSun(e); return; }
-    if (a === 't-toggle') { await toggleTagua(); return; }
-    if (a === 't-bring') { bringTagua(); return; }
-    if (a === 't-dissolve') { dissolveTagua(); return; }
+    if (a === 'bring' && e) { bringHere(e); return; }
+    if (a === 'r-create') { await createRadio($('fx-rname').value, $('fx-rurl').value, true); return; }
     if (a === 'notif') {
       if (!('Notification' in window)) { toast('Este navegador no tiene avisos'); return; }
       if (prefs.notif && Notification.permission === 'granted') prefs.notif = false;
@@ -1279,7 +1423,7 @@
     if (k === 'pulse') sunConfig.pulse = v;
     entities.forEach(e => {
       if (e.kind === 'kairos') return;
-      if (k === 'refDistance' || k === 'rolloff') e.obj.setPanner(prefs);
+      if (k === 'refDistance' || k === 'influence' || k === 'radioInfluence') e.obj.setPanner(prefs.refDistance, influenceOf(e));
       if (k === 'sunVolume' && e.kind === 'sun') e.obj.setVolume(v);
       if (k === 'taguaVolume' && e.kind === 'tagua') e.obj.setVolume(v);
     });
@@ -1541,6 +1685,7 @@
       else e.obj.update(t, dt, camPos);
     }
     if (frame % 5 === 0) updateVideoLOD(t);
+    if (frame % 6 === 0) updateInfluence();
     if (frame % 3 === 0) updateHover();
     if (flight && !orbit && !zoom) stepFlight(dt);
     let owns = false;
@@ -1573,7 +1718,8 @@
     // para el puente de sockets / otros módulos
     entities: () => entities.map(e => ({ id: e.id, kind: e.kind, name: e.name, position: e.obj.position.toArray(), playing: !!e.obj.playing })),
     createKairos, orbit: id => startOrbit(entities.find(e => e.id === id)), exitOrbit,
-    toggleTagua, flyTo: id => { const e = entities.find(x => x.id === id); if (e) flyTo(e); }
+    createRadio, toggleSound: id => { const e = entities.find(x => x.id === id); if (e && e.kind !== 'kairos') toggleSun(e); },
+    isGrabbing: () => !!grab, flyTo: id => { const e = entities.find(x => x.id === id); if (e) flyTo(e); }
   };
 
   /* =====================================================================
@@ -1584,7 +1730,7 @@
       const ents = (await DB.all('entities')).sort((a, b) => a.createdAt - b.createdAt);
       for (const r of ents) {
         if (r.kind === 'kairos') spawnKairos(r);
-        else if (r.kind === 'sun') spawnSun(r);
+        else if (r.kind === 'sun' || r.kind === 'tagua') spawnSun(r);
       }
       const ms = (await DB.all('messages')).sort((a, b) => a.createdAt - b.createdAt);
       for (const m of ms) {
@@ -1593,7 +1739,12 @@
         if (k) attachSat(k, m);
       }
       entities.filter(e => e.kind === 'kairos').forEach(k => k.obj.setResonance(countFor(k).total));
-      const tg = safeJSON(localStorage.getItem(TAGUA_KEY));
+      const tg = safeJSON(localStorage.getItem('forja_tagua_v1'));   // migración: la antigua radio única
+      if (tg && tg.position && !entities.some(e => e.kind === 'tagua')) {
+        const rec = { id: 'tagua', kind: 'tagua', name: 'Radio Tagua Tagua', url: L.TAGUA_URL, createdAt: Date.now(), position: tg.position };
+        await DB.put('entities', rec); spawnSun(rec);
+      }
+      try { localStorage.removeItem('forja_tagua_v1'); } catch (e) {}
       if (tg && tg.position) spawnSun({ id: 'tagua', kind: 'tagua', name: 'Radio Tagua Tagua', position: tg.position });
     } catch (e) { console.warn('[Forja] no pude restaurar el cielo:', e); }
     window.Forja.ready = true;

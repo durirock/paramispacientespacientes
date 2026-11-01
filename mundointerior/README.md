@@ -15,4 +15,7 @@ Los tres `.js` deben cargarse en ese orden, después del script principal.
 `C` orbitar · `Shift+C` / `Esc` salir · `Enter` zoom al video más cercano · `Espacio` pausa en zoom ·
 `W/S` acercarse en órbita · `A/D/Q/E` girar · `Z/X` subir/bajar
 
+Arrastrar un texto o video de un Kairós cambia su órbita (mouse o dedo). `Shift` + arrastrar un sol o una radio lo mueve.
+Soles y radios suenan según la distancia a su núcleo y dejan de transmitir fuera de su influjo; retoman al volver.
+
 El micrófono requiere HTTPS (GitHub Pages) o localhost. Los audios y videos se guardan en el IndexedDB del navegador.

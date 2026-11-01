@@ -201,15 +201,25 @@
       this.el.removeAttribute('src');
       this.el.load();
     }
-    setPanner(cfg) {
+    /* el panner da dirección y la caída natural; setFade la lleva a cero en el borde del influjo */
+    setPanner(ref, influence) {
       const p = this.positional.panner;
       if (!p) return;
       p.distanceModel = 'inverse';
-      p.refDistance = cfg.refDistance;
-      p.rolloffFactor = cfg.rolloff;
-      p.maxDistance = 4000;
+      p.refDistance = ref;
+      p.rolloffFactor = 0.6;
+      p.maxDistance = Math.max(ref + 1, influence);
     }
-    setVolume(v) { this.positional.setVolume(v); }
+    setVolume(v) { this.baseVol = v; this._applyGain(); }
+    setFade(f) {
+      if (this.fade !== undefined && Math.abs(f - this.fade) < 0.004) return;
+      this.fade = f; this._applyGain();
+    }
+    _applyGain() {
+      const v = (this.baseVol == null ? 1 : this.baseVol) * (this.fade == null ? 1 : this.fade);
+      const g = this.positional.gain.gain;
+      g.setTargetAtTime(v, this.ctx.currentTime, 0.08);
+    }
 
     /* ---------------- vida ---------------- */
     update(t, dt, camPos) {
