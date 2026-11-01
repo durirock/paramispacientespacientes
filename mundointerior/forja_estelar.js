@@ -750,7 +750,7 @@
   /* =====================================================================
      ARRASTRE
      · textos y videos de un Kairós: mouse o dedo → cambian su órbita
-     · soles y radios: Shift + arrastrar con el mouse → se mueven
+     · Kairós, soles y radios: Shift + arrastrar con el mouse → se mueven
      ===================================================================== */
   let grab = null;
   const _plane = new THREE.Plane(), _hp = new V3(), _tmp = new V3();
@@ -762,7 +762,7 @@
     if (!h) return false;
     let anchor;
     if (h.type === 'sat' && (h.sat.type === 'text' || h.sat.type === 'video')) anchor = satWorld(h.sat).clone();
-    else if (h.type === 'ent' && h.ent.kind !== 'kairos' && ev.shiftKey) anchor = h.ent.obj.position.clone();
+    else if (h.type === 'ent' && ev.shiftKey) anchor = h.ent.obj.position.clone();
     else return false;
     _plane.setFromNormalAndCoplanarPoint(camForward(), anchor);
     const p = planeHit(ev.clientX, ev.clientY);
@@ -792,8 +792,9 @@
       k.obj._placeSat(s);
     } else {
       const o = grab.h.ent.obj;
-      o.anchor.add(target.sub(o.position)); // la deriva lenta sigue, el ancla viaja con la mano
-      o.position.add(_tmp);
+      target.sub(o.position);
+      if (o.anchor) o.anchor.add(target); // soles y radios: la deriva lenta sigue, el ancla viaja con la mano
+      o.position.add(target);
     }
   }
   function endGrab(ev) {
@@ -851,7 +852,7 @@
       else zoomTo(h.ent, s);
       return;
     }
-    if (h.ent.kind === 'kairos') toggleRing(h.ent);
+    if (h.ent.kind === 'kairos') { if (!shiftTap) toggleRing(h.ent); }
     else if (!shiftTap) toggleSun(h.ent);
   }
 
@@ -1266,7 +1267,7 @@
     const notifOn = prefs.notif && 'Notification' in window && Notification.permission === 'granted';
     const sw = Object.keys(HUES).map(h => `<button data-a="hue" data-hue="${h}" class="${h === newHue ? 'on' : ''}" style="background:${HUES[h].a};color:${HUES[h].a}" title="${HUES[h].label}"></button>`).join('');
     let html = `<div class="fx-card acc-k"><h4>Encender un Kairós</h4>
-      <p class="fx-note">Una estrella de plasma que guarda tu voz, tus palabras y tus imágenes, orbitando para quien vas a ser.</p>
+      <p class="fx-note">Una estrella de plasma que guarda tu voz, tus palabras y tus imágenes, orbitando para quien vas a ser. Shift + arrastrar lo mueve por el espacio.</p>
       <input class="fx-in" id="fx-kname" placeholder="nombre (opcional)" maxlength="40">
       <div class="fx-sw">${sw}<span>${HUES[newHue].label}</span></div>
       <button class="fx-btn k wide" data-a="k-create">Encender frente a mí</button></div>`;
@@ -1370,7 +1371,7 @@
       <div><b>click</b>en un video o texto: zoom</div><div><b>Enter</b>zoom al video más cercano</div>
       <div><b>Espacio</b>pausa el video en zoom</div><div><b>Esc</b>volver</div>
       <div><b>click</b>en un Kairós: grabar, escribir, subir video</div><div><b>click</b>en un sol o radio: encender / apagar</div>
-      <div><b>arrastrar</b>un texto o video: cambiar su órbita</div><div><b>Shift+arrastrar</b>un sol o radio: moverlo</div>
+      <div><b>arrastrar</b>un texto o video: cambiar su órbita</div><div><b>Shift+arrastrar</b>un Kairós, sol o radio: moverlo</div>
       <div><b>radar</b>click cambia el alcance</div></div></div>`;
     return html;
   }

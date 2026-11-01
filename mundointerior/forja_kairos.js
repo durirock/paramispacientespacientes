@@ -186,16 +186,7 @@
       this.halo = spr(glow, P.halo, 0.32, 82 * K);
       this.plasmaHSL = {}; new THREE.Color(P.a).getHSL(this.plasmaHSL);
 
-      this.filaments = [];
-      for (let i = 0; i < 6; i++) {
-        const sp = new THREE.Sprite(new THREE.SpriteMaterial({
-          map: streakTex(), color: new THREE.Color(i % 2 ? P.alt : P.b), blending: THREE.AdditiveBlending,
-          transparent: true, depthWrite: false, opacity: 0.55, fog: false
-        }));
-        sp.scale.set((46 + Math.random() * 20) * K, 4.5 * K, 1);
-        sp.userData = { a: (i / 6) * Math.PI * 2, sp: 0.15 + Math.random() * 0.2, r: (6 + Math.random() * 4) * K };
-        this.group.add(sp); this.filaments.push(sp);
-      }
+      this.filaments = []; // sin filamentos: solo el núcleo plasmático y su corona
       this.coronaIn = this._corona(700, 16 * K, 34 * K, P.b, P.a, 1.9 * K, glow);
       this.coronaOut = this._corona(500, 34 * K, 62 * K, P.alt, P.halo, 2.6 * K, glow);
 
