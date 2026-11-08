@@ -1,0 +1,2880 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KAIRÓS · Chamalnquimyst Labs</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --calipso:#00e8c8;
+    --calipso-bright:#8dfff0;
+    --calipso-dim:#00a88f;
+    --violet:#9b6bff;
+    --elecblue:#3d8bff;
+    --void:#020208;
+    --panel:rgba(4,14,18,0.14);
+    --line:rgba(0,232,200,0.22);
+    --text:#d8fff5;
+    --text-dim:rgba(216,255,245,0.55);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:100%;height:100%;background:var(--void);overflow:hidden;
+    font-family:'Share Tech Mono',monospace;color:var(--text);}
+  #scene-canvas{position:fixed;inset:0;z-index:1;cursor:pointer;touch-action:none;}
+
+  /* ---------- PORTAL ---------- */
+  #iframe-warning{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:100;
+    max-width:340px;text-align:center;font-size:10.5px;color:#ffb37a;line-height:1.6;
+    background:rgba(4,14,18,0.5);border:1px solid rgba(255,179,122,0.4);border-radius:10px;
+    padding:10px 14px;}
+  #iframe-warning .mini-btn{display:block;margin:8px auto 0;}
+
+  /* ---------- HEADER ---------- */
+  #hud-top{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;
+    align-items:flex-start;padding:18px 20px;pointer-events:none;}
+  #hud-top *{pointer-events:auto;}
+  .brand{font-family:'Orbitron',sans-serif;font-weight:700;letter-spacing:5px;font-size:14px;color:var(--elecblue);
+    text-shadow:0 0 14px rgba(61,139,255,0.85), 0 0 28px rgba(61,139,255,0.4);
+    transition:opacity 1.4s ease;opacity:1;}
+  .brand span{display:block;font-family:'Share Tech Mono',monospace;font-weight:400;letter-spacing:2px;
+    font-size:9px;color:var(--text-dim);margin-top:3px;}
+  #resonancia{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:2px;color:var(--text-dim);}
+  #resonancia b{color:var(--calipso-bright);font-size:15px;}
+  #notif-btn,#backup-btn{background:rgba(0,232,200,0.08);border:1px solid var(--line);color:var(--text-dim);
+    font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;padding:7px 12px;
+    border-radius:20px;cursor:pointer;margin-top:8px;position:relative;}
+  #notif-btn.on{color:var(--calipso-bright);border-color:var(--calipso);}
+  #backup-btn.warn{color:#ffb37a;border-color:#ffb37a;}
+  #backup-btn .badge{position:absolute;top:-6px;right:-6px;background:#ff4d5e;color:#fff;border-radius:8px;
+    font-size:9px;min-width:14px;text-align:center;padding:0 3px;}
+
+  #hint{position:fixed;bottom:calc(52vh + 14px);left:50%;transform:translateX(-50%);z-index:15;
+    font-size:11px;letter-spacing:2px;color:var(--text-dim);text-align:center;opacity:0.85;
+    text-transform:uppercase;pointer-events:none;transition:opacity .5s;}
+
+  /* ---------- DOCK ---------- */
+  #dock{position:fixed;bottom:0;left:0;right:0;z-index:20;display:flex;flex-direction:column;
+    align-items:center;pointer-events:none;}
+  #dock-panel{width:100%;max-width:640px;max-height:52vh;overflow:hidden;
+    transform:translateY(12px);opacity:0;pointer-events:none;transition:transform .28s ease, opacity .22s ease;}
+  #dock-panel.open{transform:translateY(0);opacity:1;pointer-events:auto;}
+  #dock-toggle{margin:0 0 14px;padding:10px 22px;border-radius:22px;border:1px solid var(--line);
+    background:rgba(4,14,18,0.4);color:var(--calipso-bright);font-family:'Orbitron',sans-serif;
+    font-size:11px;letter-spacing:2px;cursor:pointer;position:relative;pointer-events:auto;}
+  #dock-toggle .badge{position:absolute;top:-6px;right:-6px;}
+
+  #pulsar-actions{position:fixed;left:50%;top:78%;transform:translate(-50%,-50%) translateY(10px);
+    z-index:55;display:flex;gap:10px;opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease;}
+  #pulsar-actions.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) translateY(0);}
+
+  #top-toggle-wrap{position:fixed;left:50%;top:20%;transform:translate(-50%,-50%) translateY(-8px);
+    z-index:55;opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease;}
+  #top-toggle-wrap.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) translateY(0);}
+  #tabs{display:flex;gap:2px;background:var(--panel);border:1px solid var(--line);border-bottom:none;
+    border-radius:10px 10px 0 0;overflow:hidden;}
+  .tab{padding:11px 18px;font-size:11px;letter-spacing:1.5px;color:var(--text-dim);cursor:pointer;
+    text-transform:uppercase;position:relative;transition:color .2s;}
+  .tab.active{color:var(--calipso-bright);background:rgba(0,232,200,0.08);}
+  .tab .badge{display:inline-block;min-width:16px;padding:0 4px;margin-left:6px;background:var(--violet);
+    color:#fff;border-radius:8px;font-size:9px;text-align:center;}
+  #panel{width:100%;max-width:640px;max-height:52vh;background:var(--panel);border-top:1px solid var(--line);
+    overflow-y:auto;padding:18px 20px 24px;touch-action:pan-y;}
+  #panel::-webkit-scrollbar{width:5px;}
+  #panel::-webkit-scrollbar-thumb{background:var(--calipso-dim);border-radius:4px;}
+
+  h3.section-label{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:3px;color:var(--calipso-bright);
+    text-transform:uppercase;margin:14px 0 8px;}
+  h3.section-label:first-child{margin-top:0;}
+
+  /* ---------- LISTS ---------- */
+  .msg-card{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px;background:rgba(0,20,18,0.35);}
+  .msg-card .m-top{display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim);margin-bottom:6px;}
+  .msg-card .m-preview{font-size:12px;color:var(--text);line-height:1.5;margin-bottom:8px;}
+  .bounce-line{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;
+    color:var(--text-dim);padding:5px 0;border-top:1px dashed rgba(0,232,200,0.15);}
+  .bounce-line.arrived{color:var(--calipso-bright);}
+  .cal-link{font-size:9px;color:var(--violet);text-decoration:underline;cursor:pointer;}
+  .arrived-btn{background:rgba(0,232,200,0.12);border:1px solid var(--calipso);color:var(--calipso-bright);
+    font-size:10px;padding:5px 10px;border-radius:5px;cursor:pointer;letter-spacing:1px;}
+  .empty-state{text-align:center;color:var(--text-dim);font-size:12px;padding:30px 10px;line-height:1.7;}
+
+  /* ---------- REPRODUCIR ---------- */
+  #reproducir-wrap{text-align:center;padding:10px 6px;}
+  #play-big-btn{width:66px;height:66px;border-radius:50%;border:1px solid var(--calipso);
+    background:radial-gradient(circle,rgba(0,232,200,0.18),transparent 70%);
+    color:var(--calipso-bright);font-size:22px;cursor:pointer;transition:all .25s;
+    display:flex;align-items:center;justify-content:center;}
+  #play-big-btn:hover{box-shadow:0 0 28px rgba(0,232,200,0.5);}
+  #play-big-btn.playing{border-color:var(--violet);color:#c8b6ff;}
+  .icon-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:rgba(0,232,200,0.05);
+    color:var(--calipso-bright);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .icon-btn:hover{border-color:var(--calipso-dim);}
+  #now-playing{font-size:10.5px;color:var(--text-dim);letter-spacing:1px;min-height:16px;margin-top:8px;
+    max-width:340px;margin-left:auto;margin-right:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #now-playing-audio{display:none;}
+
+  /* ---------- OVERLAY (acciones / grabar / programar / mensaje) ---------- */
+  #overlay-bg{position:fixed;inset:0;background:rgba(0,4,4,0.20);z-index:200;
+    display:none;align-items:center;justify-content:center;padding:20px;}
+  #overlay-bg.show{display:flex;}
+  #overlay-box{max-width:460px;width:100%;background:var(--panel);border:1px solid var(--calipso);border-radius:14px;
+    padding:26px;box-shadow:0 0 60px rgba(0,232,200,0.25);max-height:82vh;overflow-y:auto;touch-action:pan-y;}
+  #overlay-box .o-label{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:3px;color:var(--calipso-bright);
+    margin-bottom:16px;text-transform:uppercase;}
+  #overlay-box .o-body{font-size:14px;line-height:1.7;color:var(--text);margin-bottom:16px;white-space:pre-wrap;}
+  #overlay-box audio{width:100%;margin-bottom:16px;}
+
+  .choice-row{display:flex;gap:10px;margin-bottom:6px;}
+  .choice-card{flex:1;border:1px solid var(--line);border-radius:10px;padding:20px 12px;text-align:center;
+    cursor:pointer;transition:all .2s;}
+  .choice-card:hover{border-color:var(--calipso-dim);background:rgba(0,232,200,0.05);}
+  .choice-card .c-icon{font-size:26px;margin-bottom:8px;}
+  .choice-card .c-label{font-size:12px;letter-spacing:1px;color:var(--calipso-bright);}
+  .choice-card .c-desc{font-size:9.5px;color:var(--text-dim);margin-top:4px;line-height:1.5;}
+
+  /* ficha de acción compacta (tocar el pulsar) */
+  #overlay-box.compact{padding:14px 18px;}
+  .choice-row-compact{display:flex;gap:10px;justify-content:center;}
+  .pill-btn{display:flex;align-items:center;gap:8px;padding:11px 20px;border:1px solid var(--calipso);
+    border-radius:26px;background:rgba(0,232,200,0.08);color:var(--calipso-bright);cursor:pointer;
+    font-size:13px;letter-spacing:0.5px;white-space:nowrap;transition:background .2s;}
+  .pill-btn:hover{background:rgba(0,232,200,0.16);}
+
+  .icon-pill{width:52px;height:52px;border-radius:50%;border:1px solid var(--calipso);
+    background:rgba(0,232,200,0.08);color:var(--calipso-bright);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;
+    font-family:'Share Tech Mono',monospace;transition:background .2s, color .2s, border-color .2s;}
+  .icon-pill:hover{background:rgba(0,232,200,0.16);}
+  .icon-pill.icon-record{border-color:#ff4d5e;color:#ff4d5e;background:rgba(255,77,94,0.08);}
+  .icon-pill.icon-record:hover{background:rgba(255,77,94,0.16);}
+  .icon-pill.icon-punto{border-color:#ffd27a;color:#ffd27a;background:rgba(255,210,122,0.08);font-size:22px;}
+  .icon-pill.icon-punto.done{opacity:.35;pointer-events:none;}
+  .buho-line{font-size:10px;color:#ffd27a;letter-spacing:1px;margin:2px 0 6px;}
+  .icon-pill.recording{border-color:#ff4d5e;color:#ff8d8d;background:rgba(255,77,94,0.2);
+    animation:pulseRec 1s infinite;}
+
+  /* zoom al abrir una tarjeta de texto orbitante */
+  @keyframes zoomIn{from{transform:scale(0.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+  #overlay-box.zoom{animation:zoomIn .32s cubic-bezier(.2,.8,.3,1.2);}
+
+  #skip-btn{padding:9px 14px;}
+
+  textarea#msg-text{width:100%;min-height:110px;background:rgba(0,20,18,0.5);border:1px solid var(--line);
+    color:var(--text);font-family:'Share Tech Mono',monospace;font-size:13px;padding:10px;border-radius:6px;
+    resize:vertical;outline:none;margin-bottom:14px;}
+  textarea#msg-text:focus{border-color:var(--calipso);}
+
+  #rec-stage{text-align:center;padding:10px 0 4px;}
+  .rec-btn-big{width:76px;height:76px;border-radius:50%;border:1px solid var(--calipso);background:rgba(0,232,200,0.06);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;margin:6px auto 14px;}
+  .rec-btn-big .dot{width:24px;height:24px;border-radius:50%;background:#ff4d5e;}
+  .rec-btn-big.recording .dot{border-radius:5px;animation:pulseRec 1s infinite;}
+  @keyframes pulseRec{0%,100%{opacity:1}50%{opacity:.4}}
+  #rec-status{font-size:11px;color:var(--text-dim);margin-bottom:10px;}
+  #voice-preview{display:none;width:100%;margin-bottom:12px;}
+
+  .btn-primary{width:100%;padding:14px;font-family:'Orbitron',sans-serif;letter-spacing:3px;
+    font-size:12px;text-transform:uppercase;background:linear-gradient(90deg,var(--calipso-dim),var(--calipso));
+    color:#00201c;border:none;border-radius:8px;cursor:pointer;font-weight:700;transition:opacity .2s;}
+  .btn-primary:disabled{opacity:.3;cursor:not-allowed;}
+  .btn-primary:not(:disabled):hover{filter:brightness(1.15);}
+  .btn-ghost{width:100%;padding:11px;background:transparent;border:1px solid var(--line);color:var(--text-dim);
+    border-radius:6px;cursor:pointer;letter-spacing:1px;font-size:11px;margin-top:8px;}
+
+  .mode-toggle{display:flex;gap:2px;margin-bottom:14px;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .mode-btn{flex:1;padding:10px;text-align:center;font-size:11px;letter-spacing:1px;color:var(--text-dim);cursor:pointer;}
+  .mode-btn.active{background:rgba(0,232,200,0.1);color:var(--calipso-bright);}
+
+  .preset-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:6px;}
+  .preset-card{border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer;transition:all .2s;}
+  .preset-card:hover{border-color:var(--calipso-dim);}
+  .preset-card.selected{border-color:var(--calipso);background:rgba(0,232,200,0.08);}
+  .preset-card .p-title{font-size:12px;color:var(--calipso-bright);letter-spacing:1px;margin-bottom:4px;}
+  .preset-card .p-desc{font-size:10px;color:var(--text-dim);line-height:1.5;}
+
+  .coord-copy{font-size:11px;color:var(--text-dim);line-height:1.7;margin-bottom:10px;}
+  .custom-date-row{display:flex;gap:8px;margin:8px 0;align-items:center;flex-wrap:wrap;}
+  input[type="datetime-local"], input[type="number"]{background:rgba(0,20,18,0.5);border:1px solid var(--line);
+    color:var(--text);font-family:'Share Tech Mono',monospace;font-size:12px;padding:8px;border-radius:5px;outline:none;}
+  select{background:rgba(0,20,18,0.5);border:1px solid var(--line);color:var(--text);
+    font-family:'Share Tech Mono',monospace;font-size:12px;padding:8px;border-radius:5px;outline:none;}
+  .mini-btn{background:transparent;border:1px solid var(--calipso-dim);color:var(--calipso-bright);
+    font-size:10px;letter-spacing:1px;padding:7px 12px;border-radius:5px;cursor:pointer;text-transform:uppercase;}
+  .mini-btn:hover{border-color:var(--calipso);}
+  .mini-btn.tag-on{background:rgba(0,232,200,0.18);border-color:var(--calipso);color:var(--calipso-bright);}
+
+  .repeat-row{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:11px;color:var(--text-dim);}
+  .repeat-details{display:none;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;}
+  .repeat-details.show{display:flex;}
+
+  #chosen-bounces{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+  .bounce-chip{font-size:10px;background:rgba(155,107,255,0.12);border:1px solid rgba(155,107,255,0.4);
+    color:#c8b6ff;padding:4px 9px;border-radius:12px;display:flex;align-items:center;gap:6px;}
+  .bounce-chip .x{cursor:pointer;opacity:.7;}
+
+  #toast{position:fixed;bottom:calc(52vh + 20px);left:50%;transform:translateX(-50%);z-index:150;
+    background:rgba(0,232,200,0.14);border:1px solid var(--calipso);color:var(--calipso-bright);
+    padding:10px 20px;border-radius:20px;font-size:11px;letter-spacing:1px;opacity:0;transition:opacity .4s;
+    pointer-events:none;white-space:nowrap;}
+  #toast.show{opacity:1;}
+
+  #zoom-close-btn{position:fixed;top:22px;left:50%;transform:translateX(-50%) scale(0.7);
+    z-index:80;width:42px;height:42px;border-radius:50%;border:1px solid var(--calipso);
+    background:rgba(4,14,18,0.55);color:var(--calipso-bright);font-size:17px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;}
+  #zoom-close-btn.show{opacity:1;pointer-events:auto;transform:translateX(-50%) scale(1);}
+
+  @media(max-width:600px){
+    .brand{font-size:11px;}
+    #hud-top{padding:14px;}
+    #panel{max-height:46vh;padding:14px 14px 20px;}
+    .choice-row{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="scene-canvas"></canvas>
+
+<div id="iframe-warning" style="display:none;">
+  Estás viendo esto dentro de una vista previa, que puede bloquear el micrófono.
+  <button id="open-tab-btn" class="mini-btn">abrir en pestaña nueva</button>
+</div>
+
+<div id="hud-top">
+  <div class="brand">KAIRÓS<span>chamalnquimyst labs</span></div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;">
+    <div id="resonancia">RESONANCIA <b id="res-count">0</b></div>
+    <div style="display:flex;gap:6px;">
+      <button id="notif-btn">🔔 activar avisos</button>
+      <button id="backup-btn">💾 respaldo<span class="badge" id="backup-badge" style="display:none;">!</span></button>
+    </div>
+  </div>
+</div>
+
+<div id="hint">tocá el pulsar para dejarle algo a tu futuro</div>
+
+<div id="dock">
+  <div id="dock-panel">
+    <div id="tabs">
+      <div class="tab active" data-tab="transito">En tránsito<span class="badge" id="badge-transito" style="display:none;">0</span></div>
+      <div class="tab" data-tab="llegados">Llegados<span class="badge" id="badge-llegados" style="display:none;">0</span></div>
+      <div class="tab" data-tab="audios">Audios</div>
+      <div class="tab" data-tab="reproducir">Reproducir</div>
+    </div>
+    <div id="panel">
+    <div id="view-transito"></div>
+    <div id="view-llegados" style="display:none;"></div>
+    <div id="view-audios" style="display:none;"></div>
+    <div id="view-reproducir" style="display:none;">
+      <div id="reproducir-wrap">
+        <div id="playback-tag-filter" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px;"></div>
+        <div style="display:flex;gap:14px;align-items:center;justify-content:center;">
+          <button id="prev-btn" class="icon-btn">⏮</button>
+          <button id="play-big-btn">▶</button>
+          <button id="skip-btn" class="icon-btn">⏭</button>
+        </div>
+        <div id="now-playing"></div>
+        <audio id="now-playing-audio"></audio>
+      </div>
+    </div>
+    </div>
+  </div>
+  <button id="dock-toggle">☰ menú<span class="badge" id="badge-toggle" style="display:none;">0</span></button>
+</div>
+
+<div id="top-toggle-wrap">
+  <div class="pill-btn" id="toggle-cards-btn">📝 ver mensajes</div>
+</div>
+
+<div id="pulsar-actions">
+  <div class="icon-pill icon-record" id="pa-voz" title="grabar">●</div>
+  <div class="icon-pill icon-punto" id="pa-punto" title="el punto — llegaste a lo que querías decir" style="display:none;">◉</div>
+  <div class="icon-pill" id="pa-play" title="reproducir">▶</div>
+  <div class="icon-pill" id="pa-texto" title="texto">T</div>
+</div>
+
+<div id="overlay-bg">
+  <div id="overlay-box"></div>
+</div>
+
+<div id="toast"></div>
+<button id="zoom-close-btn">✕</button>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+if(typeof THREE==='undefined'){
+  document.body.innerHTML='<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;'
+    +'background:#020208;color:#ffb37a;font-family:monospace;text-align:center;padding:30px;font-size:13px;line-height:1.8;">'
+    +'No se pudo cargar el motor 3D (three.js) desde el CDN.<br>Revisá tu conexión a internet, o probá recargar la página.</div>';
+  throw new Error('THREE no cargó desde el CDN');
+}
+</script>
+<script>
+/* =========================================================================
+   KAIRÓS — el pulsar que te escribe desde el futuro
+   Chamalnquimyst Labs · hemisferio derecho · Motor de Atención Soberana
+   v2 — nebulosa central interactiva, alimentación por mensaje, reproducción
+   ========================================================================= */
+
+/* ---------------------------------------------------------------------
+   1. ALMACENAMIENTO
+   --------------------------------------------------------------------- */
+const DB_NAME='kairos_db', DB_VERSION=2; /* v2: store 'config' para recordar la carpeta de la bóveda */
+let dbInstance=null;
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    if(dbInstance){resolve(dbInstance);return;}
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains('messages')) db.createObjectStore('messages',{keyPath:'id'});
+      if(!db.objectStoreNames.contains('audio')) db.createObjectStore('audio',{keyPath:'id'});
+      if(!db.objectStoreNames.contains('config')) db.createObjectStore('config',{keyPath:'id'});
+    };
+    req.onsuccess=e=>{dbInstance=e.target.result;resolve(dbInstance);};
+    req.onerror=e=>reject(e);
+  });
+}
+/* pide que el navegador NO borre este origen por "presión de espacio" —
+   sin esto, Android puede vaciar IndexedDB en silencio cuando el teléfono
+   anda corto de espacio, y así es como se pierden los audios grabados */
+let storageIsPersisted=false;
+async function ensurePersistentStorage(){
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      storageIsPersisted = await navigator.storage.persisted();
+      if(!storageIsPersisted){
+        storageIsPersisted = await navigator.storage.persist();
+      }
+    }
+  }catch(e){ console.warn('No pude pedir almacenamiento persistente:', e); }
+  return storageIsPersisted;
+}
+async function dbPut(store,value){
+  const db=await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(store,'readwrite');
+    tx.objectStore(store).put(value);
+    tx.oncomplete=()=>{ resolve(); if(store==='messages' && typeof bovedaSyncSoon==='function') bovedaSyncSoon(); };
+    tx.onerror=e=>reject(e);
+  });
+}
+async function dbGetAll(store){
+  const db=await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(store,'readonly');
+    const req=tx.objectStore(store).getAll();
+    req.onsuccess=()=>resolve(req.result||[]);
+    req.onerror=e=>reject(e);
+  });
+}
+async function dbGet(store,id){
+  const db=await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(store,'readonly');
+    const req=tx.objectStore(store).get(id);
+    req.onsuccess=()=>resolve(req.result||null);
+    req.onerror=e=>reject(e);
+  });
+}
+async function dbDelete(store,id){
+  const db=await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(store,'readwrite');
+    tx.objectStore(store).delete(id);
+    tx.oncomplete=()=>resolve();
+    tx.onerror=e=>reject(e);
+  });
+}
+
+function getResonancia(){ return parseInt(localStorage.getItem('kairos_resonancia')||'0',10); }
+function addResonancia(n=1){
+  const v=getResonancia()+n;
+  localStorage.setItem('kairos_resonancia',String(v));
+  document.getElementById('res-count').textContent=v;
+  return v;
+}
+
+/* ---------------------------------------------------------------------
+   2. UTILIDADES
+   --------------------------------------------------------------------- */
+function uid(){ return 'msg_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
+function formatEta(ts){
+  const diff=ts-Date.now();
+  if(diff<=0) return 'listo para escuchar';
+  const s=Math.floor(diff/1000), m=Math.floor(s/60), h=Math.floor(m/60), d=Math.floor(h/24);
+  if(d>=1) return `en ${d} día${d>1?'s':''}`;
+  if(h>=1) return `en ${h}h ${m%60}m`;
+  if(m>=1) return `en ${m}m ${s%60}s`;
+  return `en ${s}s`;
+}
+function showToast(msg,ms=3200){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(showToast._h);
+  showToast._h=setTimeout(()=>t.classList.remove('show'),ms);
+}
+function makeICS(title,desc,tsMillis){
+  const d=new Date(tsMillis);
+  const pad=n=>String(n).padStart(2,'0');
+  const dt=`${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+  const ics=`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Chamalnquimyst Labs//Kairos//ES
+BEGIN:VEVENT
+UID:${uid()}@kairos.chamalnquimyst
+DTSTAMP:${dt}
+DTSTART:${dt}
+SUMMARY:${title}
+DESCRIPTION:${desc}
+END:VEVENT
+END:VCALENDAR`;
+  const blob=new Blob([ics],{type:'text/calendar'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='kairos-recordatorio.ics'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+
+/* ---------------------------------------------------------------------
+   3. ESCENA THREE.JS
+   --------------------------------------------------------------------- */
+const canvas=document.getElementById('scene-canvas');
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x00040a, 0.0016);
+
+const camera=new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 4000);
+camera.position.set(0, 58, -70);
+
+const renderer=new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.setClearColor(0x00030a, 1);
+
+/* --------- Cámara orbital propia: Pointer Events unificados (mouse + touch + pen),
+   sin el código legado de "touch events" que traía el bug del pageX --------- */
+function SimpleOrbitControls(cam, dom){
+  const self=this;
+  this.target=new THREE.Vector3(0,46,-230);
+  this.enabled=true;
+  this.autoRotate=true;
+  this.autoRotateSpeed=0.12;
+  this.minDistance=45;
+  this.maxDistance=700;
+  this.maxPolarAngle=Math.PI*0.49;
+  this.dampingFactor=0.08;
+
+  const offset=cam.position.clone().sub(this.target);
+  let radius=Math.max(offset.length(),0.001);
+  let theta=Math.atan2(offset.x, offset.z);
+  let phi=Math.acos(THREE.MathUtils.clamp(offset.y/radius,-1,1));
+  let tRadius=radius, tTheta=theta, tPhi=phi;
+
+  const pointers=new Map(); // pointerId -> {x,y}
+  let pinchStartDist=null;
+  let lastActivity=performance.now();
+
+  function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+
+  function onDown(e){
+    if(!self.enabled) return;
+    lastActivity=performance.now();
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if(pointers.size===2){
+      const pts=[...pointers.values()];
+      pinchStartDist=dist(pts[0], pts[1]);
+    }
+  }
+  function onMove(e){
+    if(!self.enabled || !pointers.has(e.pointerId)) return;
+    lastActivity=performance.now();
+    const prev=pointers.get(e.pointerId);
+    const cur={x:e.clientX, y:e.clientY};
+    pointers.set(e.pointerId, cur);
+
+    if(pointers.size>=2){
+      const pts=[...pointers.values()];
+      const d=dist(pts[0], pts[1]);
+      if(pinchStartDist!=null){
+        const delta=pinchStartDist-d;
+        tRadius=THREE.MathUtils.clamp(tRadius+delta*0.28, self.minDistance, self.maxDistance);
+      }
+      pinchStartDist=d;
+      return;
+    }
+    const dx=cur.x-prev.x, dy=cur.y-prev.y;
+    tTheta -= dx*0.0055;
+    tPhi -= dy*0.0055;
+    tPhi=THREE.MathUtils.clamp(tPhi, 0.12, self.maxPolarAngle);
+  }
+  function onUp(e){
+    lastActivity=performance.now();
+    pointers.delete(e.pointerId);
+    if(pointers.size<2) pinchStartDist=null;
+  }
+  function onWheel(e){
+    if(!self.enabled) return;
+    e.preventDefault();
+    tRadius=THREE.MathUtils.clamp(tRadius+e.deltaY*0.15, self.minDistance, self.maxDistance);
+  }
+
+  dom.addEventListener('pointerdown', onDown);
+  dom.addEventListener('pointermove', onMove);
+  dom.addEventListener('pointerup', onUp);
+  dom.addEventListener('pointercancel', onUp);
+  dom.addEventListener('pointerleave', onUp);
+  dom.addEventListener('wheel', onWheel, {passive:false});
+
+  /* auto-sanación: si quedó un dedo fantasma pegado (el navegador nunca mandó su
+     pointerup/pointercancel), lo limpiamos solos para que los próximos toques respondan */
+  setInterval(()=>{
+    if(pointers.size>0 && performance.now()-lastActivity>3500){
+      pointers.clear();
+      pinchStartDist=null;
+    }
+  }, 2000);
+
+  /* recalcula theta/phi/radius desde la posición actual de la cámara —
+     se usa después de mover la cámara "a mano" (por ejemplo el zoom a una tarjeta) */
+  this.syncFromCamera=function(){
+    const off=cam.position.clone().sub(self.target);
+    radius=tRadius=Math.max(off.length(),0.001);
+    theta=tTheta=Math.atan2(off.x, off.z);
+    phi=tPhi=Math.acos(THREE.MathUtils.clamp(off.y/radius,-1,1));
+  };
+
+  this.update=function(){
+    if(!self.enabled) return; // congelado: no pisa animaciones manuales de cámara
+    if(self.autoRotate && pointers.size===0){ tTheta += self.autoRotateSpeed*0.012; }
+    theta += (tTheta-theta)*self.dampingFactor;
+    phi += (tPhi-phi)*self.dampingFactor;
+    radius += (tRadius-radius)*self.dampingFactor;
+    const sinPhiR=Math.sin(phi)*radius;
+    cam.position.set(
+      self.target.x + sinPhiR*Math.sin(theta),
+      self.target.y + Math.cos(phi)*radius,
+      self.target.z + sinPhiR*Math.cos(theta)
+    );
+    cam.lookAt(self.target);
+  };
+}
+
+let controls;
+try{
+  controls=new SimpleOrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 46, -230);
+}catch(e){
+  console.warn('La cámara orbital no pudo iniciarse, sigo sin rotación interactiva:', e);
+  controls={ update(){}, enabled:true, autoRotate:false, target:new THREE.Vector3(0,46,-230), syncFromCamera(){} };
+}
+
+/* --------- Bloom, para que la nebulosa realmente respire luz --------- */
+let composer=null, bloomPass=null, useBloom=false;
+try{
+  composer=new THREE.EffectComposer(renderer);
+  composer.addPass(new THREE.RenderPass(scene, camera));
+  bloomPass=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), 1.55, 0.75, 0.12);
+  composer.addPass(bloomPass);
+  useBloom=true;
+}catch(e){
+  console.warn('El bloom no cargó, sigo sin ese brillo extra:', e);
+  useBloom=false;
+}
+
+/* estrellas de fondo */
+(function starfield(){
+  const N=2600, pos=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    const r=1400+Math.random()*1600;
+    const theta=Math.random()*Math.PI*2, phi=Math.acos((Math.random()*2)-1);
+    pos[i*3]=r*Math.sin(phi)*Math.cos(theta);
+    pos[i*3+1]=Math.abs(r*Math.sin(phi)*Math.sin(theta))*0.4+40;
+    pos[i*3+2]=r*Math.cos(phi)-300;
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  const mat=new THREE.PointsMaterial({color:0x7de8ff, size:1.4, transparent:true, opacity:0.5, sizeAttenuation:true});
+  scene.add(new THREE.Points(geo,mat));
+})();
+
+/* texturas de partícula reutilizables */
+function radialTexture(hex1, hex2){
+  const c=document.createElement('canvas'); c.width=c.height=128;
+  const ctx=c.getContext('2d');
+  const g=ctx.createRadialGradient(64,64,0,64,64,64);
+  g.addColorStop(0, hex1); g.addColorStop(0.4, hex2); g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,128,128);
+  const tex=new THREE.CanvasTexture(c); tex.needsUpdate=true;
+  return tex;
+}
+function streakTexture(){
+  const c=document.createElement('canvas'); c.width=256; c.height=32;
+  const ctx=c.getContext('2d');
+  const g=ctx.createLinearGradient(0,0,256,0);
+  g.addColorStop(0,'rgba(0,0,0,0)');
+  g.addColorStop(0.5,'rgba(180,255,240,0.9)');
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,8,256,16);
+  const tex=new THREE.CanvasTexture(c); tex.needsUpdate=true;
+  return tex;
+}
+const texWhiteHot=radialTexture('rgba(255,255,255,1)','rgba(0,232,200,0.9)');
+const texCalipso=radialTexture('rgba(160,255,240,0.95)','rgba(0,190,165,0.5)');
+const texViolet=radialTexture('rgba(210,180,255,0.9)','rgba(120,80,220,0.4)');
+const texStreak=streakTexture();
+
+/* ----------------- EL PULSAR KAIRÓS ----------------- */
+const PULSAR_POS=new THREE.Vector3(0, 46, -230);
+
+/* ruido orgánico: suma de senos en frecuencias no relacionadas entre sí,
+   evita el efecto "metrónomo" de una sola onda sinusoidal */
+function organicNoise(t, seed){
+  return (
+    Math.sin(t*0.37+seed)*0.5 +
+    Math.sin(t*0.71+seed*1.37)*0.3 +
+    Math.sin(t*1.23+seed*2.11)*0.15 +
+    Math.sin(t*0.19+seed*0.53)*0.25
+  );
+}
+
+class KairosPulsar{
+  constructor(){
+    this.group=new THREE.Object3D();
+    this.group.position.copy(PULSAR_POS);
+    scene.add(this.group);
+
+    this.core=new THREE.Sprite(new THREE.SpriteMaterial({
+      map:texWhiteHot, color:0xffffff, blending:THREE.AdditiveBlending, transparent:true, depthWrite:false
+    }));
+    this.core.scale.set(14,14,1);
+    this.group.add(this.core);
+
+    /* núcleo interno "hirviendo": dos capas contrarrotando */
+    this.boilA=new THREE.Sprite(new THREE.SpriteMaterial({
+      map:texCalipso, color:0x00e8c8, blending:THREE.AdditiveBlending, transparent:true, depthWrite:false, opacity:0.7
+    }));
+    this.boilA.scale.set(20,20,1);
+    this.group.add(this.boilA);
+    this.boilB=new THREE.Sprite(new THREE.SpriteMaterial({
+      map:texCalipso, color:0x8dfff0, blending:THREE.AdditiveBlending, transparent:true, depthWrite:false, opacity:0.55
+    }));
+    this.boilB.scale.set(24,24,1);
+    this.group.add(this.boilB);
+
+    this.plasma=new THREE.Sprite(new THREE.SpriteMaterial({
+      map:texCalipso, color:0x00e8c8, blending:THREE.AdditiveBlending, transparent:true, depthWrite:false, opacity:0.85
+    }));
+    this.plasma.scale.set(36,36,1);
+    this.group.add(this.plasma);
+
+    this.halo=new THREE.Sprite(new THREE.SpriteMaterial({
+      map:texCalipso, color:0x00a88f, blending:THREE.AdditiveBlending, transparent:true, depthWrite:false, opacity:0.32
+    }));
+    this.halo.scale.set(82,82,1);
+    this.group.add(this.halo);
+
+    /* filamentos / tendrils tipo prominencia solar */
+    this.filaments=[];
+    const FIL_N=6;
+    for(let i=0;i<FIL_N;i++){
+      const mat=new THREE.SpriteMaterial({
+        map:texStreak, color: i%2===0?0x8dfff0:0x9b6bff,
+        blending:THREE.AdditiveBlending, transparent:true, depthWrite:false, opacity:0.55, rotation:0
+      });
+      const sp=new THREE.Sprite(mat);
+      sp.scale.set(46+Math.random()*20, 4.5, 1);
+      const ang=(i/FIL_N)*Math.PI*2;
+      sp.userData.baseAngle=ang;
+      sp.userData.speed=0.15+Math.random()*0.2;
+      sp.userData.radius=6+Math.random()*4;
+      this.group.add(sp);
+      this.filaments.push(sp);
+    }
+
+    /* corona interior: densa y caliente */
+    this.coronaInner=this._buildCorona(700, 16, 34, 0x8dfff0, 0x00e8c8, 1.9);
+    this.group.add(this.coronaInner);
+    /* corona exterior: dispersa y fría, más lenta */
+    this.coronaOuter=this._buildCorona(500, 34, 62, 0x9b6bff, 0x00a88f, 2.6);
+    this.group.add(this.coronaOuter);
+
+    this.flashEnergy=0;
+    this.flashTarget=0;
+    this.feedEnergy=0;
+    this.feedTarget=0;
+    this.baseScale=1;
+    this.baseScaleTarget=1;
+    this.lastPulseWave=0;
+  }
+
+  _buildCorona(count, rMin, rMax, colHexA, colHexB, size){
+    const positions=new Float32Array(count*3);
+    const colors=new Float32Array(count*3);
+    const golden=Math.PI*(3-Math.sqrt(5));
+    const c1=new THREE.Color(colHexA), c2=new THREE.Color(colHexB);
+    for(let i=0;i<count;i++){
+      const t=i/count;
+      const r=rMin+Math.pow(t,0.5)*(rMax-rMin)+(Math.random()-0.5)*3;
+      const theta=i*golden;
+      const y=(Math.random()-0.5)*(rMax-rMin)*0.35;
+      positions[i*3]=Math.cos(theta)*r;
+      positions[i*3+1]=y;
+      positions[i*3+2]=Math.sin(theta)*r;
+      const mixed=c1.clone().lerp(c2, Math.random());
+      colors[i*3]=mixed.r; colors[i*3+1]=mixed.g; colors[i*3+2]=mixed.b;
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colors,3));
+    return new THREE.Points(geo, new THREE.PointsMaterial({
+      map:texCalipso, size, vertexColors:true, transparent:true, opacity:0.8,
+      blending:THREE.AdditiveBlending, depthWrite:false, sizeAttenuation:true
+    }));
+  }
+
+  setResonancia(res){
+    this.baseScaleTarget=1 + Math.min(res,80)*0.007;
+  }
+
+  /* Retorno del Búho: 0..1 = proporción de mensajes en que volviste al punto.
+     Sube el halo dorado de forma suave y permanente — nunca castiga, solo ilumina */
+  setBuho(ratio){ this.buhoTarget=Math.max(0,Math.min(1,ratio||0)); }
+
+  flash(){ this.flashTarget=1.0; }
+  feed(){ this.feedTarget=1.0; this.flashTarget=Math.max(this.flashTarget,0.7); }
+
+  update(t, audioLevel){
+    audioLevel = audioLevel||0;
+    /* respiración orgánica: suma de ondas en frecuencias no relacionadas,
+       para que nunca se sienta como un metrónomo mecánico */
+    const breathe = 1 + organicNoise(t, 0)*0.055;
+
+    /* todo sube y baja suave (ease), nunca de un salto — esto evita el "pop" abrupto */
+    this.flashEnergy += (this.flashTarget-this.flashEnergy)*0.1;
+    this.feedEnergy += (this.feedTarget-this.feedEnergy)*0.06;
+    this.baseScale += (this.baseScaleTarget-this.baseScale)*0.04;
+    if(this.flashTarget>0) this.flashTarget=Math.max(0,this.flashTarget-0.02);
+    if(this.feedTarget>0) this.feedTarget=Math.max(0,this.feedTarget-0.01);
+    const spike=this.flashEnergy;
+    const feed=this.feedEnergy;
+
+    /* pulso de audio real: crece con el volumen de lo que se está grabando o reproduciendo */
+    const audioPulse=audioLevel*0.42;
+
+    const s=this.baseScale*breathe*(1+spike*0.6)*(1+audioPulse);
+    this.core.scale.set(14*s*(1+spike*0.9+feed*0.4+audioLevel*0.5),14*s*(1+spike*0.9+feed*0.4+audioLevel*0.5),1);
+    this.boilA.scale.set(20*s*(1+organicNoise(t,1.7)*0.1), 20*s*(1+organicNoise(t,1.7)*0.1),1);
+    this.boilA.material.rotation=t*0.4;
+    this.boilB.scale.set(24*s*(1+organicNoise(t,3.4)*0.09), 24*s*(1+organicNoise(t,3.4)*0.09),1);
+    this.boilB.material.rotation=-t*0.3;
+    this.plasma.scale.set(36*s*(1+audioLevel*0.18),36*s*(1+audioLevel*0.18),1);
+    this.halo.scale.set(82*s*(1+spike*0.4+audioLevel*0.22),82*s*(1+spike*0.4+audioLevel*0.22),1);
+
+    /* saturación calipso extra durante el "procesamiento" de un nuevo mensaje o al sonar audio */
+    const hueShift=0.475 - feed*0.02 - audioLevel*0.01;
+    this.plasma.material.color.setHSL(hueShift, 0.85, 0.55+feed*0.15+audioLevel*0.1);
+    this.plasma.material.opacity=0.75+organicNoise(t,5.1)*0.1+spike*0.2+audioLevel*0.22;
+    this.buho = (this.buho||0) + ((this.buhoTarget||0)-(this.buho||0))*0.02;
+    this.halo.material.opacity=0.28+organicNoise(t,7.2)*0.07+spike*0.25+feed*0.15+audioLevel*0.28+this.buho*0.12;
+    if(!this._haloBase){ this._haloBase=new THREE.Color(0x00a88f); this._haloGold=new THREE.Color(0xffc861); }
+    this.halo.material.color.copy(this._haloBase).lerp(this._haloGold, this.buho*0.4); /* calipso → toque dorado */
+
+    this.filaments.forEach(sp=>{
+      const a=sp.userData.baseAngle + t*sp.userData.speed;
+      const r=sp.userData.radius*s;
+      sp.position.set(Math.cos(a)*r, Math.sin(t*0.5+sp.userData.baseAngle)*4, Math.sin(a)*r);
+      sp.material.rotation=a*1.3;
+      sp.material.opacity=0.4+organicNoise(t,sp.userData.baseAngle)*0.15+spike*0.3+audioLevel*0.25;
+      sp.scale.x=(46+feed*20+audioLevel*22)*s*0.5;
+    });
+
+    this.coronaInner.rotation.y=t*0.09;
+    this.coronaInner.rotation.x=Math.sin(t*0.15)*0.08;
+    this.coronaInner.material.size=1.9+spike*1.2+feed*0.8+audioLevel*1.8;
+    this.coronaOuter.rotation.y=-t*0.045;
+    this.coronaOuter.material.size=2.6+spike*1.4+audioLevel*1.1;
+
+    /* pulso periódico tipo "latido" del arc reactor, cada ~3.2s */
+    if(t-this.lastPulseWave>3.2){
+      this.lastPulseWave=t;
+      emitHeartbeatRing();
+    }
+  }
+}
+const pulsar=new KairosPulsar();
+pulsar.setResonancia(getResonancia());
+document.getElementById('res-count').textContent=getResonancia();
+
+/* superficie invisible más grande, para que sea fácil tocar el pulsar */
+const hitTarget=new THREE.Mesh(
+  new THREE.SphereGeometry(26,16,16),
+  new THREE.MeshBasicMaterial({visible:false})
+);
+hitTarget.position.copy(PULSAR_POS);
+scene.add(hitTarget);
+
+/* ----------------- TARJETAS DE TEXTO ORBITANDO ----------------- */
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function makeCardTexture(text){
+  const font='19px monospace';
+  const maxTextWidth=300, padX=20, padY=18, lineHeight=25;
+  const measure=document.createElement('canvas').getContext('2d');
+  measure.font=font;
+  const words=(text||'').split(/\s+/);
+  let lines=[], line='';
+  words.forEach(word=>{
+    const test=line?line+' '+word:word;
+    if(measure.measureText(test).width>maxTextWidth){ lines.push(line); line=word; } else line=test;
+  });
+  if(line) lines.push(line);
+  if(lines.length>6){ lines=lines.slice(0,6); lines[5]=lines[5].slice(0,Math.max(0,lines[5].length-1))+'…'; }
+  const widest=lines.reduce((m,l)=>Math.max(m,measure.measureText(l).width), 40);
+  const w=Math.round(Math.min(340, Math.max(120, widest+padX*2)));
+  const h=Math.round(padY*2 + lines.length*lineHeight);
+
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='rgba(4,20,18,0.6)';
+  roundRectPath(ctx,3,3,w-6,h-6,14); ctx.fill();
+  ctx.strokeStyle='rgba(141,255,240,0.85)'; ctx.lineWidth=2.2;
+  roundRectPath(ctx,3,3,w-6,h-6,14); ctx.stroke();
+  ctx.fillStyle='#d8fff5';
+  ctx.font=font;
+  ctx.textBaseline='top';
+  lines.forEach((l,i)=>ctx.fillText(l, padX, padY-2+i*lineHeight));
+  const tex=new THREE.CanvasTexture(c); tex.needsUpdate=true;
+  return {tex, w, h};
+}
+let textCards=[], textCardMeshes=[], cardedIds=new Set();
+let cardsVisible=false;
+const CARD_PX_PER_UNIT=11.3;
+function addTextCard(msg){
+  if(!msg.text) return;
+  if(cardedIds.has(msg.id)) return;
+  cardedIds.add(msg.id);
+  const {tex,w,h}=makeCardTexture(msg.text);
+  const mat=new THREE.SpriteMaterial({map:tex, transparent:true, depthWrite:false});
+  const sprite=new THREE.Sprite(mat);
+  sprite.scale.set(w/CARD_PX_PER_UNIT, h/CARD_PX_PER_UNIT, 1);
+  sprite.visible=cardsVisible;
+  const idx=textCards.length;
+  const golden=Math.PI*(3-Math.sqrt(5));
+  sprite.userData.msgId=msg.id;
+  sprite.userData.baseAngle=idx*golden;
+  sprite.userData.radius=78+(idx%5)*9;
+  sprite.userData.height=(Math.random()-0.5)*34+8;
+  sprite.userData.speed=0.028+Math.random()*0.018;
+  pulsar.group.add(sprite);
+  textCards.push(sprite);
+  textCardMeshes.push(sprite);
+}
+function setCardsVisible(v){
+  cardsVisible=v;
+  textCards.forEach(sp=>{ sp.visible=v; });
+  audioCards.forEach(sp=>{ sp.visible=v; });
+  const btn=document.getElementById('toggle-cards-btn');
+  if(btn) btn.textContent = v ? '✕ ocultar mensajes' : '📝 ver mensajes';
+}
+async function syncTextCards(){
+  const all=await dbGetAll('messages');
+  all.forEach(msg=>{ if(msg.text) addTextCard(msg); });
+}
+function updateTextCards(t){
+  textCards.forEach(sp=>{
+    if(sp.userData.frozen) return;
+    const a=sp.userData.baseAngle + t*sp.userData.speed;
+    const r=sp.userData.radius;
+    sp.position.set(Math.cos(a)*r, sp.userData.height+Math.sin(t*0.35+sp.userData.baseAngle)*4, Math.sin(a)*r);
+  });
+}
+
+/* ----------------- MINI SOLES DE AUDIO ORBITANDO ----------------- */
+let audioCards=[], audioCardMeshes=[], cardedAudioIds=new Set();
+function addAudioCard(msg){
+  if(!msg.hasAudio) return;
+  if(cardedAudioIds.has(msg.id)) return;
+  cardedAudioIds.add(msg.id);
+
+  const core=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:texWhiteHot, color:0xffffff, blending:THREE.AdditiveBlending, transparent:true, depthWrite:false
+  }));
+  core.scale.set(1.6,1.6,1);
+  const halo=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:texViolet, color:0x9b6bff, blending:THREE.AdditiveBlending, transparent:true, depthWrite:false, opacity:0.7
+  }));
+  halo.scale.set(3.4,3.4,1);
+  halo.add(core);
+  halo.userData.msgId=msg.id;
+
+  const idx=audioCards.length;
+  const golden=Math.PI*(3-Math.sqrt(5));
+  halo.userData.baseAngle=idx*golden+1.7;
+  halo.userData.radius=50+(idx%4)*8;
+  halo.userData.height=(Math.random()-0.5)*24-8;
+  halo.userData.speed=0.05+Math.random()*0.02;
+  halo.userData.phase=Math.random()*Math.PI*2;
+  halo.visible=cardsVisible;
+
+  pulsar.group.add(halo);
+  audioCards.push(halo);
+  audioCardMeshes.push(halo);
+}
+async function syncAudioCards(){
+  const all=await dbGetAll('messages');
+  all.forEach(msg=>{ if(msg.hasAudio) addAudioCard(msg); });
+}
+let currentlyPlayingId=null;
+let audioReactSource='central'; // 'central' = reacciona el sol | 'orb' = reacciona el planeta tocado
+
+function updateAudioCards(t, audioLevel){
+  audioLevel=audioLevel||0;
+  audioCards.forEach(sp=>{
+    const a=sp.userData.baseAngle + t*sp.userData.speed;
+    const r=sp.userData.radius;
+    sp.position.set(Math.cos(a)*r, sp.userData.height+Math.sin(t*0.5+sp.userData.phase)*3, Math.sin(a)*r);
+    const isPlaying = sp.userData.msgId===currentlyPlayingId;
+    const audioPulse = isPlaying ? audioLevel*1.1 : 0;
+    const pulse=1+Math.sin(t*1.8+sp.userData.phase)*0.15+audioPulse;
+    sp.scale.set(3.4*pulse,3.4*pulse,1);
+    sp.material.opacity = isPlaying ? Math.min(1, 0.65+audioLevel*0.5) : 0.7;
+  });
+}
+
+let zoomedCard=null, zoomSavedState=null;
+
+function animateCameraTo(fromPos, toPos, fromTarget, toTarget, duration){
+  return new Promise(resolve=>{
+    const t0=performance.now();
+    function step(now){
+      try{
+        const t=Math.min(1,(now-t0)/duration);
+        const ease = t<0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+        camera.position.lerpVectors(fromPos, toPos, ease);
+        controls.target.lerpVectors(fromTarget, toTarget, ease);
+        camera.lookAt(controls.target); // clave: sin esto la cámara se movía sin re-encuadrar
+        if(t<1){ requestAnimationFrame(step); return; }
+      }catch(e){
+        console.warn('Zoom de cámara interrumpido, se resuelve igual:', e);
+        camera.position.copy(toPos);
+        controls.target.copy(toTarget);
+        camera.lookAt(controls.target);
+      }
+      resolve();
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+function zoomToCard(sprite){
+  if(zoomedCard) return;
+  zoomedCard=sprite;
+  sprite.userData.frozen=true;
+  zoomSavedState={
+    camPos: camera.position.clone(),
+    target: controls.target.clone(),
+    autoRotate: controls.autoRotate,
+    enabled: controls.enabled
+  };
+  controls.autoRotate=false;
+  controls.enabled=false;
+
+  const dir=camera.position.clone().sub(sprite.getWorldPosition(new THREE.Vector3())).normalize();
+  const spread=Math.max(sprite.scale.x, sprite.scale.y);
+  const desiredDist=THREE.MathUtils.clamp(spread*2.1, 20, 55);
+  const worldPos=sprite.getWorldPosition(new THREE.Vector3());
+  const toPos=worldPos.clone().add(dir.multiplyScalar(desiredDist));
+
+  animateCameraTo(camera.position.clone(), toPos, controls.target.clone(), worldPos, 650);
+  document.getElementById('zoom-close-btn').classList.add('show');
+
+  /* cerrojo de seguridad: si por lo que sea nunca se cierra el zoom, se fuerza solo
+     a los 25s para que la app nunca quede completamente bloqueada al tacto */
+  clearTimeout(zoomToCard._watchdog);
+  zoomToCard._watchdog=setTimeout(()=>{ if(zoomedCard===sprite) unzoomCard(); }, 25000);
+}
+
+function unzoomCard(){
+  if(!zoomedCard || !zoomSavedState) return;
+  const sprite=zoomedCard;
+  document.getElementById('zoom-close-btn').classList.remove('show');
+  animateCameraTo(camera.position.clone(), zoomSavedState.camPos, controls.target.clone(), zoomSavedState.target, 600)
+    .then(()=>{
+      controls.syncFromCamera();
+      controls.autoRotate=zoomSavedState.autoRotate;
+      controls.enabled=zoomSavedState.enabled;
+      sprite.userData.frozen=false;
+      zoomedCard=null;
+      zoomSavedState=null;
+    });
+}
+document.getElementById('zoom-close-btn').addEventListener('click', (e)=>{ e.stopPropagation(); unzoomCard(); });
+
+/* ----------------- EL LAGO ESPEJO ----------------- */
+function gridTexture(){
+  const c=document.createElement('canvas'); c.width=c.height=256;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#020a0a'; ctx.fillRect(0,0,256,256);
+  ctx.strokeStyle='rgba(0,190,165,0.32)'; ctx.lineWidth=1;
+  for(let i=0;i<=256;i+=32){
+    ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,256);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(256,i);ctx.stroke();
+  }
+  const tex=new THREE.CanvasTexture(c);
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(18,18);
+  return tex;
+}
+const lakeGeo=new THREE.PlaneGeometry(2400,2400,1,1);
+const lakeMat=new THREE.MeshBasicMaterial({map:gridTexture(), transparent:true, opacity:0.45});
+const lake=new THREE.Mesh(lakeGeo,lakeMat);
+lake.rotation.x=-Math.PI/2;
+scene.add(lake);
+
+const reflection=new THREE.Sprite(new THREE.SpriteMaterial({
+  map:texCalipso, color:0x00e8c8, blending:THREE.AdditiveBlending, transparent:true, opacity:0.2, depthWrite:false
+}));
+reflection.scale.set(64,64,1);
+reflection.position.set(PULSAR_POS.x, 0.5, PULSAR_POS.z);
+scene.add(reflection);
+
+/* ---------------------------------------------------------------------
+   4. ANILLOS Y SPLASHES
+   --------------------------------------------------------------------- */
+function makeRing(color){
+  const geo=new THREE.RingGeometry(0.5,1,48);
+  const mat=new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.7, side:THREE.DoubleSide,
+    blending:THREE.AdditiveBlending, depthWrite:false});
+  const ring=new THREE.Mesh(geo,mat);
+  ring.rotation.x=-Math.PI/2;
+  ring.scale.set(0.1,0.1,0.1);
+  return ring;
+}
+function spawnSplash(pos){
+  const ring=makeRing(0x8dfff0);
+  ring.position.set(pos.x, 0.6, pos.z);
+  scene.add(ring);
+  const t0=performance.now();
+  function step(now){
+    const t=Math.min(1,(now-t0)/900);
+    const sc=1+t*22;
+    ring.scale.set(sc,sc,sc);
+    ring.material.opacity=0.7*(1-t);
+    if(t<1) requestAnimationFrame(step); else scene.remove(ring);
+  }
+  requestAnimationFrame(step);
+
+  const n=18, pos3=new Float32Array(n*3), vel=[];
+  for(let i=0;i<n;i++){
+    pos3[i*3]=pos.x; pos3[i*3+1]=1; pos3[i*3+2]=pos.z;
+    const a=Math.random()*Math.PI*2, sp=1.5+Math.random()*2.5;
+    vel.push([Math.cos(a)*sp, 3+Math.random()*3, Math.sin(a)*sp]);
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos3,3));
+  const mat=new THREE.PointsMaterial({map:texCalipso, color:0xbfffee, size:2.4, transparent:true,
+    opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false});
+  const pts=new THREE.Points(geo,mat);
+  scene.add(pts);
+  const start=performance.now();
+  function stepP(now){
+    const dt=(now-start)/1000;
+    const arr=pts.geometry.attributes.position.array;
+    for(let i=0;i<n;i++){
+      arr[i*3]=pos.x+vel[i][0]*dt;
+      arr[i*3+1]=1+vel[i][1]*dt-9.8*dt*dt*1.4;
+      arr[i*3+2]=pos.z+vel[i][2]*dt;
+    }
+    pts.geometry.attributes.position.needsUpdate=true;
+    mat.opacity=Math.max(0,0.9-dt*1.1);
+    if(dt<0.85) requestAnimationFrame(stepP); else scene.remove(pts);
+  }
+  requestAnimationFrame(stepP);
+}
+function emitHeartbeatRing(){
+  const ring=makeRing(0x00a88f);
+  ring.material.opacity=0.35;
+  ring.position.set(PULSAR_POS.x, 0.4, PULSAR_POS.z);
+  scene.add(ring);
+  const t0=performance.now();
+  function step(now){
+    const t=Math.min(1,(now-t0)/2600);
+    const sc=1+t*46;
+    ring.scale.set(sc,sc,sc);
+    ring.material.opacity=0.35*(1-t);
+    if(t<1) requestAnimationFrame(step); else scene.remove(ring);
+  }
+  requestAnimationFrame(step);
+}
+function absorbAudioEffect(){
+  const n=54, starts=new Float32Array(n*3), targets=[];
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, el=Math.random()*Math.PI-Math.PI/2, r=44+Math.random()*16;
+    starts[i*3]=PULSAR_POS.x+Math.cos(a)*Math.cos(el)*r;
+    starts[i*3+1]=PULSAR_POS.y+Math.sin(el)*r;
+    starts[i*3+2]=PULSAR_POS.z+Math.sin(a)*Math.cos(el)*r;
+    targets.push(PULSAR_POS.clone());
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(starts.slice(),3));
+  const mat=new THREE.PointsMaterial({map:texWhiteHot, color:0x8dfff0, size:3.6, transparent:true,
+    opacity:0.95, blending:THREE.AdditiveBlending, depthWrite:false});
+  const pts=new THREE.Points(geo,mat);
+  scene.add(pts);
+  const t0=performance.now(), dur=1450;
+  function step(now){
+    const t=Math.min(1,(now-t0)/dur);
+    const arr=pts.geometry.attributes.position.array;
+    for(let i=0;i<n;i++){
+      arr[i*3]=THREE.MathUtils.lerp(starts[i*3], targets[i].x, t);
+      arr[i*3+1]=THREE.MathUtils.lerp(starts[i*3+1], targets[i].y, t);
+      arr[i*3+2]=THREE.MathUtils.lerp(starts[i*3+2], targets[i].z, t);
+    }
+    pts.geometry.attributes.position.needsUpdate=true;
+    mat.opacity=0.95*(1-t*0.7);
+    if(t<1) requestAnimationFrame(step); else { scene.remove(pts); pulsar.feed(); }
+  }
+  requestAnimationFrame(step);
+  plunk(500,0.3); setTimeout(()=>plunk(680,0.3), 220);
+}
+
+function shakeCamera(intensity){
+  const orig=controls.target.clone();
+  let n=0;
+  const iv=setInterval(()=>{
+    controls.target.set(orig.x+(Math.random()-0.5)*intensity, orig.y+(Math.random()-0.5)*intensity, orig.z);
+    n++;
+    if(n>4){clearInterval(iv); controls.target.copy(orig);}
+  },40);
+}
+let actx=null;
+function ensureAudioCtx(){
+  if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
+  return actx;
+}
+function plunk(freq=440, dur=0.18){
+  try{
+    ensureAudioCtx();
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.type='sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.12, actx.currentTime+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime+dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime+dur+0.02);
+  }catch(e){}
+}
+
+/* ----------------- ANÁLISIS DE AUDIO EN VIVO: el pulsar reacciona al sonido real ----------------- */
+let audioAnalyser=null, audioDataArray=null;
+let recordingSourceNode=null, playbackSourceNode=null;
+
+function ensureAnalyser(){
+  const ctx=ensureAudioCtx();
+  if(!audioAnalyser){
+    audioAnalyser=ctx.createAnalyser();
+    audioAnalyser.fftSize=128;
+    audioAnalyser.smoothingTimeConstant=0.75;
+    audioDataArray=new Uint8Array(audioAnalyser.frequencyBinCount);
+  }
+  return audioAnalyser;
+}
+function attachAnalyserToStream(stream){
+  try{
+    const ctx=ensureAudioCtx();
+    const analyser=ensureAnalyser();
+    if(recordingSourceNode){ try{ recordingSourceNode.disconnect(); }catch(e){} }
+    recordingSourceNode=ctx.createMediaStreamSource(stream);
+    recordingSourceNode.connect(analyser); // sin conectar a destination: no hay eco al grabar
+  }catch(e){ console.warn('No pude analizar el audio del micrófono:', e); }
+}
+function detachRecordingAnalyser(){
+  if(recordingSourceNode){ try{ recordingSourceNode.disconnect(); }catch(e){} recordingSourceNode=null; }
+}
+function attachAnalyserToPlayback(audioEl){
+  try{
+    const ctx=ensureAudioCtx();
+    const analyser=ensureAnalyser();
+    if(!playbackSourceNode){
+      playbackSourceNode=ctx.createMediaElementSource(audioEl);
+      playbackSourceNode.connect(analyser);
+      analyser.connect(ctx.destination);
+    }
+    if(ctx.state==='suspended') ctx.resume();
+  }catch(e){ console.warn('No pude analizar el audio de reproducción:', e); }
+}
+function getAudioLevel(){
+  if(!audioAnalyser || !audioDataArray) return 0;
+  audioAnalyser.getByteFrequencyData(audioDataArray);
+  let sum=0;
+  for(let i=0;i<audioDataArray.length;i++) sum+=audioDataArray[i];
+  return (sum/audioDataArray.length)/255;
+}
+function animateArc(mesh, start, end, duration, arcHeight){
+  return new Promise(resolve=>{
+    const t0=performance.now();
+    function step(now){
+      const t=Math.min(1,(now-t0)/duration);
+      mesh.position.set(
+        THREE.MathUtils.lerp(start.x,end.x,t),
+        THREE.MathUtils.lerp(start.y,end.y,t)+Math.sin(t*Math.PI)*arcHeight,
+        THREE.MathUtils.lerp(start.z,end.z,t)
+      );
+      if(t<1) requestAnimationFrame(step); else resolve();
+    }
+    requestAnimationFrame(step);
+  });
+}
+async function playThrowPreview(numBounces){
+  numBounces=Math.min(Math.max(numBounces,1),4);
+  const node=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:texWhiteHot, color:0xffffff, blending:THREE.AdditiveBlending, transparent:true, depthWrite:false
+  }));
+  node.scale.set(6,6,1);
+  scene.add(node);
+  let start=new THREE.Vector3(0, 25, 260);
+  node.position.copy(start);
+  let arcHeight=52;
+  for(let i=0;i<numBounces;i++){
+    const tprog=(i+1)/(numBounces+1);
+    const end=new THREE.Vector3((Math.random()-0.5)*40, 0, THREE.MathUtils.lerp(260,-190,tprog));
+    await animateArc(node, start, end, 620, arcHeight);
+    spawnSplash(end);
+    shakeCamera(1.2);
+    plunk(300+i*90);
+    start=end.clone(); start.y=0;
+    arcHeight*=0.52;
+  }
+  await animateArc(node, start, PULSAR_POS.clone(), 850, 18);
+  scene.remove(node);
+  pulsar.flash();
+  plunk(720,0.4);
+}
+
+/* ---------------------------------------------------------------------
+   5. RAYCASTER — tocar el pulsar abre el flujo de creación
+   --------------------------------------------------------------------- */
+const raycaster=new THREE.Raycaster();
+const pointerNDC=new THREE.Vector2();
+let downPos=null;
+let lastPulsarTapTime=0;
+
+function toNDC(x,y){
+  const r=renderer.domElement.getBoundingClientRect();
+  pointerNDC.x=((x-r.left)/r.width)*2-1;
+  pointerNDC.y=-((y-r.top)/r.height)*2+1;
+}
+renderer.domElement.addEventListener('pointerdown', e=>{ downPos={x:e.clientX,y:e.clientY}; });
+renderer.domElement.addEventListener('pointercancel', ()=>{ downPos=null; });
+renderer.domElement.addEventListener('pointerleave', ()=>{ downPos=null; });
+renderer.domElement.addEventListener('pointerup', e=>{
+  if(!downPos) return;
+  const dx=e.clientX-downPos.x, dy=e.clientY-downPos.y;
+  downPos=null;
+  if(Math.sqrt(dx*dx+dy*dy)>8) return; // fue un arrastre de cámara, no un toque
+  if(zoomedCard){ unzoomCard(); return; }
+  toNDC(e.clientX, e.clientY);
+  raycaster.setFromCamera(pointerNDC, camera);
+
+  const cardHits=raycaster.intersectObjects(textCardMeshes);
+  if(cardHits.length>0){ zoomToCard(cardHits[0].object); return; }
+
+  const audioHits=raycaster.intersectObjects(audioCardMeshes);
+  if(audioHits.length>0){
+    const msgId=audioHits[0].object.userData.msgId;
+    playHistory=playHistory.slice(0,historyIndex+1);
+    playHistory.push(msgId);
+    historyIndex=playHistory.length-1;
+    audioReactSource='orb';
+    playPick(msgId);
+    return;
+  }
+
+  const hits=raycaster.intersectObject(hitTarget);
+  if(hits.length>0){
+    const now=performance.now();
+    if(now-lastPulsarTapTime<380){
+      /* doble click: alterna las tarjetas de texto directamente */
+      setCardsVisible(!cardsVisible);
+      lastPulsarTapTime=0;
+    } else {
+      lastPulsarTapTime=now;
+      openActionSheet();
+    }
+  }
+});
+
+/* ---------------------------------------------------------------------
+   6. GRABACIÓN DE VOZ
+   --------------------------------------------------------------------- */
+let mediaRecorder=null, audioChunks=[], recordedBlob=null, isRecording=false, chosenMime='';
+
+function pickMimeType(){
+  if(!('MediaRecorder' in window) || !MediaRecorder.isTypeSupported) return '';
+  const candidates=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus'];
+  for(const c of candidates){ if(MediaRecorder.isTypeSupported(c)) return c; }
+  return '';
+}
+
+/* ----------------- TRANSCRIPCIÓN EN VIVO MIENTRAS SE GRABA ----------------- */
+let liveRecognition=null, liveTranscript='';
+function startLiveTranscription(){
+  liveTranscript='';
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR) return; // sin soporte: el audio se guarda igual, solo sin título/etiqueta automática
+  try{
+    liveRecognition=new SR();
+    liveRecognition.lang=navigator.language||'es-ES';
+    liveRecognition.continuous=true;
+    liveRecognition.interimResults=true;
+    liveRecognition.onresult=(e)=>{
+      let finalText='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        if(e.results[i].isFinal) finalText+=e.results[i][0].transcript;
+        /* ancla verbal del búho: se detecta apenas se dice, aunque no sea resultado final */
+        if(buhoPuntoAt===null && hasAnclaBuho(e.results[i][0].transcript)) marcarPunto('voz');
+      }
+      if(finalText) liveTranscript=(liveTranscript+' '+finalText).trim();
+    };
+    liveRecognition.onerror=()=>{};
+    liveRecognition.onend=()=>{ if(liveRecognition && liveRecognition._keepAlive){ try{ liveRecognition.start(); }catch(e){} } };
+    liveRecognition._keepAlive=true;
+    liveRecognition.start();
+  }catch(e){ liveRecognition=null; }
+}
+function stopLiveTranscription(){
+  if(liveRecognition){
+    liveRecognition._keepAlive=false;
+    try{ liveRecognition.stop(); }catch(e){}
+  }
+  return liveTranscript.trim();
+}
+function guessTagsFromText(text){
+  const low=text.toLowerCase();
+  return getTagDefs().filter(t=>low.includes(t.toLowerCase()));
+}
+
+function setRecStatus(msg){
+  const el=document.getElementById('rec-status');
+  if(el){
+    el.textContent=msg;
+    el.style.color = msg.indexOf('⚠️')===0 ? '#ffb37a' : '';
+  }
+  showToast(msg, 5200);
+}
+
+/* ----------------- MICRÓFONO: SE PIDE UNA SOLA VEZ -----------------
+   El stream se guarda y se reutiliza entre grabaciones. Solo se suelta
+   tras un rato sin grabar (para no dejar el indicador de micrófono
+   encendido ni gastar batería). Servido por HTTPS, el navegador además
+   recuerda el permiso entre sesiones: no vuelve a preguntar. */
+let micStream=null, micReleaseTimer=null;
+const MIC_IDLE_RELEASE_MS=4*60*1000;
+async function getMicStream(){
+  clearTimeout(micReleaseTimer);
+  if(micStream && micStream.getAudioTracks().some(t=>t.readyState==='live')) return micStream;
+  micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true}});
+  localStorage.setItem('kairos_mic_ok','1');
+  return micStream;
+}
+function scheduleMicRelease(){
+  clearTimeout(micReleaseTimer);
+  micReleaseTimer=setTimeout(()=>{
+    if(isRecording || !micStream) return;
+    micStream.getTracks().forEach(t=>t.stop());
+    micStream=null;
+  }, MIC_IDLE_RELEASE_MS);
+}
+/* al volver a la app con el mic soltado, no hace falta nada: si el permiso
+   quedó concedido, getUserMedia lo reabre en silencio */
+
+/* ----------------- RETORNO DEL BÚHO -----------------
+   Mide cuánto tardás en llegar al punto de lo que querías decir.
+   Se marca tocando ◉ mientras grabás, o diciendo "aquí estamos" /
+   "el punto es" / "vuelvo al punto". Volver suma resonancia; no volver
+   no resta nada: solo queda registrado. */
+const ANCLAS_BUHO=['aquí estamos','aqui estamos','el punto es','vuelvo al punto','volviendo al punto'];
+let recStartAt=0, buhoPuntoAt=null, buhoOrigen=null;
+function hasAnclaBuho(txt){
+  const low=(txt||'').toLowerCase();
+  return ANCLAS_BUHO.some(a=>low.includes(a));
+}
+function marcarPunto(origen){
+  if(!isRecording || buhoPuntoAt!==null) return;
+  buhoPuntoAt=performance.now();
+  buhoOrigen=origen||'toque';
+  const seg=Math.round((buhoPuntoAt-recStartAt)/1000);
+  const btn=document.getElementById('pa-punto');
+  if(btn) btn.classList.add('done');
+  pulsar.flash();
+  plunk(660, 0.25);
+  showToast(`🦉 volviste al punto · ${seg} s`, 3400);
+}
+async function refreshBuho(){
+  const all=await dbGetAll('messages');
+  const voces=all.filter(m=>m.hasAudio && m.buho);
+  const retornos=voces.filter(m=>m.buho.retorno);
+  pulsar.setBuho(voces.length ? retornos.length/voces.length : 0);
+  const lat=retornos.map(m=>m.buho.latencia);
+  const pre=retornos.map(m=>m.buho.preambulo);
+  const avg=a=>a.length ? a.reduce((s,x)=>s+x,0)/a.length : null;
+  return {
+    mensajes:voces.length, retornos:retornos.length,
+    latenciaProm: avg(lat), preambuloProm: avg(pre),
+    /* tendencia: últimas 5 vs las 5 anteriores (negativo = llegás más rápido) */
+    tendencia: lat.length>=10 ? avg(lat.slice(-5))-avg(lat.slice(-10,-5)) : null
+  };
+}
+
+async function startRecording(){
+  let inIframe=false;
+  try{ inIframe = window.self!==window.top; }catch(e){ inIframe=true; }
+
+  if(!window.isSecureContext){
+    setRecStatus('⚠️ Sin HTTPS: el micrófono no funciona así. Subí el archivo a GitHub Pages, o abrilo con un servidor local (http://localhost).');
+    return false;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    setRecStatus('⚠️ Este navegador no tiene soporte para grabar audio.');
+    return false;
+  }
+  try{
+    const stream=await getMicStream();
+    chosenMime=pickMimeType();
+    mediaRecorder = chosenMime ? new MediaRecorder(stream,{mimeType:chosenMime}) : new MediaRecorder(stream);
+    attachAnalyserToStream(stream);
+    audioChunks=[];
+    startLiveTranscription();
+    mediaRecorder.ondataavailable=e=>{ if(e.data && e.data.size>0) audioChunks.push(e.data); };
+    mediaRecorder.onerror=e=>{ setRecStatus('⚠️ Error al grabar: '+(e.error?e.error.name:'desconocido')); };
+    mediaRecorder.onstop=()=>{
+      recordedBlob=new Blob(audioChunks,{type:chosenMime||'audio/webm'});
+      /* el stream NO se corta: queda listo para la próxima grabación sin volver a pedir permiso */
+      scheduleMicRelease();
+      detachRecordingAnalyser();
+      const transcript=stopLiveTranscription();
+      const durSeg=(performance.now()-recStartAt)/1000;
+      const buho = buhoPuntoAt!==null
+        ? {retorno:true, latencia:+((buhoPuntoAt-recStartAt)/1000).toFixed(1),
+           preambulo:+(((buhoPuntoAt-recStartAt)/1000)/Math.max(durSeg,0.1)).toFixed(2),
+           duracion:+durSeg.toFixed(1), origen:buhoOrigen}
+        : {retorno:false, latencia:null, preambulo:null, duracion:+durSeg.toFixed(1), origen:null};
+      if(audioChunks.length===0 || recordedBlob.size===0){
+        setRecStatus('⚠️ No se grabó audio (0 bytes). El navegador cortó el acceso al micrófono a mitad de camino — probá en una pestaña propia, fuera de cualquier vista previa.');
+        return;
+      }
+      setRecStatus('integrando el audio al núcleo...');
+      setTimeout(()=>{
+        const title=transcript ? transcript.trim().slice(0,42) : '';
+        const autoTags=transcript ? guessTagsFromText(transcript) : [];
+        commitMessage({type:'voice', text:'', hasAudio:true, blob:recordedBlob, title, transcript, autoTags, buho});
+      }, 650);
+    };
+    buhoPuntoAt=null; buhoOrigen=null;
+    mediaRecorder.start();
+    recStartAt=performance.now();
+    isRecording=true;
+    setRecStatus('grabando... tocá para detener');
+    return true;
+  }catch(err){
+    let msg='⚠️ No pude acceder al micrófono.';
+    if(err){
+      if(err.name==='NotAllowedError') msg='⚠️ Permiso bloqueado. '+(inIframe?'Esta vista previa corre dentro de un iframe sin permiso de micrófono — abrí el archivo en su propia pestaña del navegador.':'Revisá el ícono de candado/micrófono en la barra de direcciones y volvé a intentar.');
+      else if(err.name==='NotFoundError') msg='⚠️ No encontré un micrófono en este dispositivo.';
+      else if(err.name==='NotReadableError') msg='⚠️ El micrófono está siendo usado por otra app.';
+      else if(err.name==='SecurityError') msg='⚠️ Bloqueado por seguridad. '+(inIframe?'Salí de la vista previa y abrí el archivo directo en el navegador.':'Probá servirlo por HTTPS.');
+      else msg='⚠️ '+err.name+': '+(err.message||'error desconocido');
+    }
+    setRecStatus(msg);
+    return false;
+  }
+}
+function stopRecording(){
+  if(mediaRecorder && isRecording){ mediaRecorder.stop(); isRecording=false; }
+}
+
+/* ---------------------------------------------------------------------
+   7. FLUJO DE OVERLAY: acción → contenido → programación
+   --------------------------------------------------------------------- */
+const overlayBg=document.getElementById('overlay-bg');
+const overlayBox=document.getElementById('overlay-box');
+let pendingMessage=null; // mensaje ya guardado en DB, esperando bounces
+
+function showOverlay(html, cls){
+  overlayBox.className='';
+  if(cls) overlayBox.classList.add(cls);
+  overlayBox.innerHTML=html;
+  overlayBg.classList.add('show');
+  controls.enabled=false;
+}
+function closeOverlay(){
+  overlayBg.classList.remove('show');
+  overlayBox.innerHTML='';
+  overlayBox.className='';
+  controls.enabled=true;
+}
+
+function openActionSheet(){
+  document.getElementById('pulsar-actions').classList.add('show');
+  document.getElementById('top-toggle-wrap').classList.add('show');
+}
+
+async function toggleQuickRecord(){
+  const btn=document.getElementById('pa-voz');
+  if(!isRecording){
+    recordedBlob=null; audioChunks=[];
+    const ok=await startRecording();
+    if(ok){
+      btn.textContent='■'; btn.classList.add('recording');
+      const p=document.getElementById('pa-punto');
+      p.classList.remove('done'); p.style.display='flex';
+    }
+  } else {
+    stopRecording();
+    document.getElementById('pa-punto').style.display='none';
+    btn.textContent='●';
+    btn.classList.remove('recording');
+    btn.style.opacity='0.4';
+    btn.style.pointerEvents='none';
+    /* commitMessage() se dispara solo, desde mediaRecorder.onstop */
+    setTimeout(()=>{ btn.style.opacity='1'; btn.style.pointerEvents='auto'; }, 1400);
+  }
+}
+
+function openTextCompose(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  showOverlay(`
+    <div class="o-label">Mensaje de texto</div>
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;">
+      <textarea id="msg-text" placeholder="Escribile a quien vas a ser..." style="flex:1;"></textarea>
+      ${SR?'<button class="icon-pill icon-record" id="dictate-btn" style="width:44px;height:44px;font-size:15px;flex-shrink:0;" title="dictar">●</button>':''}
+    </div>
+    <button class="btn-ghost" id="done-text-btn">listo — se guarda solo</button>
+  `);
+  const ta=document.getElementById('msg-text');
+  let committed=false;
+  const doCommit=async ()=>{
+    const val=ta.value.trim();
+    if(committed || !val) return;
+    committed=true;
+    await commitMessage({type:'text', text:val, hasAudio:false, blob:null});
+  };
+
+  let dictating=false, dictateRecognition=null;
+  const dictateBtn=document.getElementById('dictate-btn');
+  if(dictateBtn){
+    dictateBtn.addEventListener('pointerdown', e=>{ e.preventDefault(); }); // no le robe el foco al textarea
+    dictateBtn.addEventListener('click', ()=>{
+      if(!dictating){
+        try{
+          dictateRecognition=new SR();
+          dictateRecognition.lang=navigator.language||'es-ES';
+          dictateRecognition.continuous=true;
+          dictateRecognition.interimResults=true;
+          const base=ta.value;
+          dictateRecognition.onresult=(e)=>{
+            let finalText='';
+            for(let i=e.resultIndex;i<e.results.length;i++){
+              if(e.results[i].isFinal) finalText+=e.results[i][0].transcript;
+            }
+            if(finalText) ta.value=(base+' '+finalText).trim();
+          };
+          dictateRecognition.onend=()=>{ if(dictating){ try{ dictateRecognition.start(); }catch(e){} } };
+          dictateRecognition.start();
+          dictating=true;
+          dictateBtn.classList.add('recording');
+        }catch(e){ showToast('No pude iniciar el dictado por voz.'); }
+      } else {
+        dictating=false;
+        if(dictateRecognition){ dictateRecognition.onend=null; try{ dictateRecognition.stop(); }catch(e){} }
+        dictateBtn.classList.remove('recording');
+        ta.focus();
+      }
+    });
+  }
+
+  ta.addEventListener('blur', doCommit);
+  document.getElementById('done-text-btn').addEventListener('click', async ()=>{
+    if(!ta.value.trim()){ closeOverlay(); return; }
+    await doCommit();
+  });
+  setTimeout(()=>ta.focus(), 60);
+}
+
+/* ---------------------------------------------------------------------
+   7b. RESPALDO — porque IndexedDB vive solo en este teléfono y este navegador,
+   y Android puede borrarla sola cuando anda corto de espacio. Dos capas:
+   (a) exportar todo a un .zip cuando quieras, sin depender de nada externo
+   (b) sincronizar cada audio a una carpeta de tu Google Drive, automático
+   --------------------------------------------------------------------- */
+function extForBlob(blob){
+  const t=(blob&&blob.type)||'';
+  if(t.includes('mp4')) return 'm4a';
+  if(t.includes('ogg')) return 'ogg';
+  return 'webm';
+}
+
+async function exportFullBackup(){
+  if(typeof JSZip==='undefined'){ showToast('No pude cargar la librería de respaldo (JSZip). Revisá tu conexión.'); return; }
+  showToast('Empaquetando tu respaldo...', 2500);
+  const zip=new JSZip();
+  const all=await dbGetAll('messages');
+  const manifest=[];
+  for(const msg of all){
+    let audioFilename=null;
+    if(msg.hasAudio){
+      const rec=await dbGet('audio', msg.id);
+      if(rec && rec.blob){
+        audioFilename=`audio/${msg.id}.${extForBlob(rec.blob)}`;
+        zip.file(audioFilename, rec.blob);
+      }
+    }
+    manifest.push({...msg, audioFilename});
+  }
+  zip.file('kairos-manifest.json', JSON.stringify(manifest,null,2));
+  zip.file('leeme.txt',
+    'Este es un respaldo completo de Kairós (Chamalnquimyst Labs).\n'+
+    'kairos-manifest.json tiene todos tus mensajes, etiquetas y fechas de rebote.\n'+
+    'La carpeta audio/ tiene cada grabación de voz, nombrada con el mismo id que en el manifest.\n'+
+    'Guardá este .zip en un lugar que no dependa de un solo teléfono (Drive, un disco, etc).'
+  );
+  const blob=await zip.generateAsync({type:'blob'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`kairos-respaldo-${new Date().toISOString().slice(0,10)}.zip`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),6000);
+  localStorage.setItem('kairos_last_backup', String(Date.now()));
+  updateBackupBadge();
+  showToast('Respaldo descargado ✦ guardalo fuera del teléfono.');
+}
+
+/* ---------------------------------------------------------------------
+   7c. GOOGLE DRIVE — sincronización automática de cada audio nuevo
+   Requiere un Client ID de OAuth (gratis, se saca una vez en
+   console.cloud.google.com) que el usuario pega en el panel de Respaldo.
+   Usa Google Identity Services + Drive API v3, todo desde el navegador,
+   sin servidor propio — el token vive solo en esta sesión.
+   --------------------------------------------------------------------- */
+let driveTokenClient=null, driveAccessToken=null, driveFolderId=null;
+function getDriveClientId(){ return localStorage.getItem('kairos_drive_client_id')||''; }
+function setDriveClientId(v){ localStorage.setItem('kairos_drive_client_id', v.trim()); }
+function isDriveAutoSyncOn(){ return localStorage.getItem('kairos_drive_autosync')==='1'; }
+function setDriveAutoSync(v){ localStorage.setItem('kairos_drive_autosync', v?'1':'0'); }
+
+function initDriveTokenClient(){
+  const clientId=getDriveClientId();
+  if(!clientId || !window.google || !google.accounts || !google.accounts.oauth2) return false;
+  if(driveTokenClient) return true;
+  driveTokenClient=google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: 'https://www.googleapis.com/auth/drive.file',
+    callback: async (resp)=>{
+      if(resp && resp.access_token){
+        driveAccessToken=resp.access_token;
+        showToast('Google Drive conectado ✦');
+        renderBackupPanel();
+        await syncAllToDrive();
+      } else {
+        showToast('No se pudo conectar con Google Drive.');
+      }
+    }
+  });
+  return true;
+}
+function connectDrive(){
+  if(!getDriveClientId()){ showToast('Primero pegá tu Client ID de Google.'); return; }
+  if(!initDriveTokenClient()){ showToast('Google Identity Services todavía no cargó — probá de nuevo en un segundo.'); return; }
+  driveTokenClient.requestAccessToken({prompt: driveAccessToken?'':'consent'});
+}
+function disconnectDrive(){
+  driveAccessToken=null; driveFolderId=null;
+  showToast('Desconectado de Google Drive (para esta sesión).');
+  renderBackupPanel();
+}
+
+async function ensureDriveFolder(){
+  if(driveFolderId) return driveFolderId;
+  const cached=localStorage.getItem('kairos_drive_folder_id');
+  const q=encodeURIComponent("name='Kairós Audios' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  const searchRes=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,
+    {headers:{Authorization:`Bearer ${driveAccessToken}`}});
+  if(!searchRes.ok) throw new Error('drive folder search failed: '+searchRes.status);
+  const data=await searchRes.json();
+  if(data.files && data.files.length>0){
+    driveFolderId=data.files[0].id;
+  } else if(cached){
+    driveFolderId=cached;
+  } else {
+    const createRes=await fetch('https://www.googleapis.com/drive/v3/files',{
+      method:'POST',
+      headers:{Authorization:`Bearer ${driveAccessToken}`, 'Content-Type':'application/json'},
+      body: JSON.stringify({name:'Kairós Audios', mimeType:'application/vnd.google-apps.folder'})
+    });
+    if(!createRes.ok) throw new Error('drive folder create failed: '+createRes.status);
+    const created=await createRes.json();
+    driveFolderId=created.id;
+  }
+  localStorage.setItem('kairos_drive_folder_id', driveFolderId);
+  return driveFolderId;
+}
+
+async function uploadBlobToDrive(filename, blob){
+  const folderId=await ensureDriveFolder();
+  const metadata={name:filename, parents:[folderId]};
+  const form=new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'}));
+  form.append('file', blob);
+  const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{
+    method:'POST', headers:{Authorization:`Bearer ${driveAccessToken}`}, body:form
+  });
+  if(!res.ok) throw new Error('drive upload failed: '+res.status);
+  return (await res.json()).id;
+}
+
+async function syncMessageToDrive(msg){
+  if(!driveAccessToken || msg.driveSynced) return;
+  try{
+    const datePrefix=new Date(msg.createdAt).toISOString().slice(0,10);
+    if(msg.hasAudio){
+      const rec=await dbGet('audio', msg.id);
+      if(rec && rec.blob){
+        await uploadBlobToDrive(`kairos-${datePrefix}-${msg.id}.${extForBlob(rec.blob)}`, rec.blob);
+      }
+    }
+    if(msg.text){
+      const jsonBlob=new Blob([JSON.stringify(msg,null,2)],{type:'application/json'});
+      await uploadBlobToDrive(`kairos-${datePrefix}-${msg.id}.json`, jsonBlob);
+    }
+    msg.driveSynced=true;
+    await dbPut('messages', msg);
+  }catch(e){
+    console.warn('No se pudo sincronizar este mensaje a Drive:', e);
+  }
+}
+async function syncAllToDrive(){
+  if(!driveAccessToken) return;
+  const all=await dbGetAll('messages');
+  const pending=all.filter(m=>!m.driveSynced);
+  for(const msg of pending){ await syncMessageToDrive(msg); }
+  if(pending.length>0) showToast(`Sincronizados ${pending.length} mensaje(s) con Drive ✦`);
+  localStorage.setItem('kairos_last_drive_sync', String(Date.now()));
+  updateBackupBadge();
+}
+
+/* ---------------------------------------------------------------------
+   7d. BÓVEDA LOCAL — tus grabaciones como archivos reales en tu PC
+   Elegís una carpeta UNA vez. Kairós guarda ahí cada audio
+   (audio/<id>.webm) y un kairos-manifest.json con todos los mensajes,
+   etiquetas, rebotes y marcas del búho — el mismo formato que el .zip.
+   Al abrir Kairós, lo que esté en la carpeta y falte en el navegador se
+   "evoca" de vuelta. En celulares sin acceso a carpetas: evocar desde .zip.
+   --------------------------------------------------------------------- */
+let bovedaDir=null, bovedaSyncTimer=null, bovedaBusy=false, bovedaAgain=false;
+const bovedaSoportada=()=>'showDirectoryPicker' in window;
+async function cfgGet(k){ const r=await dbGet('config',k); return r?r.value:null; }
+async function cfgPut(k,v){ await dbPut('config',{id:k, value:v}); }
+
+function mimeFromName(name){
+  const n=(name||'').toLowerCase();
+  if(n.endsWith('.m4a')||n.endsWith('.mp4')) return 'audio/mp4';
+  if(n.endsWith('.ogg')) return 'audio/ogg';
+  return 'audio/webm';
+}
+async function bovedaFileHandle(path, create){
+  const parts=path.split('/');
+  let dir=bovedaDir;
+  for(const p of parts.slice(0,-1)) dir=await dir.getDirectoryHandle(p,{create});
+  return dir.getFileHandle(parts[parts.length-1],{create});
+}
+async function bovedaWrite(path, data){
+  const fh=await bovedaFileHandle(path,true);
+  const w=await fh.createWritable();
+  await w.write(data);
+  await w.close();
+}
+async function bovedaExists(path){
+  try{ await bovedaFileHandle(path,false); return true; }catch(e){ return false; }
+}
+
+async function bovedaSync(){
+  if(!bovedaDir) return;
+  if(bovedaBusy){ bovedaAgain=true; return; }
+  bovedaBusy=true;
+  try{
+    const all=await dbGetAll('messages');
+    const manifest=[];
+    for(const msg of all){
+      let audioFilename=null;
+      if(msg.hasAudio){
+        const rec=await dbGet('audio', msg.id);
+        if(rec && rec.blob){
+          audioFilename=`audio/${msg.id}.${extForBlob(rec.blob)}`;
+          if(!(await bovedaExists(audioFilename))) await bovedaWrite(audioFilename, rec.blob);
+        }
+      }
+      manifest.push({...msg, audioFilename});
+    }
+    await bovedaWrite('kairos-manifest.json', JSON.stringify(manifest,null,2));
+    localStorage.setItem('kairos_last_boveda', String(Date.now()));
+    updateBackupBadge();
+  }catch(e){
+    console.warn('No pude escribir en la bóveda:', e);
+    if(e && (e.name==='NotAllowedError' || e.name==='NotFoundError')){
+      bovedaDir=null;
+      showToast('Se perdió el acceso a la carpeta de la bóveda — reconectala en 💾 respaldo.', 5200);
+    }
+  }finally{
+    bovedaBusy=false;
+    if(bovedaAgain){ bovedaAgain=false; bovedaSyncSoon(); }
+  }
+}
+function bovedaSyncSoon(){
+  if(!bovedaDir) return;
+  clearTimeout(bovedaSyncTimer);
+  bovedaSyncTimer=setTimeout(bovedaSync, 1200);
+}
+async function bovedaRemoveAudio(id){
+  if(!bovedaDir) return;
+  try{
+    const dir=await bovedaDir.getDirectoryHandle('audio');
+    for(const ext of ['webm','m4a','ogg']){ try{ await dir.removeEntry(`${id}.${ext}`); }catch(e){} }
+  }catch(e){}
+  bovedaSyncSoon();
+}
+
+/* evocar: trae al navegador los mensajes que existen en un manifest y faltan acá */
+async function evocarMensajes(manifest, getBlob){
+  let n=0;
+  for(const m of (manifest||[])){
+    if(!m || !m.id) continue;
+    if(await dbGet('messages', m.id)) continue;
+    const {audioFilename, ...msg}=m;
+    if(msg.hasAudio && audioFilename){
+      const raw=await getBlob(audioFilename);
+      if(raw) await dbPut('audio', {id:msg.id, blob:new Blob([raw], {type:mimeFromName(audioFilename)})});
+    }
+    msg.bounces=msg.bounces||[];
+    await dbPut('messages', msg);
+    n++;
+  }
+  if(n){
+    await syncTextCards(); await syncAudioCards();
+    refreshLists(); refreshBuho();
+  }
+  return n;
+}
+async function bovedaEvocarCarpeta(){
+  if(!bovedaDir) return 0;
+  try{
+    const fh=await bovedaFileHandle('kairos-manifest.json', false);
+    const manifest=JSON.parse(await (await fh.getFile()).text());
+    return await evocarMensajes(manifest, async p=>{
+      try{ return await (await bovedaFileHandle(p,false)).getFile(); }catch(e){ return null; }
+    });
+  }catch(e){ return 0; } // carpeta nueva, todavía sin manifest
+}
+async function evocarDesdeZip(file){
+  if(typeof JSZip==='undefined'){ showToast('No pude cargar JSZip. Revisá tu conexión.'); return; }
+  try{
+    const zip=await JSZip.loadAsync(file);
+    const mf=zip.file('kairos-manifest.json');
+    if(!mf){ showToast('Ese .zip no parece un respaldo de Kairós.'); return; }
+    const manifest=JSON.parse(await mf.async('string'));
+    const n=await evocarMensajes(manifest, async p=>{ const f=zip.file(p); return f ? await f.async('blob') : null; });
+    showToast(n ? `Evocados ${n} mensaje(s) ✦` : 'Todo lo de ese respaldo ya estaba acá.');
+  }catch(e){ showToast('No pude leer ese respaldo: '+(e.message||e)); }
+}
+
+async function bovedaElegir(){
+  if(!bovedaSoportada()){ showToast('Este navegador no deja elegir carpetas. Usá el .zip para respaldar y evocar.', 5200); return; }
+  try{
+    const h=await window.showDirectoryPicker({id:'kairos-boveda', mode:'readwrite', startIn:'documents'});
+    bovedaDir=h;
+    await cfgPut('bovedaDir', h);
+    const n=await bovedaEvocarCarpeta();
+    await bovedaSync();
+    showToast(n ? `Bóveda conectada ✦ evoqué ${n} mensaje(s) de la carpeta`
+                : 'Bóveda conectada ✦ cada grabación queda también en tu carpeta', 4500);
+    renderBackupPanel();
+  }catch(e){
+    if(e && e.name!=='AbortError') showToast('No pude abrir la carpeta: '+e.name);
+  }
+}
+
+/* al abrir: si la carpeta ya tiene permiso, se reconecta sola; si no,
+   se pide en el primer toque (una vez — Chrome ofrece "permitir siempre") */
+async function bovedaInit(){
+  if(!bovedaSoportada()) return;
+  const h=await cfgGet('bovedaDir');
+  if(!h) return;
+  let st='prompt';
+  try{ st=await h.queryPermission({mode:'readwrite'}); }catch(e){}
+  const conectar=async ()=>{
+    bovedaDir=h;
+    const n=await bovedaEvocarCarpeta();
+    bovedaSyncSoon();
+    if(n) showToast(`Evocados ${n} mensaje(s) desde tu bóveda ✦`);
+  };
+  if(st==='granted'){ await conectar(); return; }
+  const once=async ()=>{
+    document.removeEventListener('click', once, true);
+    try{ if((await h.requestPermission({mode:'readwrite'}))==='granted') await conectar(); }catch(e){}
+  };
+  document.addEventListener('click', once, true);
+}
+
+/* ----- panel de respaldo (overlay) ----- */
+function updateBackupBadge(){
+  const btn=document.getElementById('backup-btn');
+  const badge=document.getElementById('backup-badge');
+  if(!btn || !badge) return;
+  const last=parseInt(localStorage.getItem('kairos_last_backup')||'0',10);
+  const lastDrive=parseInt(localStorage.getItem('kairos_last_drive_sync')||'0',10);
+  const lastBoveda=bovedaDir ? parseInt(localStorage.getItem('kairos_last_boveda')||'0',10) : 0;
+  const mostRecent=Math.max(last,lastDrive,lastBoveda);
+  const daysSince=(Date.now()-mostRecent)/(24*3600*1000);
+  const stale = mostRecent===0 || daysSince>7;
+  btn.classList.toggle('warn', stale);
+  badge.style.display = stale ? 'inline-block' : 'none';
+}
+
+async function renderBackupPanel(){
+  const bs=await refreshBuho();
+  const fmtS=v=>v===null ? '—' : `${Math.round(v)} s`;
+  const tendLine = bs.tendencia===null ? 'se calcula desde 10 retornos'
+    : (bs.tendencia<0 ? `llegás ${Math.abs(Math.round(bs.tendencia))} s más rápido que antes` : `${Math.round(bs.tendencia)} s más de rodeo que antes`);
+  const lastBoveda=parseInt(localStorage.getItem('kairos_last_boveda')||'0',10);
+  const bovedaHtml = bovedaSoportada()
+    ? `<div style="font-size:11px;color:var(--text-dim);line-height:1.7;margin-bottom:10px;">
+         Elegí una carpeta de tu computador una sola vez: cada grabación queda ahí como archivo real
+         (<span style="color:var(--calipso-bright);">audio/</span> + <span style="color:var(--calipso-bright);">kairos-manifest.json</span>),
+         y al abrir Kairós en otro navegador con esa misma carpeta, tus mensajes se evocan solos.
+       </div>
+       <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">
+         Estado: ${bovedaDir ? `<span style="color:var(--calipso-bright);">conectada${bovedaDir.name ? ' · '+bovedaDir.name.replace(/</g,'&lt;') : ''}</span>` : 'sin carpeta'}
+         ${bovedaDir && lastBoveda ? ' · última escritura: '+new Date(lastBoveda).toLocaleString('es-CL') : ''}
+       </div>
+       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+         <button class="mini-btn" id="boveda-pick-btn">📁 ${bovedaDir ? 'cambiar carpeta' : 'elegir carpeta'}</button>
+         ${bovedaDir ? '<button class="mini-btn" id="boveda-sync-btn">guardar ahora</button>' : ''}
+       </div>`
+    : `<div style="font-size:11px;color:var(--text-dim);line-height:1.7;margin-bottom:12px;">
+         En este navegador (celular, Safari o Firefox) las grabaciones viven dentro de la app.
+         Descargá el .zip para llevarlas a tu teléfono o computador, y evocalas desde ahí cuando quieras.
+       </div>`;
+
+  const persistLine = storageIsPersisted
+    ? '<span style="color:var(--calipso-bright);">✓ activado</span> — el navegador no debería borrar estos datos por falta de espacio.'
+    : '<span style="color:#ffb37a;">no disponible en este navegador</span> — pedí igual el respaldo manual seguido.';
+  const lastBackup=parseInt(localStorage.getItem('kairos_last_backup')||'0',10);
+  const lastBackupLine = lastBackup ? new Date(lastBackup).toLocaleString('es-CL') : 'nunca';
+
+  const hasClientId=!!getDriveClientId();
+  const driveConnected=!!driveAccessToken;
+  const lastSync=parseInt(localStorage.getItem('kairos_last_drive_sync')||'0',10);
+  const lastSyncLine = lastSync ? new Date(lastSync).toLocaleString('es-CL') : 'nunca';
+
+  showOverlay(`
+    <div class="o-label">Respaldo y sincronización</div>
+
+    <h3 class="section-label" style="margin-top:0;">Protección local</h3>
+    <div style="font-size:11.5px;color:var(--text-dim);line-height:1.7;margin-bottom:12px;">
+      Almacenamiento persistente: ${persistLine}
+    </div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Último respaldo .zip: ${lastBackupLine}</div>
+    <button class="btn-primary" id="do-backup-btn">💾 descargar respaldo completo (.zip)</button>
+    <button class="btn-ghost" id="evocar-zip-btn">✨ evocar desde un respaldo .zip</button>
+    <input type="file" id="evocar-zip-input" accept=".zip,application/zip" style="display:none;">
+
+    <h3 class="section-label">Bóveda en este dispositivo</h3>
+    ${bovedaHtml}
+
+    <h3 class="section-label">🦉 Retorno del búho</h3>
+    <div style="font-size:11px;color:var(--text-dim);line-height:1.8;margin-bottom:14px;">
+      Mientras grabás, tocá <span style="color:#ffd27a;">◉</span> o decí <i>"aquí estamos"</i> / <i>"el punto es"</i>
+      al llegar a lo que querías decir.<br>
+      Retornos: <b style="color:#ffd27a;">${bs.retornos}</b> de ${bs.mensajes} grabaciones medidas ·
+      llegada promedio: <b style="color:#ffd27a;">${fmtS(bs.latenciaProm)}</b> ·
+      preámbulo: <b style="color:#ffd27a;">${bs.preambuloProm===null?'—':Math.round(bs.preambuloProm*100)+'%'}</b><br>
+      Tendencia: ${tendLine}
+    </div>
+
+    <h3 class="section-label">Google Drive (automático)</h3>
+    <div style="font-size:11px;color:var(--text-dim);line-height:1.7;margin-bottom:10px;">
+      Cada audio y texto nuevo se sube solo a una carpeta "Kairós Audios" en tu Drive.
+      La primera vez necesitás un Client ID de Google (gratis, se saca en
+      <span style="color:var(--calipso-bright);">console.cloud.google.com</span> → APIs y servicios →
+      Credenciales → ID de cliente OAuth → tipo "Aplicación web").
+    </div>
+    <div class="custom-date-row" style="margin-bottom:10px;">
+      <input type="text" id="drive-clientid-input" placeholder="tu Client ID de Google..." value="${hasClientId?getDriveClientId().replace(/"/g,'&quot;'):''}" style="flex:1;min-width:160px;">
+      <button class="mini-btn" id="save-clientid-btn">guardar</button>
+    </div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">
+      Estado: ${driveConnected ? '<span style="color:var(--calipso-bright);">conectado</span>' : 'no conectado'} ·
+      última sincronización: ${lastSyncLine}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      ${driveConnected
+        ? '<button class="mini-btn" id="sync-now-btn">sincronizar ahora</button><button class="mini-btn" id="disconnect-drive-btn">desconectar</button>'
+        : '<button class="mini-btn" id="connect-drive-btn">conectar Google Drive</button>'}
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-dim);margin-bottom:16px;">
+      <input type="checkbox" id="drive-autosync-check" ${isDriveAutoSyncOn()?'checked':''}> subir automáticamente cada mensaje nuevo
+    </label>
+
+    <button class="btn-ghost" id="close-backup-btn">cerrar</button>
+  `);
+
+  document.getElementById('do-backup-btn').addEventListener('click', exportFullBackup);
+  const zipInput=document.getElementById('evocar-zip-input');
+  document.getElementById('evocar-zip-btn').addEventListener('click', ()=>zipInput.click());
+  zipInput.addEventListener('change', async ()=>{
+    if(zipInput.files && zipInput.files[0]){ await evocarDesdeZip(zipInput.files[0]); renderBackupPanel(); }
+  });
+  const pickBtn=document.getElementById('boveda-pick-btn');
+  if(pickBtn) pickBtn.addEventListener('click', bovedaElegir);
+  const bSyncBtn=document.getElementById('boveda-sync-btn');
+  if(bSyncBtn) bSyncBtn.addEventListener('click', async ()=>{ await bovedaSync(); showToast('Bóveda al día ✦'); renderBackupPanel(); });
+  document.getElementById('save-clientid-btn').addEventListener('click', ()=>{
+    setDriveClientId(document.getElementById('drive-clientid-input').value);
+    driveTokenClient=null; // fuerza reinicializar con el nuevo id
+    showToast('Client ID guardado.');
+  });
+  const connectBtn=document.getElementById('connect-drive-btn');
+  if(connectBtn) connectBtn.addEventListener('click', connectDrive);
+  const syncBtn=document.getElementById('sync-now-btn');
+  if(syncBtn) syncBtn.addEventListener('click', syncAllToDrive);
+  const disconnectBtn=document.getElementById('disconnect-drive-btn');
+  if(disconnectBtn) disconnectBtn.addEventListener('click', disconnectDrive);
+  document.getElementById('drive-autosync-check').addEventListener('change', e=>{
+    setDriveAutoSync(e.target.checked);
+  });
+  document.getElementById('close-backup-btn').addEventListener('click', closeOverlay);
+}
+document.getElementById('backup-btn').addEventListener('click', renderBackupPanel);
+
+/* el mensaje se guarda EN EL MOMENTO en que se termina de grabar o escribir */
+async function commitMessage({type, text, hasAudio, blob, title, transcript, autoTags, buho}){
+  const id=uid();
+  const msg={
+    id, type, text, hasAudio, createdAt:Date.now(), bounces:[],
+    tags: autoTags||[],
+    title: title||'',
+    transcript: transcript||'',
+    driveSynced:false
+  };
+  if(buho) msg.buho=buho;
+  if(hasAudio && blob) await dbPut('audio', {id, blob});   /* audio primero: así la bóveda ya lo encuentra al escribir */
+  await dbPut('messages', msg);
+  if(buho && buho.retorno) addResonancia(1);               /* volver al punto suma poder */
+  if(buho) refreshBuho();
+
+  if(hasAudio) absorbAudioEffect(); else pulsar.feed();
+  if(text) addTextCard(msg);
+  if(hasAudio) addAudioCard(msg);
+
+  const total=addResonancia(1);
+  pulsar.setResonancia(total);
+  refreshLists();
+  closeOverlay();
+  showToast(hasAudio ? 'Tu voz quedó integrada al núcleo ✦' : 'Tu mensaje quedó suspendido en el plasma ✦');
+  updateBackupBadge();
+
+  if(driveAccessToken && isDriveAutoSyncOn()){
+    syncMessageToDrive(msg).then(updateBackupBadge);
+  }
+}
+
+/* ------------- paso de programación: Deriva vs Coordinación ------------- */
+const PRESETS={
+  rapido:{label:'Eco rápido', desc:'para probar: +30s y +2min', bounces:[
+    {label:'+30 segundos', ms:30*1000},{label:'+2 minutos', ms:2*60*1000}]},
+  cercano:{label:'Cercano', desc:'1 semana y 1 mes', bounces:[
+    {label:'en 1 semana', ms:7*24*3600*1000},{label:'en 1 mes', ms:30*24*3600*1000}]},
+  profundo:{label:'Profundo', desc:'1 mes, 6 meses y 1 año', bounces:[
+    {label:'en 1 mes', ms:30*24*3600*1000},{label:'en 6 meses', ms:182*24*3600*1000},{label:'en 1 año', ms:365*24*3600*1000}]},
+};
+let chosenBounces=[];
+let scheduleMode='deriva';
+
+function openScheduleStep(){
+  chosenBounces=[];
+  scheduleMode='deriva';
+  showOverlay(`
+    <div class="o-label">¿Cuándo querés que vuelva a vos?</div>
+    <button class="btn-ghost" id="save-only-btn" style="margin-bottom:14px;">✓ solo guardar, sin programar</button>
+    <div class="mode-toggle">
+      <div class="mode-btn active" data-mode="deriva">🌊 Deriva</div>
+      <div class="mode-btn" data-mode="coordinacion">🎯 Coordinación</div>
+    </div>
+    <div id="schedule-body"></div>
+    <div id="chosen-bounces"></div>
+    <button class="btn-primary" id="confirm-schedule-btn" disabled>Confirmar rebotes</button>
+  `);
+  document.getElementById('save-only-btn').addEventListener('click', ()=>{
+    closeOverlay();
+    showToast('Guardado. Podés programarlo después desde "En tránsito".');
+  });
+  document.querySelectorAll('.mode-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      scheduleMode=btn.dataset.mode;
+      chosenBounces=[];
+      renderScheduleBody();
+      renderChosenBounces();
+    });
+  });
+  document.getElementById('confirm-schedule-btn').addEventListener('click', confirmSchedule);
+  renderScheduleBody();
+}
+
+function renderScheduleBody(){
+  const body=document.getElementById('schedule-body');
+  if(scheduleMode==='deriva'){
+    body.innerHTML=`
+      <div class="preset-grid" id="preset-grid"></div>
+      <div class="custom-date-row">
+        <input type="datetime-local" id="custom-date">
+        <button class="mini-btn" id="add-custom-btn">+ fecha propia</button>
+      </div>
+    `;
+    const grid=document.getElementById('preset-grid');
+    Object.entries(PRESETS).forEach(([key,p])=>{
+      const card=document.createElement('div');
+      card.className='preset-card';
+      card.innerHTML=`<div class="p-title">${p.label}</div><div class="p-desc">${p.desc}</div>`;
+      card.addEventListener('click',()=>{
+        chosenBounces=p.bounces.map(b=>({label:b.label, timestamp:Date.now()+b.ms}));
+        document.querySelectorAll('.preset-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        renderChosenBounces();
+      });
+      grid.appendChild(card);
+    });
+    document.getElementById('add-custom-btn').addEventListener('click',()=>{
+      const input=document.getElementById('custom-date');
+      if(!input.value) return;
+      const ts=new Date(input.value).getTime();
+      if(ts<=Date.now()){ showToast('Elegí una fecha en el futuro.'); return; }
+      chosenBounces.push({label:'fecha propia · '+new Date(ts).toLocaleDateString('es-CL'), timestamp:ts});
+      document.querySelectorAll('.preset-card').forEach(c=>c.classList.remove('selected'));
+      renderChosenBounces();
+      input.value='';
+    });
+  } else {
+    body.innerHTML=`
+      <div class="coord-copy">Elegí el instante exacto en que querés encontrarte con vos mismo —
+      el punto del futuro donde esperás que la conexión pase, y que estés ahí, escuchando.</div>
+      <div class="custom-date-row">
+        <input type="datetime-local" id="coord-date">
+      </div>
+      <label class="repeat-row">
+        <input type="checkbox" id="coord-repeat-check"> repetir este encuentro
+      </label>
+      <div class="repeat-details" id="coord-repeat-details">
+        <select id="coord-interval">
+          <option value="${7*24*3600*1000}">cada semana</option>
+          <option value="${30*24*3600*1000}">cada mes</option>
+          <option value="${182*24*3600*1000}">cada 6 meses</option>
+          <option value="${365*24*3600*1000}">cada año</option>
+        </select>
+        <input type="number" id="coord-repeats" min="2" max="12" value="3" style="width:64px;"> veces
+      </div>
+    `;
+    const dateInput=document.getElementById('coord-date');
+    const buildCoordBounces=()=>{
+      if(!dateInput.value) return;
+      const ts=new Date(dateInput.value).getTime();
+      if(ts<=Date.now()){ showToast('Elegí una fecha en el futuro.'); return; }
+      const repeatOn=document.getElementById('coord-repeat-check').checked;
+      chosenBounces=[{label:'encuentro · '+new Date(ts).toLocaleDateString('es-CL'), timestamp:ts}];
+      if(repeatOn){
+        const interval=parseInt(document.getElementById('coord-interval').value,10);
+        const reps=Math.min(12,Math.max(2,parseInt(document.getElementById('coord-repeats').value,10)||3));
+        for(let i=1;i<reps;i++){
+          chosenBounces.push({label:'encuentro '+(i+1)+' · '+new Date(ts+interval*i).toLocaleDateString('es-CL'), timestamp:ts+interval*i});
+        }
+      }
+      renderChosenBounces();
+    };
+    dateInput.addEventListener('change', buildCoordBounces);
+    document.getElementById('coord-repeat-check').addEventListener('change', e=>{
+      document.getElementById('coord-repeat-details').classList.toggle('show', e.target.checked);
+      buildCoordBounces();
+    });
+    document.getElementById('coord-interval').addEventListener('change', buildCoordBounces);
+    document.getElementById('coord-repeats').addEventListener('input', buildCoordBounces);
+  }
+}
+
+function renderChosenBounces(){
+  chosenBounces.sort((a,b)=>a.timestamp-b.timestamp);
+  const wrap=document.getElementById('chosen-bounces');
+  wrap.innerHTML='';
+  chosenBounces.forEach((b,i)=>{
+    const chip=document.createElement('div');
+    chip.className='bounce-chip';
+    chip.innerHTML=`<span>${b.label}</span><span class="x" data-i="${i}">✕</span>`;
+    chip.querySelector('.x').addEventListener('click',()=>{ chosenBounces.splice(i,1); renderChosenBounces(); });
+    wrap.appendChild(chip);
+  });
+  document.getElementById('confirm-schedule-btn').disabled = chosenBounces.length===0;
+}
+
+async function confirmSchedule(){
+  if(!pendingMessage || chosenBounces.length===0) return;
+  pendingMessage.bounces=chosenBounces.map(b=>({label:b.label, timestamp:b.timestamp, arrived:false, opened:false}));
+  await dbPut('messages', pendingMessage);
+  await playThrowPreview(pendingMessage.bounces.length);
+  pendingMessage=null;
+  closeOverlay();
+  showToast('Rebotes programados sobre el agua.');
+  refreshLists();
+}
+
+/* ---------------------------------------------------------------------
+   8. PESTAÑAS Y LISTAS
+   --------------------------------------------------------------------- */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.getElementById('view-transito').style.display = name==='transito' ? 'block':'none';
+  document.getElementById('view-llegados').style.display = name==='llegados' ? 'block':'none';
+  document.getElementById('view-audios').style.display = name==='audios' ? 'block':'none';
+  document.getElementById('view-reproducir').style.display = name==='reproducir' ? 'block':'none';
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+
+/* ----- botón único de menú, se colapsa/expande ----- */
+const dockToggle=document.getElementById('dock-toggle');
+const dockPanel=document.getElementById('dock-panel');
+dockToggle.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  dockPanel.classList.toggle('open');
+});
+
+/* ----- botones flotantes de grabar/texto al tocar el pulsar ----- */
+const pulsarActions=document.getElementById('pulsar-actions');
+const topToggleWrap=document.getElementById('top-toggle-wrap');
+document.getElementById('pa-voz').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  toggleQuickRecord();
+  /* la ficha de acciones se queda visible mientras graba, para poder tocar "detener" ahí mismo */
+});
+document.getElementById('pa-punto').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  marcarPunto('toque');
+});
+document.getElementById('pa-play').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  pulsarActions.classList.remove('show');
+  topToggleWrap.classList.remove('show');
+  switchTab('reproducir');
+  dockPanel.classList.add('open');
+  audioReactSource='central';
+  playNext();
+});
+document.getElementById('pa-texto').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  pulsarActions.classList.remove('show');
+  topToggleWrap.classList.remove('show');
+  openTextCompose();
+});
+document.getElementById('toggle-cards-btn').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  setCardsVisible(!cardsVisible);
+});
+
+/* ----- se cierran solos al tocar cualquier otro lugar de la pantalla ----- */
+document.addEventListener('pointerdown', (e)=>{
+  const insideActionGroup = pulsarActions.contains(e.target) || topToggleWrap.contains(e.target);
+  if((pulsarActions.classList.contains('show') || topToggleWrap.classList.contains('show')) && !insideActionGroup){
+    pulsarActions.classList.remove('show');
+    topToggleWrap.classList.remove('show');
+  }
+  if(dockPanel.classList.contains('open') && !dockPanel.contains(e.target) && !dockToggle.contains(e.target)){
+    dockPanel.classList.remove('open');
+  }
+});
+
+async function deleteMessageCompletely(id){
+  await dbDelete('messages', id);
+  try{ await dbDelete('audio', id); }catch(e){}
+  bovedaRemoveAudio(id);
+
+  const aidx=audioCards.findIndex(sp=>sp.userData.msgId===id);
+  if(aidx>=0){
+    const sp=audioCards[aidx];
+    pulsar.group.remove(sp);
+    audioCards.splice(aidx,1);
+    const mi=audioCardMeshes.indexOf(sp);
+    if(mi>=0) audioCardMeshes.splice(mi,1);
+    cardedAudioIds.delete(id);
+  }
+  const tidx=textCards.findIndex(sp=>sp.userData.msgId===id);
+  if(tidx>=0){
+    const sp=textCards[tidx];
+    if(zoomedCard===sp) unzoomCard();
+    pulsar.group.remove(sp);
+    textCards.splice(tidx,1);
+    const mi=textCardMeshes.indexOf(sp);
+    if(mi>=0) textCardMeshes.splice(mi,1);
+    cardedIds.delete(id);
+  }
+  refreshLists();
+}
+
+/* ----------------- ETIQUETAS DEFINIDAS POR EL USUARIO (sin emoji) ----------------- */
+function getTagDefs(){
+  try{ return JSON.parse(localStorage.getItem('kairos_tagdefs')||'[]'); }catch(e){ return []; }
+}
+function setTagDefs(arr){ localStorage.setItem('kairos_tagdefs', JSON.stringify(arr)); }
+async function addTagDef(name){
+  name=(name||'').trim();
+  if(!name) return;
+  const defs=getTagDefs();
+  if(!defs.includes(name)){ defs.push(name); setTagDefs(defs); }
+}
+async function removeTagDef(name){
+  setTagDefs(getTagDefs().filter(t=>t!==name));
+  /* también se saca de todos los audios que la tenían */
+  const all=await dbGetAll('messages');
+  for(const msg of all){
+    if(msg.tags && msg.tags.includes(name)){
+      msg.tags=msg.tags.filter(t=>t!==name);
+      await dbPut('messages', msg);
+    }
+  }
+}
+
+async function renderAudios(){
+  const all=await dbGetAll('messages');
+  const audios=all.filter(m=>m.hasAudio).sort((a,b)=>b.createdAt-a.createdAt);
+  const wrap=document.getElementById('view-audios');
+  const tagDefs=getTagDefs();
+
+  const managerHtml=`
+    <h3 class="section-label">Etiquetas</h3>
+    <div class="custom-date-row" style="margin-bottom:8px;">
+      <input type="text" id="new-tagdef-input" placeholder="nombre de etiqueta" style="flex:1;min-width:110px;">
+      <button class="mini-btn" id="new-tagdef-btn">crear</button>
+    </div>
+    <div id="tagdef-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+      ${tagDefs.length===0
+        ? '<span style="font-size:10.5px;color:var(--text-dim);">todavía no definiste ninguna</span>'
+        : tagDefs.map(t=>`<span class="bounce-chip">${t.replace(/</g,'&lt;')}<span class="x" data-deltag="${t.replace(/"/g,'&quot;')}">✕</span></span>`).join('')}
+    </div>
+  `;
+
+  if(audios.length===0){
+    wrap.innerHTML=managerHtml+'<div class="empty-state">Todavía no grabaste ningún audio.</div>';
+  } else {
+    let cardsHtml='';
+    for(const msg of audios){
+      const rec=await dbGet('audio', msg.id);
+      const src=rec ? URL.createObjectURL(rec.blob) : '';
+      const tags=msg.tags||[];
+      const scheduleHtml = msg.bounces.length===0
+        ? `<div class="bounce-line"><span>sin programar</span><span class="cal-link" data-schedule="${msg.id}">programar</span></div>`
+        : msg.bounces.map(b=>`<div class="bounce-line${b.arrived?' arrived':''}"><span>${b.arrived?'llegó':formatEta(b.timestamp)}</span></div>`).join('');
+      const tagToggleHtml = tagDefs.length===0
+        ? ''
+        : tagDefs.map(t=>{
+            const on=tags.includes(t);
+            return `<span class="mini-btn${on?' tag-on':''}" data-toggletag="${msg.id}" data-tag="${t.replace(/"/g,'&quot;')}" style="margin:3px 4px 0 0;display:inline-block;">${t.replace(/</g,'&lt;')}</span>`;
+          }).join('');
+      cardsHtml+=`
+        <div class="msg-card">
+          <div class="m-top"><span>${new Date(msg.createdAt).toLocaleDateString('es-CL')}</span>
+          <span><span class="cal-link" data-delete="${msg.id}" style="color:#ff8d8d;">eliminar</span></span></div>
+          <div class="custom-date-row" style="margin-bottom:8px;">
+            <input type="text" data-titleinput="${msg.id}" value="${(msg.title||'').replace(/"/g,'&quot;')}" placeholder="ponele nombre..." style="flex:1;min-width:110px;">
+            <button class="mini-btn" data-savetitle="${msg.id}">guardar</button>
+          </div>
+          <audio controls style="width:100%;margin-bottom:8px;" src="${src}"></audio>
+          ${msg.buho ? `<div class="buho-line">${msg.buho.retorno
+              ? `🦉 punto a los ${Math.round(msg.buho.latencia)} s · preámbulo ${Math.round(msg.buho.preambulo*100)}%`
+              : '🦉 sin marca de punto'}</div>` : ''}
+          <div>${tagToggleHtml}</div>
+          ${scheduleHtml}
+        </div>
+      `;
+    }
+    wrap.innerHTML=managerHtml+cardsHtml;
+  }
+
+  document.getElementById('new-tagdef-btn').addEventListener('click', async ()=>{
+    const input=document.getElementById('new-tagdef-input');
+    await addTagDef(input.value);
+    input.value='';
+    renderAudios();
+  });
+  wrap.querySelectorAll('[data-deltag]').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      await removeTagDef(el.dataset.deltag);
+      renderAudios();
+    });
+  });
+  wrap.querySelectorAll('.cal-link[data-schedule]').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      pendingMessage=await dbGet('messages', el.dataset.schedule);
+      openScheduleStep();
+    });
+  });
+  wrap.querySelectorAll('.cal-link[data-delete]').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      if(confirm('¿Eliminar este audio para siempre? No se puede deshacer.')){
+        await deleteMessageCompletely(el.dataset.delete);
+      }
+    });
+  });
+  wrap.querySelectorAll('[data-toggletag]').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      const id=el.dataset.toggletag, tag=el.dataset.tag;
+      const msg=await dbGet('messages', id);
+      if(!msg) return;
+      msg.tags=msg.tags||[];
+      if(msg.tags.includes(tag)) msg.tags=msg.tags.filter(t=>t!==tag);
+      else msg.tags.push(tag);
+      await dbPut('messages', msg);
+      renderAudios();
+    });
+  });
+  wrap.querySelectorAll('[data-savetitle]').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      const id=el.dataset.savetitle;
+      const input=wrap.querySelector(`[data-titleinput="${id}"]`);
+      const msg=await dbGet('messages', id);
+      if(!msg) return;
+      msg.title=(input.value||'').trim();
+      await dbPut('messages', msg);
+      showToast('Nombre guardado.');
+    });
+  });
+}
+
+async function refreshLists(){
+  const all=await dbGetAll('messages');
+  const transito=document.getElementById('view-transito');
+  const llegados=document.getElementById('view-llegados');
+  transito.innerHTML=''; llegados.innerHTML='';
+  let transitoCount=0, llegadosCount=0;
+  syncTextCards();
+  syncAudioCards();
+  renderPlaybackTagFilter();
+  renderAudios();
+  const tagDefs=getTagDefs();
+
+  all.sort((a,b)=>b.createdAt-a.createdAt).forEach(msg=>{
+    const pendientes=msg.bounces.filter(b=>!b.arrived);
+    const disponibles=msg.bounces.filter(b=>b.arrived && !b.opened);
+
+    if(msg.bounces.length===0 || pendientes.length>0){
+      transitoCount++;
+      const card=document.createElement('div');
+      card.className='msg-card';
+      const preview=msg.text ? (msg.text.length>90?msg.text.slice(0,90)+'…':msg.text) : '(mensaje de voz)';
+      const tagToggleHtml = (msg.text && tagDefs.length>0)
+        ? '<div style="margin-bottom:6px;">'+tagDefs.map(t=>{
+            const on=(msg.tags||[]).includes(t);
+            return `<span class="mini-btn${on?' tag-on':''}" data-toggletxttag="${msg.id}" data-tag="${t.replace(/"/g,'&quot;')}" style="margin:3px 4px 0 0;display:inline-block;">${t.replace(/</g,'&lt;')}</span>`;
+          }).join('')+'</div>'
+        : '';
+      card.innerHTML=`
+        <div class="m-top"><span>${new Date(msg.createdAt).toLocaleDateString('es-CL')}</span>
+        <span>${msg.hasAudio?'🎙️':''} ${msg.text?'✎':''}</span></div>
+        <div class="m-preview">${preview}</div>
+        ${tagToggleHtml}
+      `;
+      if(msg.bounces.length===0){
+        const line=document.createElement('div');
+        line.className='bounce-line';
+        line.innerHTML=`<span>sin programar todavía</span><span class="cal-link" data-schedule="${msg.id}">programar ahora</span>`;
+        card.appendChild(line);
+      } else {
+        msg.bounces.forEach(b=>{
+          const line=document.createElement('div');
+          line.className='bounce-line'+(b.arrived?' arrived':'');
+          line.innerHTML=`<span>${b.arrived? '✓ llegó' : formatEta(b.timestamp)}</span>` +
+            (b.arrived?'':`<span class="cal-link" data-ts="${b.timestamp}" data-label="${b.label}">🔔 calendario</span>`);
+          card.appendChild(line);
+        });
+      }
+      transito.appendChild(card);
+    }
+
+    if(disponibles.length>0){
+      llegadosCount++;
+      const card=document.createElement('div');
+      card.className='msg-card';
+      const preview=msg.text ? (msg.text.length>90?msg.text.slice(0,90)+'…':msg.text) : '(mensaje de voz)';
+      card.innerHTML=`
+        <div class="m-top"><span>escrito el ${new Date(msg.createdAt).toLocaleDateString('es-CL')}</span></div>
+        <div class="m-preview">${preview}</div>
+        <button class="arrived-btn" data-id="${msg.id}">abrir mensaje ✨</button>
+      `;
+      llegados.appendChild(card);
+    }
+  });
+
+  document.getElementById('badge-transito').style.display = transitoCount>0?'inline-block':'none';
+  document.getElementById('badge-transito').textContent=transitoCount;
+  document.getElementById('badge-llegados').style.display = llegadosCount>0?'inline-block':'none';
+  document.getElementById('badge-llegados').textContent=llegadosCount;
+  document.getElementById('badge-toggle').style.display = llegadosCount>0?'inline-block':'none';
+  document.getElementById('badge-toggle').textContent=llegadosCount;
+
+  if(transitoCount===0) transito.innerHTML='<div class="empty-state">Todavía no hay piedras en camino.<br>Tocá el pulsar para escribirle a tu futuro.</div>';
+  if(llegadosCount===0) llegados.innerHTML='<div class="empty-state">Cuando un rebote llegue a destino,<br>aparecerá acá para que lo abras.</div>';
+
+  transito.querySelectorAll('.cal-link[data-ts]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      makeICS('Kairós: un mensaje de tu pasado', 'Volvé al pulsar Kairós — un mensaje que te escribiste está por llegar.', parseInt(el.dataset.ts,10));
+    });
+  });
+  transito.querySelectorAll('.cal-link[data-schedule]').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      pendingMessage=await dbGet('messages', el.dataset.schedule);
+      openScheduleStep();
+    });
+  });
+  transito.querySelectorAll('[data-toggletxttag]').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      const id=el.dataset.toggletxttag, tag=el.dataset.tag;
+      const msg=await dbGet('messages', id);
+      if(!msg) return;
+      msg.tags=msg.tags||[];
+      if(msg.tags.includes(tag)) msg.tags=msg.tags.filter(t=>t!==tag);
+      else msg.tags.push(tag);
+      await dbPut('messages', msg);
+      refreshLists();
+    });
+  });
+  llegados.querySelectorAll('.arrived-btn').forEach(el=>{
+    el.addEventListener('click',()=>openArrivedMessage(el.dataset.id));
+  });
+}
+
+async function openArrivedMessage(id){
+  const msg=await dbGet('messages', id);
+  if(!msg) return;
+  const bounce=msg.bounces.find(b=>b.arrived && !b.opened);
+  if(!bounce) return;
+
+  let audioHtml='';
+  if(msg.hasAudio){
+    const rec=await dbGet('audio', id);
+    if(rec) audioHtml=`<audio controls autoplay src="${URL.createObjectURL(rec.blob)}"></audio>`;
+  }
+  showOverlay(`
+    <div class="o-label">Mensaje del pasado · ${bounce.label}</div>
+    <div class="o-body">${(msg.text||'').replace(/</g,'&lt;')}</div>
+    ${audioHtml}
+    <button class="btn-ghost" id="close-arrived">cerrar</button>
+  `);
+  document.getElementById('close-arrived').addEventListener('click', closeOverlay);
+
+  bounce.opened=true;
+  await dbPut('messages', msg);
+  const total=addResonancia(1);
+  pulsar.setResonancia(total);
+  pulsar.flash();
+  refreshLists();
+}
+
+/* ---------------------------------------------------------------------
+   9. VIGÍA DE REBOTES
+   --------------------------------------------------------------------- */
+async function checkArrivals(){
+  const all=await dbGetAll('messages');
+  let anyArrived=false;
+  for(const msg of all){
+    let changed=false;
+    for(const b of msg.bounces){
+      if(!b.arrived && b.timestamp<=Date.now()){ b.arrived=true; changed=true; anyArrived=true; }
+    }
+    if(changed){
+      await dbPut('messages', msg);
+      pulsar.flash();
+      if(Notification && Notification.permission==='granted'){
+        new Notification('Kairós', {body:'Un mensaje de tu pasado llegó a la orilla.'});
+      }
+    }
+  }
+  if(anyArrived){
+    plunk(620,0.5);
+    showToast('Un rebote llegó a destino. Revisá "Llegados".');
+    refreshLists();
+  }
+}
+setInterval(checkArrivals, 15000);
+
+/* ---------------------------------------------------------------------
+   10. NOTIFICACIONES
+   --------------------------------------------------------------------- */
+const notifBtn=document.getElementById('notif-btn');
+function updateNotifBtn(){
+  if(!('Notification' in window)){ notifBtn.style.display='none'; return; }
+  if(Notification.permission==='granted'){ notifBtn.textContent='🔔 avisos activos'; notifBtn.classList.add('on'); }
+  else { notifBtn.textContent='🔔 activar avisos'; notifBtn.classList.remove('on'); }
+}
+notifBtn.addEventListener('click', async ()=>{
+  if('Notification' in window && Notification.permission!=='granted'){
+    await Notification.requestPermission();
+    updateNotifBtn();
+    showToast('Avisos activados en este navegador.');
+  }
+});
+updateNotifBtn();
+
+/* ---------------------------------------------------------------------
+   11. MODO ALEATORIO — REPRODUCIR
+   --------------------------------------------------------------------- */
+let shuffling=false, advanceTimer=null;
+let playHistory=[], historyIndex=-1;
+const playBtn=document.getElementById('play-big-btn');
+const skipBtn=document.getElementById('skip-btn');
+const prevBtn=document.getElementById('prev-btn');
+const nowPlaying=document.getElementById('now-playing');
+const nowPlayingAudio=document.getElementById('now-playing-audio');
+
+function clearAdvanceTimer(){ if(advanceTimer){ clearTimeout(advanceTimer); advanceTimer=null; } }
+
+let selectedPlaybackTags=new Set();
+
+function messagePassesTagFilter(msg){
+  if(selectedPlaybackTags.size===0) return true; // sin selección = suena todo
+  const tags=msg.tags||[];
+  return tags.some(t=>selectedPlaybackTags.has(t));
+}
+
+async function getPlaybackPool(){
+  const all=await dbGetAll('messages');
+  return all.filter(m=>(m.hasAudio||m.text) && messagePassesTagFilter(m)).map(m=>m.id);
+}
+
+function renderPlaybackTagFilter(){
+  const defs=getTagDefs();
+  const wrap=document.getElementById('playback-tag-filter');
+  if(!wrap) return;
+  /* limpia de la selección cualquier etiqueta que ya no exista */
+  selectedPlaybackTags.forEach(t=>{ if(!defs.includes(t)) selectedPlaybackTags.delete(t); });
+  if(defs.length===0){ wrap.innerHTML=''; return; }
+  wrap.innerHTML=defs.map(t=>{
+    const on=selectedPlaybackTags.has(t);
+    return `<span class="mini-btn${on?' tag-on':''}" data-playtag="${t.replace(/"/g,'&quot;')}">${t.replace(/</g,'&lt;')}</span>`;
+  }).join('');
+  wrap.querySelectorAll('[data-playtag]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const t=el.dataset.playtag;
+      if(selectedPlaybackTags.has(t)) selectedPlaybackTags.delete(t);
+      else selectedPlaybackTags.add(t);
+      renderPlaybackTagFilter();
+    });
+  });
+}
+
+async function playPick(msgId){
+  clearAdvanceTimer();
+  nowPlayingAudio.onended=null;
+  const msg=await dbGet('messages', msgId);
+  if(!msg){ playNext(); return; }
+
+  pulsar.flash();
+  shuffling=true;
+  playBtn.classList.add('playing');
+  playBtn.textContent='❚❚';
+  nowPlayingAudio.pause();
+
+  let willAutoAdvanceAfter=4200;
+  currentlyPlayingId=null;
+
+  if(msg.hasAudio){
+    const rec=await dbGet('audio', msg.id);
+    if(rec){
+      currentlyPlayingId=msg.id;
+      nowPlaying.textContent='🎙️ '+new Date(msg.createdAt).toLocaleDateString('es-CL');
+      attachAnalyserToPlayback(nowPlayingAudio);
+      nowPlayingAudio.src=URL.createObjectURL(rec.blob);
+      nowPlayingAudio.play().catch(()=>{});
+      /* pausa de 2 segundos de silencio entre un audio y el siguiente */
+      nowPlayingAudio.onended=()=>{ if(shuffling) advanceTimer=setTimeout(()=>{ if(shuffling) playNext(); }, 2000); };
+      willAutoAdvanceAfter=null;
+    }
+  } else {
+    const preview=(msg.text||'').slice(0,54);
+    nowPlaying.textContent='✎ '+preview+(msg.text&&msg.text.length>54?'…':'');
+  }
+
+  if(willAutoAdvanceAfter){
+    advanceTimer=setTimeout(()=>{ if(shuffling) playNext(); }, willAutoAdvanceAfter);
+  }
+}
+
+let shuffleBag=[];
+function shuffleArray(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+async function pickNextFromBag(){
+  const pool=await getPlaybackPool();
+  if(pool.length===0) return null;
+  shuffleBag=shuffleBag.filter(id=>pool.includes(id)); // por si algo se borró o el filtro cambió
+  if(shuffleBag.length===0){
+    shuffleBag=shuffleArray(pool);
+    /* que la vuelta nueva no arranque justo con lo último que sonó */
+    if(shuffleBag.length>1 && shuffleBag[shuffleBag.length-1]===currentlyPlayingId){
+      [shuffleBag[shuffleBag.length-1], shuffleBag[shuffleBag.length-2]]=[shuffleBag[shuffleBag.length-2], shuffleBag[shuffleBag.length-1]];
+    }
+  }
+  return shuffleBag.pop();
+}
+
+async function playNext(){
+  clearAdvanceTimer();
+  if(historyIndex < playHistory.length-1){
+    historyIndex++;
+    await playPick(playHistory[historyIndex]);
+    return;
+  }
+  const msgId=await pickNextFromBag();
+  if(!msgId){
+    showToast('Todavía no grabaste ni escribiste nada para reproducir.');
+    stopShuffle();
+    return;
+  }
+  playHistory.push(msgId);
+  historyIndex=playHistory.length-1;
+  await playPick(msgId);
+}
+
+async function playPrevious(){
+  if(historyIndex<=0){ showToast('No hay nada anterior todavía.'); return; }
+  historyIndex--;
+  await playPick(playHistory[historyIndex]);
+}
+
+function stopShuffle(){
+  shuffling=false;
+  clearAdvanceTimer();
+  playBtn.classList.remove('playing');
+  playBtn.textContent='▶';
+  nowPlayingAudio.onended=null;
+  nowPlayingAudio.pause();
+  currentlyPlayingId=null;
+}
+
+playBtn.addEventListener('click', async ()=>{
+  if(shuffling){ stopShuffle(); return; }
+  audioReactSource='central';
+  await playNext();
+});
+skipBtn.addEventListener('click', ()=>{ audioReactSource='central'; playNext(); });
+prevBtn.addEventListener('click', ()=>{ audioReactSource='central'; playPrevious(); });
+
+/* ---------------------------------------------------------------------
+   12. ARRANQUE DIRECTO
+   --------------------------------------------------------------------- */
+(function checkIframe(){
+  let inIframe=false;
+  try{ inIframe = window.self!==window.top; }catch(e){ inIframe=true; }
+  if(inIframe){
+    document.getElementById('iframe-warning').style.display='block';
+    document.getElementById('open-tab-btn').addEventListener('click', ()=>{
+      window.open(window.location.href, '_blank');
+    });
+  }
+})();
+
+setTimeout(()=>{ document.getElementById('hint').style.opacity='0'; }, 6000);
+
+/* ----- sello Chamalnquimyst: se difumina a los 5s, vuelve con el tacto ----- */
+(function brandFadeCycle(){
+  const brandEl=document.querySelector('.brand');
+  let fadeTimer=null;
+  function scheduleFade(){
+    brandEl.style.opacity='1';
+    clearTimeout(fadeTimer);
+    fadeTimer=setTimeout(()=>{ brandEl.style.opacity='0'; }, 5000);
+  }
+  document.addEventListener('pointerdown', scheduleFade);
+  scheduleFade();
+})();
+
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  if(useBloom && composer) composer.setSize(innerWidth, innerHeight);
+});
+
+/* ---------------------------------------------------------------------
+   13. LOOP PRINCIPAL
+   --------------------------------------------------------------------- */
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  try{
+    const t=clock.getElapsedTime();
+    const level=getAudioLevel();
+    pulsar.update(t, audioReactSource==='central' ? level : 0);
+    updateTextCards(t);
+    updateAudioCards(t, audioReactSource==='orb' ? level : 0);
+    reflection.material.opacity=0.16+Math.sin(t*0.9)*0.05;
+    controls.update();
+    if(useBloom && composer) composer.render(); else renderer.render(scene, camera);
+  }catch(e){
+    console.warn('Error en un frame de animación, sigo con el siguiente:', e);
+  }
+}
+animate();
+
+refreshLists();
+checkArrivals();
+ensurePersistentStorage().then(()=>updateBackupBadge());
+updateBackupBadge();
+bovedaInit().then(updateBackupBadge);
+refreshBuho();
+
+/* recordatorio suave: si pasó una semana sin respaldar, un toast al abrir la app */
+setTimeout(()=>{
+  const last=Math.max(
+    parseInt(localStorage.getItem('kairos_last_backup')||'0',10),
+    parseInt(localStorage.getItem('kairos_last_drive_sync')||'0',10)
+  );
+  const daysSince=(Date.now()-last)/(24*3600*1000);
+  if(last===0){
+    // primera vez: no asustar, solo un aviso suave si ya hay algo grabado
+    dbGetAll('messages').then(all=>{
+      if(all.some(m=>m.hasAudio)) showToast('Tip: tocá "💾 respaldo" arriba para no perder tus audios.', 6000);
+    });
+  } else if(daysSince>7){
+    showToast('Hace más de una semana que no respaldás tus mensajes — tocá "💾 respaldo".', 6000);
+  }
+}, 2500);
+</script>
+</body>
+</html>
